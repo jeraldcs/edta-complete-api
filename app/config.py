@@ -73,6 +73,11 @@ class Settings:
             self.expose_error_details = self.environment != "production"
         else:
             self.expose_error_details = expose_errors in {"1", "true", "yes"}
+        self.expose_demo_api_key = os.getenv("EDTA_EXPOSE_DEMO_API_KEY", "true").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+        }
 
     @property
     def auth_enabled(self) -> bool:

@@ -60,7 +60,7 @@ Mutating endpoints require the key Render generated (or you set):
 X-API-Key: <EDTA_API_KEY>
 ```
 
-The web demos call legacy routes from the browser on the same origin, so they work without the header when CORS/origin matches. External API clients must send the key.
+When `EDTA_EXPOSE_DEMO_API_KEY=true` (default in `render.yaml`), the web demos load the key from `GET /demo-config` and attach it automatically. Disable this for API-only deployments without browser demos.
 
 ## Free tier limits
 

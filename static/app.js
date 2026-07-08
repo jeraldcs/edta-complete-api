@@ -490,7 +490,7 @@ async function submitFeedback(kind) {
   }
 
   try {
-    const response = await fetch("/feedback", {
+    const response = await DemoApi.fetch("/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -520,9 +520,8 @@ async function runPersonalization() {
   recommendationList.innerHTML = "";
 
   try {
-    const response = await fetch("/recommend", {
+    const response = await DemoApi.fetch("/recommend", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 

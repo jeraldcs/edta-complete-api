@@ -140,6 +140,17 @@ def metrics():
     return Response(content=body, media_type=content_type)
 
 
+@app.get("/demo-config")
+def demo_config():
+    from app.config import settings as runtime_settings
+
+    if not runtime_settings.auth_enabled:
+        return {"auth_enabled": False, "api_key": None}
+    if runtime_settings.expose_demo_api_key:
+        return {"auth_enabled": True, "api_key": runtime_settings.api_key}
+    return {"auth_enabled": True, "api_key": None}
+
+
 @app.get("/demo")
 def demo():
     return FileResponse(Path("static/index.html"))
