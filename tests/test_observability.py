@@ -98,6 +98,31 @@ def test_concurrent_recommend_requests(client: TestClient, sample_recommend_payl
     assert all(status == 200 for status in statuses)
 
 
+def test_demo_config_exposes_key_when_enabled(client, monkeypatch):
+    monkeypatch.setenv("EDTA_API_KEY", "demo-secret-key")
+    monkeypatch.setenv("EDTA_EXPOSE_DEMO_API_KEY", "true")
+
+    import app.config
+
+    app.config.settings = app.config.Settings()
+    response = client.get("/demo-config")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["auth_enabled"] is True
+    assert payload["api_key"] == "demo-secret-key"
+
+
+def test_demo_config_hides_key_when_disabled(client, monkeypatch):
+    monkeypatch.setenv("EDTA_API_KEY", "demo-secret-key")
+    monkeypatch.setenv("EDTA_EXPOSE_DEMO_API_KEY", "false")
+
+    import app.config
+
+    app.config.settings = app.config.Settings()
+    response = client.get("/demo-config")
+    assert response.json()["api_key"] is None
+
+
 def test_recommend_burst(client: TestClient, sample_recommend_payload):
     payload = json.loads(json.dumps(sample_recommend_payload))
     statuses = [client.post("/recommend", json=payload).status_code for _ in range(5)]

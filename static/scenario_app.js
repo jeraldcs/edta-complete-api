@@ -314,9 +314,8 @@ async function runScenario() {
   scenarioStatus.textContent = "Parsing scenario...";
 
   try {
-    const response = await fetch("/recommend-from-scenario", {
+    const response = await DemoApi.fetch("/recommend-from-scenario", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
@@ -349,9 +348,8 @@ async function runSimulate() {
   try {
     let context = parsedContextFromSummary(lastScenarioData?.request_summary || {});
     if (!context.channel) {
-      const parseResponse = await fetch("/recommend-from-scenario", {
+      const parseResponse = await DemoApi.fetch("/recommend-from-scenario", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload())
       });
       if (!parseResponse.ok) {
@@ -366,9 +364,8 @@ async function runSimulate() {
     payloadPreview.textContent = JSON.stringify(payload, null, 2);
     scenarioStatus.textContent = "Simulating all candidate outcomes...";
 
-    const response = await fetch("/simulate", {
+    const response = await DemoApi.fetch("/simulate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
@@ -414,9 +411,8 @@ async function runExperienceMemory() {
   try {
     let context = parsedContextFromSummary(lastScenarioData?.request_summary || {});
     if (!context.channel) {
-      const parseResponse = await fetch("/recommend-from-scenario", {
+      const parseResponse = await DemoApi.fetch("/recommend-from-scenario", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload())
       });
       if (!parseResponse.ok) {
