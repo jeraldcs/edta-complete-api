@@ -1,0 +1,101 @@
+scenario_text,domain,channel,intent,journey_stage,tapl_action,expected_candidate_id
+"unknown visitor comparing SUV rental options at airport for family trip",car_rental,web,research,consideration,show,vehicle_upgrade_suv
+"known preferred customer searching family SUV airport rental",car_rental,web,research,consideration,show,vehicle_upgrade_suv
+"traveler reviewing premium SUV upgrade before booking rental car",car_rental,web,upgrade,consideration,show,vehicle_upgrade_suv
+"customer checked SUV availability and started booking airport rental",car_rental,web,purchase,purchase,show,vehicle_upgrade_suv
+"customer ready to reserve premium SUV for summer vacation",car_rental,web,purchase,purchase,show,vehicle_upgrade_suv
+"family traveler wants larger vehicle with luggage space",car_rental,web,upgrade,consideration,show,vehicle_upgrade_suv
+"visitor browsing rental car early booking discount",car_rental,web,research,research,show,early_booking_discount
+"traveler comparing rental prices and discount offers",car_rental,web,research,consideration,show,early_booking_discount
+"customer looking for airport rental deal before checkout",car_rental,web,research,consideration,show,early_booking_discount
+"customer entered checkout for rental booking payment",car_rental,web,purchase,purchase,show,vehicle_upgrade_suv
+"chatbot user asks if SUV rental is available at SFO",car_rental,chatbot,purchase,consideration,show,chatbot_booking_assist
+"customer needs help changing rental reservation in chatbot",car_rental,chatbot,support,service,show,chatbot_booking_assist
+"traveler asks chatbot to cancel or modify car rental booking",car_rental,chatbot,support,service,show,chatbot_booking_assist
+"driver in connected car needs nearby rental return location",car_rental,connected_car,support,service,show,connected_car_location_assist
+"connected car user asks for closest fuel and return support",car_rental,connected_car,support,service,show,connected_car_location_assist
+"customer received loyalty renewal rental offer",car_rental,email,retention,retention,show,early_booking_discount
+"frequent renter may churn after poor rental experience",car_rental,email,retention,retention,soften,early_booking_discount
+"business traveler searching airport car rental availability",car_rental,web,research,consideration,show,early_booking_discount
+"traveler wants premium rental car for work trip",car_rental,web,upgrade,consideration,show,vehicle_upgrade_suv
+"customer asks support about rental refund issue",car_rental,chatbot,support,service,show,chatbot_booking_assist
+"airport traveler searching SUV with child seats",car_rental,web,research,consideration,show,vehicle_upgrade_suv
+"customer comparing compact car and SUV upgrade price",car_rental,web,research,consideration,show,vehicle_upgrade_suv
+"traveler ready to book car rental after checking inventory",car_rental,web,purchase,purchase,show,vehicle_upgrade_suv
+"loyalty customer looking at weekend rental discount",car_rental,web,research,research,show,early_booking_discount
+"mobile customer opens rental booking confirmation and needs return help",car_rental,connected_car,support,service,show,connected_car_location_assist
+"guest looking for hotel room availability this weekend",hotel,web,research,consideration,show,hotel_reservation_assist
+"visitor comparing hotel rooms and stay options",hotel,web,research,consideration,show,hotel_room_offer
+"traveler browsing lodging offers near airport",hotel,web,research,research,show,hotel_room_offer
+"guest checking hotel room photos and amenities",hotel,web,research,research,show,hotel_room_offer
+"customer looking for hotel reservation website",hotel,web,research,consideration,show,hotel_reservation_assist
+"guest ready to reserve hotel room for tonight",hotel,web,purchase,purchase,show,hotel_reservation_assist
+"customer checking out hotel reservation payment",hotel,web,purchase,purchase,show,hotel_reservation_assist
+"known guest chooses room and starts hotel booking",hotel,web,purchase,purchase,show,hotel_room_offer
+"traveler wants suite upgrade during hotel booking",hotel,web,upgrade,consideration,show,hotel_room_offer
+"preferred loyalty member looking for premium hotel room offer",hotel,web,upgrade,consideration,show,hotel_room_offer
+"guest asks chatbot about hotel booking availability",hotel,chatbot,purchase,consideration,show,chatbot_booking_assist
+"customer wants support for hotel reservation issue",hotel,chatbot,support,service,show,chatbot_booking_assist
+"hotel guest needs help changing room reservation",hotel,chatbot,support,service,show,chatbot_booking_assist
+"customer checking hotel cancellation policy after booking",hotel,chatbot,support,service,show,chatbot_booking_assist
+"guest searches family hotel room near airport",hotel,web,research,consideration,show,hotel_room_offer
+"visitor comparing hotel rates and availability",hotel,web,research,consideration,show,hotel_reservation_assist
+"traveler is ready to book hotel stay after comparing rooms",hotel,web,purchase,purchase,show,hotel_reservation_assist
+"guest viewing hotel reservation confirmation",hotel,web,purchase,purchase,show,hotel_reservation_assist
+"loyalty guest receives renewal stay offer",hotel,email,retention,retention,show,hotel_room_offer
+"customer unhappy with hotel stay may churn",hotel,email,retention,retention,soften,hotel_room_offer
+"mobile visitor opens hotel room offer",hotel,mobile,research,research,show,hotel_room_offer
+"traveler asks for available rooms tonight in chat",hotel,chatbot,purchase,consideration,show,chatbot_booking_assist
+"guest browsing spa and dining packages at hotel",hotel,web,research,research,show,hotel_room_offer
+"customer applying promo code to hotel checkout",hotel,web,purchase,purchase,show,hotel_reservation_assist
+"visitor looking for accessible hotel room reservation",hotel,web,research,consideration,show,hotel_reservation_assist
+"visitor looking for restaurant reservation for dinner table",restaurant,web,purchase,consideration,show,restaurant_reservation_assist
+"customer wants to book a restaurant table tonight",restaurant,web,purchase,purchase,show,restaurant_reservation_assist
+"guest checking table availability for dinner",restaurant,web,purchase,consideration,show,restaurant_reservation_assist
+"visitor comparing restaurant reservation times",restaurant,web,research,consideration,show,restaurant_reservation_assist
+"customer looking restaurant reservation website for dinner table",restaurant,web,purchase,consideration,show,restaurant_reservation_assist
+"person sitting in restaurant viewing menu from website",restaurant,web,purchase,purchase,show,restaurant_menu_recommendation
+"unknown customer reading restaurant menu on website",restaurant,web,research,research,show,restaurant_menu_recommendation
+"diner browsing cuisine and dishes before ordering",restaurant,web,purchase,purchase,show,restaurant_menu_recommendation
+"customer seated at table reviews menu and specials",restaurant,web,purchase,purchase,show,restaurant_menu_recommendation
+"visitor comparing restaurants and cuisine options",restaurant,web,research,consideration,show,restaurant_menu_recommendation
+"visitor scans QR code at restaurant table and opens menu",restaurant,mobile,purchase,purchase,show,mobile_restaurant_dish_promo
+"customer scans barcode on mobile to view restaurant menu",restaurant,mobile,purchase,purchase,show,mobile_restaurant_dish_promo
+"mobile guest scans table QR code and reads menu",restaurant,mobile,purchase,purchase,show,mobile_restaurant_dish_promo
+"diner uses phone camera to open restaurant menu",restaurant,mobile,purchase,purchase,show,mobile_restaurant_dish_promo
+"customer on mobile browses food menu at restaurant",restaurant,mobile,purchase,purchase,show,mobile_restaurant_dish_promo
+"guest asks chatbot to change restaurant reservation",restaurant,chatbot,support,service,show,chatbot_booking_assist
+"customer needs help canceling dinner reservation",restaurant,chatbot,support,service,show,chatbot_booking_assist
+"restaurant visitor wants support with booking issue",restaurant,chatbot,support,service,show,chatbot_booking_assist
+"customer receives loyalty dining offer by email",restaurant,email,retention,retention,show,restaurant_reservation_assist
+"diner may churn after bad restaurant experience",restaurant,email,retention,retention,soften,restaurant_reservation_assist
+"customer looking at wine pairing and dinner menu",restaurant,web,purchase,purchase,show,restaurant_menu_recommendation
+"visitor searches vegetarian restaurant dishes",restaurant,web,research,research,show,restaurant_menu_recommendation
+"guest ready to order after viewing menu online",restaurant,web,purchase,purchase,show,restaurant_menu_recommendation
+"restaurant customer browsing dessert menu at table",restaurant,web,purchase,purchase,show,restaurant_menu_recommendation
+"unknown visitor checks cuisine menu before making reservation",restaurant,web,research,consideration,show,restaurant_menu_recommendation
+"doctor reading obesity product information on healthcare website",healthcare,web,research,research,show,obesity_product_hcp_education
+"hcp reviewing approved clinical education content",healthcare,web,research,research,show,hcp_education_content
+"physician accessing healthcare website for diabetes education",healthcare,web,research,research,show,hcp_education_content
+"healthcare professional reviewing obesity therapy information",healthcare,web,research,consideration,show,obesity_product_hcp_education
+"doctor comparing clinical data for obesity treatment",healthcare,web,research,consideration,show,obesity_product_hcp_education
+"hcp reads prescribing information and product education",healthcare,web,research,research,show,obesity_product_hcp_education
+"medical visitor downloads clinical education paper",healthcare,web,research,research,show,hcp_education_content
+"doctor searches diabetes clinical education materials",healthcare,web,research,research,show,hcp_education_content
+"hcp wants approved obesity product education",healthcare,web,research,consideration,show,obesity_product_hcp_education
+"healthcare professional reviewing therapy information on HCP site",healthcare,web,research,research,show,hcp_education_content
+"patient support issue on healthcare product website",healthcare,web,support,service,soften,hcp_education_content
+"visitor asks healthcare support question about product information",healthcare,chatbot,support,service,soften,chatbot_booking_assist
+"doctor on wearable device receiving disease specific promotional message",healthcare,wearable,research,awareness,suppress,wearable_health_nudge
+"patient wearable asks for wellness education reminder",healthcare,wearable,research,awareness,soften,wearable_health_nudge
+"wearable notification contains sensitive healthcare content",healthcare,wearable,research,awareness,suppress,wearable_health_nudge
+"hcp requests approved education by email",healthcare,email,research,research,show,hcp_education_content
+"medical visitor opted out of personalization while reading therapy page",healthcare,web,research,research,generic_fallback,hcp_education_content
+"healthcare visitor has no consent for personalized product content",healthcare,web,research,research,generic_fallback,hcp_education_content
+"physician reviews clinical trial summary for diabetes",healthcare,web,research,research,show,hcp_education_content
+"doctor looking for cardiology education resources",healthcare,web,research,research,show,hcp_education_content
+"hcp compares obesity therapy options before follow up",healthcare,web,research,consideration,show,obesity_product_hcp_education
+"medical professional ready to request product education follow up",healthcare,web,purchase,consideration,show,obesity_product_hcp_education
+"healthcare user asks service question about education access",healthcare,chatbot,support,service,soften,chatbot_booking_assist
+"doctor receives repeated healthcare offer after high fatigue",healthcare,email,retention,retention,delay,hcp_education_content
+"hcp on mobile opens approved product education page",healthcare,mobile,research,research,show,hcp_education_content

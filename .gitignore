@@ -1,0 +1,28 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime / generated artifacts
+models/*.joblib
+data/experience_memory.json
+data/feedback_events.json
+data/edta.db
+data/edta.db-*
+
+# Environment and secrets
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

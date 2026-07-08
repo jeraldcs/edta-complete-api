@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scenario NLP Recommendation Demo</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body class="scenario-page">
+  <main>
+    <section class="scenario-hero">
+      <nav class="topbar scenario-topbar" aria-label="Primary">
+        <div class="nav-links">
+          <a href="/scenario-demo">Scenario demo</a>
+          <a href="/docs">Swagger</a>
+        </div>
+      </nav>
+      <div class="scenario-hero-content">
+        <h1>Original AI Personalization Architecture for Trust-Aware, Outcome-Simulated Enterprise Recommendations</h1>
+        <div class="hero-stat-row" aria-label="Scenario demo capabilities">
+          <span>100 labeled scenarios</span>
+          <span>4 industries</span>
+          <span>Trust-aware scoring</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="site-section scenario-workbench">
+      <article class="scenario-input-panel">
+        <div class="panel-title-row">
+          <span class="step-badge">Scenario input</span>
+          <p>Choose, edit, and run</p>
+        </div>
+        <div class="scenario-library-row">
+          <label class="scenario-picker-label" for="scenarioExampleSelect">
+            <span class="eyebrow">Training library</span>
+            <strong>Pick a scenario</strong>
+          </label>
+          <select id="scenarioExampleSelect" class="scenario-picker"></select>
+          <button id="scenarioLoadExampleBtn" class="example-chip" type="button">Run selected</button>
+        </div>
+        <div id="scenarioExampleMeta" class="scenario-example-meta">Loading scenarios...</div>
+        <label class="scenario-text-label" for="scenarioText">
+          <span class="eyebrow">User scenario</span>
+          <strong>Describe what the visitor is doing</strong>
+        </label>
+        <textarea id="scenarioText" rows="9">Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.</textarea>
+
+        <div class="scenario-actions">
+          <label class="toggle-row compact-toggle">
+            <input id="scenarioUseLlm" type="checkbox"/>
+            <span>
+              <strong>Use LLM parsing</strong>
+              <small>Uses OpenAI when configured, otherwise falls back to local keyword NLP.</small>
+            </span>
+          </label>
+          <label class="toggle-row compact-toggle">
+            <input id="scenarioUseLlmExplanation" type="checkbox"/>
+            <span>
+              <strong>Use LLM explanation</strong>
+              <small>Optional customer-facing explanation from OpenAI.</small>
+            </span>
+          </label>
+          <div class="scenario-mode-tabs" role="tablist" aria-label="Scenario demo mode">
+            <button type="button" class="scenario-mode-tab is-active" data-mode="recommend" role="tab" aria-selected="true">Recommend</button>
+            <button type="button" class="scenario-mode-tab" data-mode="simulate" role="tab" aria-selected="false">Simulate</button>
+            <button type="button" class="scenario-mode-tab" data-mode="memory" role="tab" aria-selected="false">Experience memory</button>
+          </div>
+          <button id="scenarioRunBtn" type="button">Run recommendation</button>
+        </div>
+        <div id="scenarioStatus" class="scenario-status">Ready</div>
+      </article>
+    </section>
+
+    <section class="site-section scenario-results">
+      <article class="offer-card scenario-offer">
+        <div id="scenarioLoading" class="loading hidden">
+          <div class="spinner"></div>
+          <span>Parsing scenario and calling recommendation API...</span>
+        </div>
+        <div id="scenarioRecommendation">
+          <p class="eyebrow">Recommendation result</p>
+          <h2>Waiting for a scenario.</h2>
+          <p class="explanation">Run the scenario to see the parsed context, model signals, and top recommendation.</p>
+        </div>
+      </article>
+
+      <aside class="insight-card">
+        <div class="panel-title-row">
+          <span class="step-badge">Context</span>
+          <p>Parsed from text</p>
+        </div>
+        <p class="eyebrow">Parsed NLP context</p>
+        <div id="parsedContext" class="parsed-context">No parsed context yet.</div>
+      </aside>
+    </section>
+
+    <section class="site-section architecture-section">
+      <div class="section-heading">
+        <p class="eyebrow">EDTA architecture</p>
+        <h2>TKGE, EML, HAOE, and OSE from the last run</h2>
+      </div>
+      <div id="scenarioArchitecturePanels" class="architecture-grid">
+        <article class="architecture-card placeholder-card">
+          <span class="architecture-label">Waiting</span>
+          <h3>Run a scenario</h3>
+          <p>Architecture panels populate after recommend, simulate, or memory calls.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="site-section technical-section">
+      <article class="insight-card technical-card">
+        <div class="section-heading compact-heading">
+          <p class="eyebrow">Technical explanation</p>
+          <h2>Why this recommendation was selected</h2>
+        </div>
+        <div id="technicalExplanation" class="technical-explanation">
+          Run a scenario to see parsing, candidate filtering, scoring, TAPL, and ranking details.
+        </div>
+      </article>
+    </section>
+
+    <section class="site-section api-layout">
+      <div class="section-heading">
+        <p class="eyebrow">API details</p>
+        <h2>Scenario request and response</h2>
+      </div>
+      <div class="code-grid">
+        <article>
+          <h3>Request</h3>
+          <pre id="scenarioPayloadPreview"></pre>
+        </article>
+        <article>
+          <h3>Response</h3>
+          <pre id="scenarioResponsePreview">Run a scenario to see the response.</pre>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="/static/demo-shared.js"></script>
+  <script src="/static/scenario_app.js"></script>
+</body>
+</html>

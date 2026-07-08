@@ -1,0 +1,62 @@
+{
+  "cust-789": {
+    "profile_attributes": {
+      "loyalty_tier": "preferred",
+      "preferred_vehicle_class": "SUV",
+      "home_airport": "SFO",
+      "family_traveler": true,
+      "lifetime_rentals": 9,
+      "fatigue_count": 1
+    },
+    "past_transactions": [
+      {
+        "category": "car_rental",
+        "vehicle_class": "SUV",
+        "location": "SFO airport",
+        "booking_count": 3,
+        "last_booking_days_ago": 42
+      },
+      {
+        "category": "car_rental",
+        "vehicle_class": "minivan",
+        "location": "LAX airport",
+        "booking_count": 1,
+        "last_booking_days_ago": 180
+      }
+    ],
+    "business_context": {
+      "customer_value_segment": "high",
+      "eligible_upgrade_credit": true,
+      "loyalty_offer_eligible": true
+    },
+    "consent": {
+      "personalization": true,
+      "profile_lookup": true
+    }
+  },
+  "cust-chat-789": {
+    "profile_attributes": {
+      "loyalty_tier": "preferred",
+      "preferred_vehicle_class": "SUV",
+      "support_sensitivity": "medium",
+      "fatigue_count": 0
+    },
+    "past_transactions": [
+      {
+        "category": "car_rental",
+        "vehicle_class": "standard",
+        "location": "ORD airport",
+        "status": "active_reservation"
+      }
+    ],
+    "business_context": {
+      "inventory_suv": "available",
+      "reservation_change_allowed": true,
+      "customer_value_segment": "medium"
+    },
+    "consent": {
+      "personalization": true,
+      "profile_lookup": true
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "context": {
+    "anonymous_id": "anon-web-123",
+    "customer_id": "cust-789",
+    "channel": "web",
+    "session_events": [
+      "viewed_vehicle_page",
+      "searched_suv",
+      "checked_location_availability",
+      "started_booking"
+    ],
+    "search_terms": [
+      "family SUV airport rental"
+    ],
+    "past_transactions": [
+      {
+        "category": "car_rental",
+        "vehicle_class": "SUV",
+        "location": "SFO airport"
+      }
+    ],
+    "profile_attributes": {
+      "loyalty_tier": "preferred",
+      "trip_type": "family",
+      "fatigue_count": 1
+    },
+    "business_context": {
+      "inventory_suv": "available",
+      "season": "summer"
+    },
+    "channel_context": {
+      "page_type": "vehicle_detail",
+      "placement": "hero_banner"
+    },
+    "device_context": {
+      "device_type": "desktop"
+    },
+    "consent": {
+      "personalization": true
+    }
+  },
+  "limit": 3,
+  "use_ai_models": true,
+  "use_llm": true,
+  "use_llm_explanation": true
+}

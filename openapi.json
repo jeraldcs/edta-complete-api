@@ -1,0 +1,2604 @@
+{
+  "components": {
+    "schemas": {
+      "AIModelBreakdown": {
+        "properties": {
+          "ai_rank_score": {
+            "title": "Ai Rank Score",
+            "type": "number"
+          },
+          "channel_fit_score": {
+            "title": "Channel Fit Score",
+            "type": "number"
+          },
+          "final_hybrid_score": {
+            "title": "Final Hybrid Score",
+            "type": "number"
+          },
+          "intent": {
+            "$ref": "#/components/schemas/ModelPrediction"
+          },
+          "journey_stage": {
+            "$ref": "#/components/schemas/ModelPrediction"
+          },
+          "orchestration": {
+            "$ref": "#/components/schemas/OrchestrationDecision"
+          },
+          "outcome_simulation": {
+            "$ref": "#/components/schemas/OutcomeSimulation"
+          },
+          "semantic_similarity_score": {
+            "title": "Semantic Similarity Score",
+            "type": "number"
+          },
+          "tapl": {
+            "$ref": "#/components/schemas/TAPLDecision"
+          }
+        },
+        "required": [
+          "intent",
+          "journey_stage",
+          "orchestration",
+          "tapl",
+          "semantic_similarity_score",
+          "channel_fit_score",
+          "outcome_simulation",
+          "ai_rank_score",
+          "final_hybrid_score"
+        ],
+        "title": "AIModelBreakdown",
+        "type": "object"
+      },
+      "BatchRecommendationRequest": {
+        "properties": {
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationRequest"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Requests",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requests"
+        ],
+        "title": "BatchRecommendationRequest",
+        "type": "object"
+      },
+      "CandidatePreselectionSummary": {
+        "properties": {
+          "candidate_count": {
+            "title": "Candidate Count",
+            "type": "integer"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "candidate_count"
+        ],
+        "title": "CandidatePreselectionSummary",
+        "type": "object"
+      },
+      "Channel": {
+        "enum": [
+          "web",
+          "mobile",
+          "email",
+          "sms",
+          "push",
+          "in_app",
+          "call_center",
+          "chatbot",
+          "voice_assistant",
+          "iot",
+          "wearable",
+          "connected_car",
+          "kiosk",
+          "smart_tv",
+          "ar_vr",
+          "social",
+          "marketplace",
+          "partner_api"
+        ],
+        "title": "Channel",
+        "type": "string"
+      },
+      "CompareOutcomesRequest": {
+        "properties": {
+          "candidate_id_a": {
+            "title": "Candidate Id A",
+            "type": "string"
+          },
+          "candidate_id_b": {
+            "title": "Candidate Id B",
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/CustomerContext"
+          },
+          "use_ai_models": {
+            "default": true,
+            "title": "Use Ai Models",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "context",
+          "candidate_id_a",
+          "candidate_id_b"
+        ],
+        "title": "CompareOutcomesRequest",
+        "type": "object"
+      },
+      "CompareOutcomesResponse": {
+        "properties": {
+          "candidate_a": {
+            "$ref": "#/components/schemas/RankedRecommendation"
+          },
+          "candidate_b": {
+            "$ref": "#/components/schemas/RankedRecommendation"
+          },
+          "request_summary": {
+            "title": "Request Summary",
+            "type": "object"
+          },
+          "winner_candidate_id": {
+            "title": "Winner Candidate Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_summary",
+          "candidate_a",
+          "candidate_b",
+          "winner_candidate_id"
+        ],
+        "title": "CompareOutcomesResponse",
+        "type": "object"
+      },
+      "CompareOutcomesResponseV1": {
+        "properties": {
+          "candidate_a": {
+            "$ref": "#/components/schemas/RankedRecommendation"
+          },
+          "candidate_b": {
+            "$ref": "#/components/schemas/RankedRecommendation"
+          },
+          "request_summary": {
+            "$ref": "#/components/schemas/CompareRequestSummary"
+          },
+          "winner_candidate_id": {
+            "title": "Winner Candidate Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_summary",
+          "candidate_a",
+          "candidate_b",
+          "winner_candidate_id"
+        ],
+        "title": "CompareOutcomesResponseV1",
+        "type": "object"
+      },
+      "CompareRequestSummary": {
+        "properties": {
+          "api_version": {
+            "default": "v1",
+            "title": "Api Version",
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "comparison": {
+            "title": "Comparison",
+            "type": "string"
+          },
+          "context_graph": {
+            "title": "Context Graph",
+            "type": "object"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "experience_memory": {
+            "$ref": "#/components/schemas/ExperienceMemorySnapshot"
+          },
+          "ose_calibration": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Ose Calibration",
+            "type": "object"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileLookupSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "winner_candidate_id": {
+            "title": "Winner Candidate Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "comparison",
+          "channel",
+          "experience_memory",
+          "ose_calibration",
+          "context_graph",
+          "winner_candidate_id"
+        ],
+        "title": "CompareRequestSummary",
+        "type": "object"
+      },
+      "CustomerContext": {
+        "properties": {
+          "anonymous_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anonymous Id"
+          },
+          "business_context": {
+            "title": "Business Context",
+            "type": "object"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel",
+            "default": "web"
+          },
+          "channel_context": {
+            "title": "Channel Context",
+            "type": "object"
+          },
+          "consent": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Consent",
+            "type": "object"
+          },
+          "current_intent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "device_context": {
+            "title": "Device Context",
+            "type": "object"
+          },
+          "journey_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JourneyStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "past_transactions": {
+            "items": {
+              "type": "object"
+            },
+            "title": "Past Transactions",
+            "type": "array"
+          },
+          "profile_attributes": {
+            "title": "Profile Attributes",
+            "type": "object"
+          },
+          "search_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Search Terms",
+            "type": "array"
+          },
+          "session_events": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Session Events",
+            "type": "array"
+          }
+        },
+        "title": "CustomerContext",
+        "type": "object"
+      },
+      "EDSBreakdown": {
+        "properties": {
+          "business_value_score": {
+            "title": "Business Value Score",
+            "type": "number"
+          },
+          "context_relevance_score": {
+            "title": "Context Relevance Score",
+            "type": "number"
+          },
+          "engagement_score": {
+            "title": "Engagement Score",
+            "type": "number"
+          },
+          "final_eds_score": {
+            "title": "Final Eds Score",
+            "type": "number"
+          },
+          "intent_score": {
+            "title": "Intent Score",
+            "type": "number"
+          },
+          "journey_momentum_score": {
+            "title": "Journey Momentum Score",
+            "type": "number"
+          },
+          "risk_adjustment": {
+            "title": "Risk Adjustment",
+            "type": "number"
+          }
+        },
+        "required": [
+          "intent_score",
+          "engagement_score",
+          "business_value_score",
+          "journey_momentum_score",
+          "context_relevance_score",
+          "risk_adjustment",
+          "final_eds_score"
+        ],
+        "title": "EDSBreakdown",
+        "type": "object"
+      },
+      "ExperienceMemorySnapshot": {
+        "properties": {
+          "fatigue_score": {
+            "title": "Fatigue Score",
+            "type": "number"
+          },
+          "outcomes": {
+            "title": "Outcomes",
+            "type": "object"
+          },
+          "preferences": {
+            "title": "Preferences",
+            "type": "object"
+          },
+          "recommendation_history": {
+            "items": {
+              "type": "object"
+            },
+            "title": "Recommendation History",
+            "type": "array"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "trust_score": {
+            "title": "Trust Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "subject_id",
+          "subject_type",
+          "trust_score",
+          "fatigue_score"
+        ],
+        "title": "ExperienceMemorySnapshot",
+        "type": "object"
+      },
+      "FeedbackEvent": {
+        "properties": {
+          "anonymous_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anonymous Id"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel",
+            "default": "web"
+          },
+          "context_snapshot": {
+            "title": "Context Snapshot",
+            "type": "object"
+          },
+          "converted": {
+            "default": false,
+            "title": "Converted",
+            "type": "boolean"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "event_type": {
+            "default": "click",
+            "title": "Event Type",
+            "type": "string"
+          },
+          "recommendation_id": {
+            "title": "Recommendation Id",
+            "type": "string"
+          },
+          "revenue": {
+            "default": 0.0,
+            "title": "Revenue",
+            "type": "number"
+          }
+        },
+        "required": [
+          "recommendation_id"
+        ],
+        "title": "FeedbackEvent",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IntentType": {
+        "enum": [
+          "research",
+          "purchase",
+          "support",
+          "retention",
+          "upgrade",
+          "unknown"
+        ],
+        "title": "IntentType",
+        "type": "string"
+      },
+      "JobAcceptedResponse": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "queued",
+            "title": "Status",
+            "type": "string"
+          },
+          "status_url": {
+            "title": "Status Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status_url"
+        ],
+        "title": "JobAcceptedResponse",
+        "type": "object"
+      },
+      "JourneyStage": {
+        "enum": [
+          "awareness",
+          "research",
+          "consideration",
+          "purchase",
+          "service",
+          "retention"
+        ],
+        "title": "JourneyStage",
+        "type": "string"
+      },
+      "ModelPrediction": {
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "confidence",
+          "source"
+        ],
+        "title": "ModelPrediction",
+        "type": "object"
+      },
+      "OrchestrationDecision": {
+        "properties": {
+          "estimated_cost_units": {
+            "title": "Estimated Cost Units",
+            "type": "number"
+          },
+          "estimated_latency_ms": {
+            "title": "Estimated Latency Ms",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "tier": {
+            "title": "Tier",
+            "type": "string"
+          },
+          "used_teacher_signal": {
+            "default": false,
+            "title": "Used Teacher Signal",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tier",
+          "reason",
+          "estimated_latency_ms",
+          "estimated_cost_units"
+        ],
+        "title": "OrchestrationDecision",
+        "type": "object"
+      },
+      "OutcomeSimulation": {
+        "properties": {
+          "compliance_risk": {
+            "title": "Compliance Risk",
+            "type": "number"
+          },
+          "conversion_probability": {
+            "title": "Conversion Probability",
+            "type": "number"
+          },
+          "expected_outcome_score": {
+            "title": "Expected Outcome Score",
+            "type": "number"
+          },
+          "fatigue_risk": {
+            "title": "Fatigue Risk",
+            "type": "number"
+          },
+          "journey_impact": {
+            "title": "Journey Impact",
+            "type": "number"
+          },
+          "revenue_impact": {
+            "title": "Revenue Impact",
+            "type": "number"
+          },
+          "trust_impact": {
+            "title": "Trust Impact",
+            "type": "number"
+          }
+        },
+        "required": [
+          "conversion_probability",
+          "revenue_impact",
+          "trust_impact",
+          "journey_impact",
+          "compliance_risk",
+          "fatigue_risk",
+          "expected_outcome_score"
+        ],
+        "title": "OutcomeSimulation",
+        "type": "object"
+      },
+      "ProfileLookupSummary": {
+        "properties": {
+          "adapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adapter"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "fields_merged": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fields Merged",
+            "type": "array"
+          },
+          "profile_lookup": {
+            "title": "Profile Lookup",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "required": [
+          "profile_lookup",
+          "reason"
+        ],
+        "title": "ProfileLookupSummary",
+        "type": "object"
+      },
+      "RankedRecommendation": {
+        "properties": {
+          "ai_score": {
+            "$ref": "#/components/schemas/AIModelBreakdown"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/RecommendationCandidate"
+          },
+          "eds_score": {
+            "$ref": "#/components/schemas/EDSBreakdown"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "explanation_source": {
+            "default": "local",
+            "title": "Explanation Source",
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidate",
+          "eds_score",
+          "ai_score",
+          "reason_codes",
+          "explanation"
+        ],
+        "title": "RankedRecommendation",
+        "type": "object"
+      },
+      "RecommendationCandidate": {
+        "properties": {
+          "business_value": {
+            "default": 0.5,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Business Value",
+            "type": "number"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "compliance_sensitivity": {
+            "default": 0.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Compliance Sensitivity",
+            "type": "number"
+          },
+          "content_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Content Tags",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "intent_tags": {
+            "items": {
+              "$ref": "#/components/schemas/IntentType"
+            },
+            "title": "Intent Tags",
+            "type": "array"
+          },
+          "inventory_weight": {
+            "default": 0.5,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Inventory Weight",
+            "type": "number"
+          },
+          "journey_tags": {
+            "items": {
+              "$ref": "#/components/schemas/JourneyStage"
+            },
+            "title": "Journey Tags",
+            "type": "array"
+          },
+          "margin_weight": {
+            "default": 0.5,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Margin Weight",
+            "type": "number"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "channel"
+        ],
+        "title": "RecommendationCandidate",
+        "type": "object"
+      },
+      "RecommendationRequest": {
+        "properties": {
+          "candidates": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RecommendationCandidate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidates"
+          },
+          "context": {
+            "$ref": "#/components/schemas/CustomerContext"
+          },
+          "limit": {
+            "default": 3,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "use_ai_models": {
+            "default": true,
+            "title": "Use Ai Models",
+            "type": "boolean"
+          },
+          "use_llm": {
+            "default": false,
+            "title": "Use Llm",
+            "type": "boolean"
+          },
+          "use_llm_explanation": {
+            "default": false,
+            "title": "Use Llm Explanation",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "context"
+        ],
+        "title": "RecommendationRequest",
+        "type": "object"
+      },
+      "RecommendationResponse": {
+        "properties": {
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/RankedRecommendation"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "request_summary": {
+            "title": "Request Summary",
+            "type": "object"
+          }
+        },
+        "required": [
+          "request_summary",
+          "recommendations"
+        ],
+        "title": "RecommendationResponse",
+        "type": "object"
+      },
+      "RecommendationResponseV1": {
+        "properties": {
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/RankedRecommendation"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          },
+          "request_summary": {
+            "$ref": "#/components/schemas/RequestSummary"
+          }
+        },
+        "required": [
+          "request_summary",
+          "recommendations"
+        ],
+        "title": "RecommendationResponseV1",
+        "type": "object"
+      },
+      "RequestSummary": {
+        "properties": {
+          "api_version": {
+            "default": "v1",
+            "title": "Api Version",
+            "type": "string"
+          },
+          "candidate_preselection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CandidatePreselectionSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Channel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "comparison": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison"
+          },
+          "context_graph": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Graph"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "experience_memory": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experience Memory"
+          },
+          "haoe": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Haoe"
+          },
+          "intent_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "journey_stage_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JourneyStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "llm_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Enabled"
+          },
+          "llm_status": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Status"
+          },
+          "nlp": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nlp"
+          },
+          "ose_calibration": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ose Calibration"
+          },
+          "parsed_context": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parsed Context"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileLookupSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "scenario_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Text"
+          },
+          "self_distillation": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Distillation"
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation"
+          },
+          "training_alignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingAlignmentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "use_ai_models": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Ai Models"
+          },
+          "use_llm": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Llm"
+          },
+          "use_llm_explanation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Llm Explanation"
+          },
+          "winner_candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner Candidate Id"
+          }
+        },
+        "required": [
+          "request_id"
+        ],
+        "title": "RequestSummary",
+        "type": "object"
+      },
+      "ScenarioRecommendationRequest": {
+        "properties": {
+          "limit": {
+            "default": 3,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "scenario_text": {
+            "maxLength": 4000,
+            "minLength": 10,
+            "title": "Scenario Text",
+            "type": "string"
+          },
+          "use_ai_models": {
+            "default": true,
+            "title": "Use Ai Models",
+            "type": "boolean"
+          },
+          "use_llm": {
+            "default": false,
+            "title": "Use Llm",
+            "type": "boolean"
+          },
+          "use_llm_explanation": {
+            "default": false,
+            "title": "Use Llm Explanation",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scenario_text"
+        ],
+        "title": "ScenarioRecommendationRequest",
+        "type": "object"
+      },
+      "SimulationRequest": {
+        "properties": {
+          "candidates": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RecommendationCandidate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidates"
+          },
+          "context": {
+            "$ref": "#/components/schemas/CustomerContext"
+          }
+        },
+        "required": [
+          "context"
+        ],
+        "title": "SimulationRequest",
+        "type": "object"
+      },
+      "SyntheticTrainingRequest": {
+        "properties": {
+          "count": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "domain": {
+            "default": "travel",
+            "title": "Domain",
+            "type": "string"
+          }
+        },
+        "title": "SyntheticTrainingRequest",
+        "type": "object"
+      },
+      "TAPLAction": {
+        "enum": [
+          "show",
+          "soften",
+          "delay",
+          "suppress",
+          "generic_fallback"
+        ],
+        "title": "TAPLAction",
+        "type": "string"
+      },
+      "TAPLDecision": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TAPLAction"
+          },
+          "compliance_score": {
+            "title": "Compliance Score",
+            "type": "number"
+          },
+          "fatigue_score": {
+            "title": "Fatigue Score",
+            "type": "number"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "sensitivity_score": {
+            "title": "Sensitivity Score",
+            "type": "number"
+          },
+          "trust_score": {
+            "title": "Trust Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "trust_score",
+          "fatigue_score",
+          "sensitivity_score",
+          "compliance_score",
+          "reason"
+        ],
+        "title": "TAPLDecision",
+        "type": "object"
+      },
+      "TrainingAlignmentSummary": {
+        "properties": {
+          "expected_candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Candidate Id"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "boolean"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          }
+        },
+        "required": [
+          "matched"
+        ],
+        "title": "TrainingAlignmentSummary",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WebhookRegistrationRequest": {
+        "properties": {
+          "event_types": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Event Types",
+            "type": "array"
+          },
+          "target_url": {
+            "maxLength": 2000,
+            "minLength": 8,
+            "title": "Target Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_url"
+        ],
+        "title": "WebhookRegistrationRequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Detailed AI models for EDTA: intent, journey, TAPL, channel, outcome simulation, and ranking.",
+    "title": "EDTA Full AI Models",
+    "version": "2.2.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "health_check__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check"
+      }
+    },
+    "/compare-outcomes": {
+      "post": {
+        "operationId": "compare_outcomes_legacy_compare_outcomes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareOutcomesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareOutcomesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Compare Outcomes Legacy"
+      }
+    },
+    "/context-graph": {
+      "get": {
+        "operationId": "get_context_graph_legacy_context_graph_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "customer_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anonymous_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anonymous Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_live",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Live",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Context Graph Legacy"
+      }
+    },
+    "/demo": {
+      "get": {
+        "operationId": "demo_demo_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demo"
+      }
+    },
+    "/experience-memory": {
+      "get": {
+        "operationId": "get_experience_memory_legacy_experience_memory_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "customer_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anonymous_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anonymous Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Experience Memory Legacy"
+      }
+    },
+    "/feedback": {
+      "post": {
+        "operationId": "feedback_legacy_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Feedback Legacy"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/orchestration-status": {
+      "get": {
+        "operationId": "orchestration_status_legacy_orchestration_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Orchestration Status Legacy"
+      }
+    },
+    "/recommend": {
+      "post": {
+        "operationId": "recommend_legacy_recommend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recommend Legacy"
+      }
+    },
+    "/recommend-from-scenario": {
+      "post": {
+        "operationId": "recommend_from_scenario_legacy_recommend_from_scenario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioRecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recommend From Scenario Legacy"
+      }
+    },
+    "/scenario-demo": {
+      "get": {
+        "operationId": "scenario_demo_scenario_demo_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Scenario Demo"
+      }
+    },
+    "/scenario-examples": {
+      "get": {
+        "operationId": "scenario_examples_scenario_examples_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Scenario Examples"
+      }
+    },
+    "/self-distillation": {
+      "get": {
+        "operationId": "self_distillation_status_legacy_self_distillation_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Self Distillation Status Legacy"
+      }
+    },
+    "/simulate": {
+      "post": {
+        "operationId": "simulate_legacy_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Simulate Legacy"
+      }
+    },
+    "/synthetic-training-data": {
+      "post": {
+        "operationId": "synthetic_training_data_legacy_synthetic_training_data_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyntheticTrainingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Synthetic Training Data Legacy"
+      }
+    },
+    "/v1/compare-outcomes": {
+      "post": {
+        "operationId": "compare_outcomes_v1_v1_compare_outcomes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareOutcomesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareOutcomesResponseV1"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Compare Outcomes V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/context-graph": {
+      "get": {
+        "operationId": "context_graph_v1_v1_context_graph_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "customer_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anonymous_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anonymous Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_live",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Live",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Context Graph V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/events/stream": {
+      "get": {
+        "operationId": "events_stream_v1_v1_events_stream_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Events Stream V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/experience-memory": {
+      "get": {
+        "operationId": "experience_memory_v1_v1_experience_memory_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "customer_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anonymous_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anonymous Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Experience Memory V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/feedback": {
+      "post": {
+        "operationId": "feedback_v1_v1_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Feedback V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "get_job_v1_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Job V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/orchestration-status": {
+      "get": {
+        "operationId": "orchestration_status_v1_v1_orchestration_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Orchestration Status V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/recommend": {
+      "post": {
+        "operationId": "recommend_v1_v1_recommend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponseV1"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recommend V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/recommend-from-scenario": {
+      "post": {
+        "operationId": "recommend_from_scenario_v1_v1_recommend_from_scenario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioRecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponseV1"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recommend From Scenario V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/recommend/batch": {
+      "post": {
+        "operationId": "recommend_batch_v1_v1_recommend_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recommend Batch V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/scenario-examples": {
+      "get": {
+        "operationId": "scenario_examples_v1_v1_scenario_examples_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Scenario Examples V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/self-distillation": {
+      "get": {
+        "operationId": "self_distillation_v1_v1_self_distillation_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Self Distillation V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/simulate": {
+      "post": {
+        "operationId": "simulate_v1_v1_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponseV1"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Simulate V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/synthetic-training-data": {
+      "post": {
+        "operationId": "synthetic_training_data_v1_v1_synthetic_training_data_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyntheticTrainingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Synthetic Training Data V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/webhooks": {
+      "get": {
+        "operationId": "list_webhooks_v1_v1_webhooks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Webhooks V1",
+        "tags": [
+          "v1"
+        ]
+      },
+      "post": {
+        "operationId": "register_webhook_v1_v1_webhooks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Register Webhook V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    },
+    "/v1/webhooks/{webhook_id}": {
+      "delete": {
+        "operationId": "delete_webhook_v1_v1_webhooks__webhook_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "webhook_id",
+            "required": true,
+            "schema": {
+              "title": "Webhook Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Delete Webhook V1",
+        "tags": [
+          "v1"
+        ]
+      }
+    }
+  }
+}

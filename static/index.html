@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EDTA Personalization Website</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <img class="hero-image" src="/static/hero-suv-personalization.svg" alt="Premium SUV at an airport rental pickup area"/>
+      <div class="hero-shade"></div>
+      <nav class="topbar" aria-label="Primary">
+        <a class="brand" href="/demo">AI-Driven Personalization Architecture: Experience Digital Twins, Trust-Aware Recommendation Systems, and Responsible LLM Integration</a>
+        <div class="nav-links">
+          <a href="/scenario-demo">Scenario demo</a>
+          <a href="#personalized-offer">Personalized offer</a>
+          <a href="#api-panel">API response</a>
+          <a href="/docs">Swagger</a>
+        </div>
+      </nav>
+
+      <div class="hero-content">
+        <p class="eyebrow">Live EDTA API integration</p>
+        <h1 id="heroTitle">Find the right ride for your trip.</h1>
+        <p id="heroSubtitle" class="subtitle">
+          This page calls <code>POST /recommend</code> and uses the model response to personalize the offer, explanation, and ranking details shown below.
+        </p>
+        <div class="hero-actions">
+          <button id="runBtn" type="button">Personalize this visit</button>
+          <a class="secondary-link" href="#personalized-offer">View recommendation</a>
+        </div>
+        <div id="heroPersonalization" class="hero-personalization">
+          <span>Waiting for API response</span>
+          <strong>Personalized content will appear after the recommendation call.</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="site-section booking-strip" aria-label="Booking search">
+      <div>
+        <span>Pickup</span>
+        <strong>San Francisco Airport</strong>
+      </div>
+      <div>
+        <span>Trip type</span>
+        <strong>Family summer travel</strong>
+      </div>
+      <div>
+        <span>Channel</span>
+        <strong id="activeChannel">Web</strong>
+      </div>
+      <label class="scenario-control" for="scenario">
+        <span>Visitor scenario</span>
+        <select id="scenario" aria-label="Visitor scenario">
+          <!-- Options populated by app.js from the full catalog -->
+        </select>
+      </label>
+    </section>
+
+    <section class="site-section control-panel" aria-label="Personalization controls">
+      <div>
+        <p class="eyebrow">Runtime controls</p>
+        <h2>Personalization switches</h2>
+      </div>
+      <label class="toggle-row">
+        <input id="useLlm" type="checkbox"/>
+        <span>
+          <strong>Use LLM enrichment</strong>
+          <small>Calls OpenAI when <code>OPENAI_API_KEY</code> is configured; otherwise falls back locally.</small>
+        </span>
+      </label>
+      <label class="toggle-row">
+        <input id="useLlmExplanation" type="checkbox"/>
+        <span>
+          <strong>Use LLM explanation</strong>
+          <small>Lets the LLM write the customer-facing recommendation reason when available.</small>
+        </span>
+      </label>
+      <div class="status-pill" id="llmStatus">LLM status: unknown</div>
+    </section>
+
+    <section class="site-section storefront-layout" aria-label="Personalized storefront">
+      <article class="personalized-banner">
+        <p class="eyebrow">Page content personalized by API</p>
+        <h2 id="bannerTitle">Your trip page is ready.</h2>
+        <p id="bannerCopy">Run personalization to adapt the page hero, call to action, and ranked offers to this visitor context.</p>
+        <button id="bannerCta" type="button">See recommended option</button>
+      </article>
+      <div class="trip-panel">
+        <span>Live visitor signals</span>
+        <ul id="visitorSignals"></ul>
+      </div>
+    </section>
+
+    <section id="personalized-offer" class="site-section recommendation-layout">
+      <article class="offer-card" aria-live="polite">
+        <div id="loading" class="loading hidden">
+          <div class="spinner"></div>
+          <span>Calling personalization API...</span>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <p class="eyebrow">Personalized next best action</p>
+          <h2>Ready to personalize this page.</h2>
+          <p>Select a visitor scenario and run the EDTA recommendation models to display the best offer for that context.</p>
+        </div>
+
+        <div id="topRecommendation" class="hidden"></div>
+      </article>
+
+      <aside class="insight-card">
+        <p class="eyebrow">Why this appears</p>
+        <h2>Model signals</h2>
+        <div id="signalGrid" class="signal-grid">
+          <div><span>Intent</span><strong>-</strong></div>
+          <div><span>Journey</span><strong>-</strong></div>
+          <div><span>TAPL action</span><strong>-</strong></div>
+          <div><span>Outcome score</span><strong>-</strong></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="site-section architecture-section">
+      <div class="section-heading">
+        <p class="eyebrow">EDTA architecture</p>
+        <h2>TKGE, EML, HAOE, and OSE signals</h2>
+      </div>
+      <div id="architecturePanels" class="architecture-grid">
+        <article class="architecture-card placeholder-card">
+          <span class="architecture-label">Waiting</span>
+          <h3>Run personalization</h3>
+          <p>Architecture panels populate from the live API response.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="site-section">
+      <div class="section-heading">
+        <p class="eyebrow">Experience changes</p>
+        <h2>What the API personalized</h2>
+      </div>
+      <div id="experienceChanges" class="change-grid">
+        <article><span>Hero</span><strong>Default</strong><p>Waiting for recommendation.</p></article>
+        <article><span>CTA</span><strong>Default</strong><p>No personalized action yet.</p></article>
+        <article><span>Reason</span><strong>Default</strong><p>Model explanation will appear here.</p></article>
+      </div>
+    </section>
+
+    <section class="site-section">
+      <div class="section-heading">
+        <p class="eyebrow">More ranked options</p>
+        <h2>Recommendation stack</h2>
+      </div>
+      <div id="recommendationList" class="recommendation-list"></div>
+    </section>
+
+    <section id="api-panel" class="site-section api-layout">
+      <div class="section-heading">
+        <p class="eyebrow">Integration details</p>
+        <h2>Request and response</h2>
+      </div>
+      <div class="code-grid">
+        <article>
+          <h3>Request payload</h3>
+          <pre id="payloadPreview"></pre>
+        </article>
+        <article>
+          <h3>API response</h3>
+          <pre id="responsePreview">Run personalization to see the response.</pre>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="/static/demo-shared.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

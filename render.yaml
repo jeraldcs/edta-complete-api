@@ -1,0 +1,32 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: edta-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /ready
+    autoDeploy: true
+    envVars:
+      - key: EDTA_ENVIRONMENT
+        value: production
+      - key: EDTA_LOG_FORMAT
+        value: json
+      - key: EDTA_LOG_LEVEL
+        value: INFO
+      - key: EDTA_METRICS_ENABLED
+        value: true
+      - key: EDTA_EXPOSE_ERROR_DETAILS
+        value: auto
+      - key: EDTA_RATE_LIMIT_PER_MINUTE
+        value: 120
+      - key: EDTA_API_KEY
+        generateValue: true
+      - key: EDTA_CORS_ORIGINS
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini

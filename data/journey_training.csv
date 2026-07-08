@@ -1,0 +1,32 @@
+text,journey_stage
+customer searching SUV rental at airport for family trip,consideration
+preferred customer comparing rental cars and SUV options,consideration
+traveler checked SUV availability and started booking airport rental,purchase
+customer ready to reserve premium SUV for summer vacation,purchase
+visitor browsing rental car discounts before booking,research
+family traveler looking for larger vehicle upgrade,consideration
+customer needs help changing rental reservation,service
+driver in connected car needs nearby return location,service
+guest looking for hotel room availability this weekend,consideration
+visitor comparing hotel rooms and stay options,consideration
+guest ready to reserve hotel room for tonight,purchase
+customer checking out hotel reservation payment,purchase
+traveler browsing lodging offers near airport,research
+guest asks chatbot about hotel booking availability,consideration
+customer wants support for hotel reservation issue,service
+visitor looking for restaurant reservation for dinner table,consideration
+customer wants to book a restaurant table tonight,purchase
+person sitting in restaurant viewing menu from website,purchase
+unknown customer reading restaurant menu on website,research
+visitor scans QR code at restaurant table and opens menu,purchase
+customer scans barcode on mobile to view restaurant menu,purchase
+diner browsing cuisine and dishes before ordering,purchase
+visitor comparing restaurants and cuisine options,consideration
+doctor reading obesity product information on healthcare website,research
+hcp reviewing approved clinical education content,research
+physician accessing healthcare website for diabetes education,research
+healthcare professional reviewing obesity therapy information,consideration
+patient support issue on healthcare product website,service
+doctor on wearable device receiving disease specific promotional message,awareness
+hcp requests approved education by email,research
+medical visitor opted out of personalization while reading therapy page,research

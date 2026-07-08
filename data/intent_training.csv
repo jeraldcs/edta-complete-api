@@ -1,0 +1,101 @@
+text,intent
+unknown visitor comparing SUV rental options at airport for family trip,research
+known preferred customer searching family SUV airport rental,research
+traveler reviewing premium SUV upgrade before booking rental car,upgrade
+customer checked SUV availability and started booking airport rental,purchase
+customer ready to reserve premium SUV for summer vacation,purchase
+family traveler wants larger vehicle with luggage space,upgrade
+visitor browsing rental car early booking discount,research
+traveler comparing rental prices and discount offers,research
+customer looking for airport rental deal before checkout,research
+customer entered checkout for rental booking payment,purchase
+chatbot user asks if SUV rental is available at SFO,purchase
+customer needs help changing rental reservation in chatbot,support
+traveler asks chatbot to cancel or modify car rental booking,support
+driver in connected car needs nearby rental return location,support
+connected car user asks for closest fuel and return support,support
+customer received loyalty renewal rental offer,retention
+frequent renter may churn after poor rental experience,retention
+business traveler searching airport car rental availability,research
+traveler wants premium rental car for work trip,upgrade
+customer asks support about rental refund issue,support
+airport traveler searching SUV with child seats,research
+customer comparing compact car and SUV upgrade price,research
+traveler ready to book car rental after checking inventory,purchase
+loyalty customer looking at weekend rental discount,research
+mobile customer opens rental booking confirmation and needs return help,support
+guest looking for hotel room availability this weekend,research
+visitor comparing hotel rooms and stay options,research
+traveler browsing lodging offers near airport,research
+guest checking hotel room photos and amenities,research
+customer looking for hotel reservation website,research
+guest ready to reserve hotel room for tonight,purchase
+customer checking out hotel reservation payment,purchase
+known guest chooses room and starts hotel booking,purchase
+traveler wants suite upgrade during hotel booking,upgrade
+preferred loyalty member looking for premium hotel room offer,upgrade
+guest asks chatbot about hotel booking availability,purchase
+customer wants support for hotel reservation issue,support
+hotel guest needs help changing room reservation,support
+customer checking hotel cancellation policy after booking,support
+guest searches family hotel room near airport,research
+visitor comparing hotel rates and availability,research
+traveler is ready to book hotel stay after comparing rooms,purchase
+guest viewing hotel reservation confirmation,purchase
+loyalty guest receives renewal stay offer,retention
+customer unhappy with hotel stay may churn,retention
+mobile visitor opens hotel room offer,research
+traveler asks for available rooms tonight in chat,purchase
+guest browsing spa and dining packages at hotel,research
+customer applying promo code to hotel checkout,purchase
+visitor looking for accessible hotel room reservation,research
+visitor looking for restaurant reservation for dinner table,purchase
+customer wants to book a restaurant table tonight,purchase
+guest checking table availability for dinner,purchase
+visitor comparing restaurant reservation times,research
+customer looking restaurant reservation website for dinner table,purchase
+person sitting in restaurant viewing menu from website,purchase
+unknown customer reading restaurant menu on website,research
+diner browsing cuisine and dishes before ordering,purchase
+customer seated at table reviews menu and specials,purchase
+visitor comparing restaurants and cuisine options,research
+visitor scans QR code at restaurant table and opens menu,purchase
+customer scans barcode on mobile to view restaurant menu,purchase
+mobile guest scans table QR code and reads menu,purchase
+diner uses phone camera to open restaurant menu,purchase
+customer on mobile browses food menu at restaurant,purchase
+guest asks chatbot to change restaurant reservation,support
+customer needs help canceling dinner reservation,support
+restaurant visitor wants support with booking issue,support
+customer receives loyalty dining offer by email,retention
+diner may churn after bad restaurant experience,retention
+customer looking at wine pairing and dinner menu,purchase
+visitor searches vegetarian restaurant dishes,research
+guest ready to order after viewing menu online,purchase
+restaurant customer browsing dessert menu at table,purchase
+unknown visitor checks cuisine menu before making reservation,research
+doctor reading obesity product information on healthcare website,research
+hcp reviewing approved clinical education content,research
+physician accessing healthcare website for diabetes education,research
+healthcare professional reviewing obesity therapy information,research
+doctor comparing clinical data for obesity treatment,research
+hcp reads prescribing information and product education,research
+medical visitor downloads clinical education paper,research
+doctor searches diabetes clinical education materials,research
+hcp wants approved obesity product education,research
+healthcare professional reviewing therapy information on HCP site,research
+patient support issue on healthcare product website,support
+visitor asks healthcare support question about product information,support
+doctor on wearable device receiving disease specific promotional message,research
+patient wearable asks for wellness education reminder,research
+wearable notification contains sensitive healthcare content,research
+hcp requests approved education by email,research
+medical visitor opted out of personalization while reading therapy page,research
+healthcare visitor has no consent for personalized product content,research
+physician reviews clinical trial summary for diabetes,research
+doctor looking for cardiology education resources,research
+hcp compares obesity therapy options before follow up,research
+medical professional ready to request product education follow up,purchase
+healthcare user asks service question about education access,support
+doctor receives repeated healthcare offer after high fatigue,retention
+hcp on mobile opens approved product education page,research

@@ -1,0 +1,12 @@
+{
+  "customer_id": "cust-789",
+  "anonymous_id": "anon-web-123",
+  "recommendation_id": "vehicle_upgrade_suv",
+  "channel": "web",
+  "event_type": "click",
+  "converted": false,
+  "revenue": 0,
+  "context_snapshot": {
+    "scenario": "web_family_suv"
+  }
+}
