@@ -1,0 +1,11 @@
+text,action
+personalization consent missing sensitive content,generic_fallback
+high fatigue repeated offer ignored,delay
+healthcare sensitive wearable push notification,suppress
+financial sensitive voice assistant message,suppress
+general travel offer consent available,show
+approved educational content hcp web,show
+mildly sensitive content should be softened,soften
+same offer dismissed many times,delay
+low sensitivity service alert iot,show
+disease specific promotional message wearable,suppress

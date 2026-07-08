@@ -1,0 +1,32 @@
+{
+  "context": {
+    "anonymous_id": "iot-001",
+    "channel": "iot",
+    "session_events": [
+      "device_low_battery",
+      "sensor_status_warning",
+      "maintenance_due"
+    ],
+    "search_terms": [],
+    "profile_attributes": {
+      "device_type": "connected_device",
+      "fatigue_count": 1
+    },
+    "business_context": {
+      "service_window": "available"
+    },
+    "channel_context": {
+      "signal_type": "maintenance",
+      "urgency": "medium"
+    },
+    "device_context": {
+      "battery_level": 12,
+      "firmware_version": "1.2.9"
+    },
+    "consent": {
+      "personalization": true
+    }
+  },
+  "limit": 3,
+  "use_ai_models": true
+}

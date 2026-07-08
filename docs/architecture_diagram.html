@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EDTA Personalization Architecture Diagram</title>
+  <style>
+    @page {
+      size: letter landscape;
+      margin: 0.35in;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #102118;
+      background: #f7faf7;
+    }
+
+    .page {
+      width: 10.3in;
+      height: 7.8in;
+      margin: 0 auto;
+      padding: 0.18in 0.22in;
+      page-break-after: always;
+      background: #ffffff;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin: 0 0 16px;
+      color: #5d6c63;
+      font-size: 12px;
+    }
+
+    svg {
+      width: 100%;
+      height: calc(100% - 54px);
+      display: block;
+    }
+
+    .box {
+      fill: #ffffff;
+      stroke: #cfd9d1;
+      stroke-width: 1.4;
+      rx: 8;
+    }
+
+    .frontend {
+      fill: #eaf6ef;
+      stroke: #1f7a52;
+    }
+
+    .api {
+      fill: #edf7fb;
+      stroke: #21759f;
+    }
+
+    .engine {
+      fill: #fff7e7;
+      stroke: #bd7b13;
+    }
+
+    .ai {
+      fill: #f4f0ff;
+      stroke: #6c55a3;
+    }
+
+    .llm {
+      fill: #fff0f0;
+      stroke: #b84a4a;
+    }
+
+    .data {
+      fill: #f3f5f3;
+      stroke: #6b746c;
+    }
+
+    .title {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #102118;
+    }
+
+    .small {
+      font-size: 10.5px;
+      fill: #405148;
+    }
+
+    .tiny {
+      font-size: 9.4px;
+      fill: #5d6c63;
+    }
+
+    .lane {
+      fill: none;
+      stroke: #dfe7e0;
+      stroke-width: 1.2;
+      stroke-dasharray: 5 5;
+      rx: 12;
+    }
+
+    .lane-title {
+      font-size: 12px;
+      font-weight: 700;
+      fill: #405148;
+    }
+
+    .arrow {
+      stroke: #53645a;
+      stroke-width: 1.6;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+
+    .arrow-alt {
+      stroke: #8f6d20;
+      stroke-width: 1.5;
+      fill: none;
+      stroke-dasharray: 4 4;
+      marker-end: url(#arrowhead-alt);
+    }
+
+    .note {
+      fill: #102118;
+      font-size: 11px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <h1>EDTA Personalization API Architecture</h1>
+    <p class="subtitle">End-to-end runtime flow from browser context to ranked personalized content.</p>
+    <svg viewBox="0 0 1120 720" role="img" aria-label="EDTA personalization architecture diagram">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#53645a"></polygon>
+        </marker>
+        <marker id="arrowhead-alt" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#8f6d20"></polygon>
+        </marker>
+      </defs>
+
+      <rect class="lane" x="18" y="20" width="250" height="660"></rect>
+      <text class="lane-title" x="34" y="42">Frontend Demo</text>
+
+      <rect class="lane" x="292" y="20" width="220" height="660"></rect>
+      <text class="lane-title" x="308" y="42">FastAPI and Contracts</text>
+
+      <rect class="lane" x="536" y="20" width="326" height="660"></rect>
+      <text class="lane-title" x="552" y="42">Recommendation Engine</text>
+
+      <rect class="lane" x="886" y="20" width="210" height="660"></rect>
+      <text class="lane-title" x="902" y="42">AI, LLM, Data</text>
+
+      <rect class="box frontend" x="44" y="74" width="198" height="66"></rect>
+      <text class="title" x="64" y="101">Browser Demo</text>
+      <text class="small" x="64" y="121">/demo, index.html</text>
+
+      <rect class="box frontend" x="44" y="176" width="198" height="78"></rect>
+      <text class="title" x="64" y="202">static/app.js</text>
+      <text class="small" x="64" y="222">Build visitor context</text>
+      <text class="tiny" x="64" y="240">scenario, events, channel</text>
+
+      <rect class="box api" x="312" y="176" width="178" height="78"></rect>
+      <text class="title" x="332" y="202">POST /recommend</text>
+      <text class="small" x="332" y="222">app/main.py</text>
+      <text class="tiny" x="332" y="240">route handler</text>
+
+      <rect class="box api" x="312" y="292" width="178" height="78"></rect>
+      <text class="title" x="332" y="318">Pydantic Schema</text>
+      <text class="small" x="332" y="338">app/models.py</text>
+      <text class="tiny" x="332" y="356">request and response</text>
+
+      <rect class="box engine" x="562" y="92" width="268" height="72"></rect>
+      <text class="title" x="582" y="119">RecommendationEngine</text>
+      <text class="small" x="582" y="139">app/recommender.py</text>
+
+      <rect class="box engine" x="562" y="202" width="268" height="72"></rect>
+      <text class="title" x="582" y="229">ContextGraph</text>
+      <text class="small" x="582" y="249">keywords + context_text</text>
+
+      <rect class="box llm" x="914" y="76" width="154" height="86"></rect>
+      <text class="title" x="932" y="102">OpenAI LLM</text>
+      <text class="small" x="932" y="122">optional</text>
+      <text class="tiny" x="932" y="140">intent + explanation</text>
+
+      <rect class="box ai" x="914" y="202" width="154" height="86"></rect>
+      <text class="title" x="932" y="228">Local AI Models</text>
+      <text class="small" x="932" y="248">intent, journey</text>
+      <text class="tiny" x="932" y="266">joblib fallback</text>
+
+      <rect class="box data" x="914" y="328" width="154" height="72"></rect>
+      <text class="title" x="932" y="354">Catalog</text>
+      <text class="small" x="932" y="374">app/catalog.py</text>
+
+      <rect class="box engine" x="562" y="316" width="268" height="76"></rect>
+      <text class="title" x="582" y="343">Candidate Scoring</text>
+      <text class="small" x="582" y="363">filter by channel</text>
+      <text class="tiny" x="582" y="381">score every eligible candidate</text>
+
+      <rect class="box engine" x="562" y="430" width="122" height="74"></rect>
+      <text class="title" x="582" y="456">EDS</text>
+      <text class="small" x="582" y="476">intent, context</text>
+      <text class="tiny" x="582" y="492">business value</text>
+
+      <rect class="box ai" x="708" y="430" width="122" height="74"></rect>
+      <text class="title" x="728" y="456">AI Modules</text>
+      <text class="small" x="728" y="476">semantic, TAPL</text>
+      <text class="tiny" x="728" y="492">outcome, ranker</text>
+
+      <rect class="box engine" x="562" y="542" width="268" height="74"></rect>
+      <text class="title" x="582" y="568">Ranked Recommendations</text>
+      <text class="small" x="582" y="588">reason codes + explanation</text>
+
+      <rect class="box frontend" x="44" y="542" width="198" height="74"></rect>
+      <text class="title" x="64" y="568">Personalized Page</text>
+      <text class="small" x="64" y="588">hero, CTA, offer card</text>
+
+      <path class="arrow" d="M143 140 L143 176"></path>
+      <path class="arrow" d="M242 215 L312 215"></path>
+      <path class="arrow" d="M401 254 L401 292"></path>
+      <path class="arrow" d="M490 331 L562 128"></path>
+      <path class="arrow" d="M696 164 L696 202"></path>
+      <path class="arrow-alt" d="M830 120 L914 120"></path>
+      <path class="arrow-alt" d="M914 244 L830 244"></path>
+      <path class="arrow" d="M696 274 L696 316"></path>
+      <path class="arrow" d="M914 364 L830 354"></path>
+      <path class="arrow" d="M696 392 L623 430"></path>
+      <path class="arrow" d="M696 392 L769 430"></path>
+      <path class="arrow" d="M623 504 L623 542"></path>
+      <path class="arrow" d="M769 504 L769 542"></path>
+      <path class="arrow" d="M562 579 L242 579"></path>
+
+      <text class="note" x="846" y="105">use_llm=true</text>
+      <text class="note" x="838" y="233">fallback</text>
+    </svg>
+  </section>
+
+  <section class="page">
+    <h1>Layered Codebase View</h1>
+    <p class="subtitle">How files and folders map to responsibilities.</p>
+    <svg viewBox="0 0 1120 720" role="img" aria-label="EDTA codebase layered architecture">
+      <defs>
+        <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#53645a"></polygon>
+        </marker>
+      </defs>
+
+      <rect class="box frontend" x="70" y="80" width="210" height="96"></rect>
+      <text class="title" x="92" y="112">Frontend Demo</text>
+      <text class="small" x="92" y="134">static/index.html</text>
+      <text class="small" x="92" y="152">static/app.js</text>
+      <text class="small" x="92" y="170">static/styles.css</text>
+
+      <rect class="box api" x="360" y="80" width="210" height="96"></rect>
+      <text class="title" x="382" y="112">API Layer</text>
+      <text class="small" x="382" y="134">app/main.py</text>
+      <text class="small" x="382" y="152">/recommend</text>
+      <text class="small" x="382" y="170">/demo, /feedback</text>
+
+      <rect class="box api" x="650" y="80" width="210" height="96"></rect>
+      <text class="title" x="672" y="112">Data Contracts</text>
+      <text class="small" x="672" y="134">app/models.py</text>
+      <text class="small" x="672" y="152">CustomerContext</text>
+      <text class="small" x="672" y="170">RankedRecommendation</text>
+
+      <rect class="box engine" x="360" y="252" width="210" height="116"></rect>
+      <text class="title" x="382" y="284">Recommendation Core</text>
+      <text class="small" x="382" y="306">app/recommender.py</text>
+      <text class="small" x="382" y="324">app/context_graph.py</text>
+      <text class="small" x="382" y="342">app/eds.py</text>
+      <text class="small" x="382" y="360">app/catalog.py</text>
+
+      <rect class="box ai" x="70" y="440" width="290" height="138"></rect>
+      <text class="title" x="94" y="472">AI Modules</text>
+      <text class="small" x="94" y="494">intent_model.py, journey_model.py</text>
+      <text class="small" x="94" y="512">tapl_model.py, channel_model.py</text>
+      <text class="small" x="94" y="530">semantic_similarity.py</text>
+      <text class="small" x="94" y="548">outcome_model.py, ranker_model.py</text>
+
+      <rect class="box llm" x="430" y="440" width="230" height="138"></rect>
+      <text class="title" x="454" y="472">Optional LLM Layer</text>
+      <text class="small" x="454" y="494">app/llm/llm_client.py</text>
+      <text class="small" x="454" y="512">OpenAI Responses API</text>
+      <text class="small" x="454" y="530">intent enrichment</text>
+      <text class="small" x="454" y="548">explanation generation</text>
+
+      <rect class="box data" x="730" y="440" width="250" height="138"></rect>
+      <text class="title" x="754" y="472">Data and Artifacts</text>
+      <text class="small" x="754" y="494">data/*.csv</text>
+      <text class="small" x="754" y="512">models/*.joblib</text>
+      <text class="small" x="754" y="530">sample_requests/*.json</text>
+      <text class="small" x="754" y="548">scripts/train_all_models.py</text>
+
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M280 128 L360 128"></path>
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M570 128 L650 128"></path>
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M755 176 C755 246 570 222 520 252"></path>
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M465 368 L250 440"></path>
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M492 368 L540 440"></path>
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M570 328 C690 340 760 392 835 440"></path>
+      <path class="arrow" marker-end="url(#arrowhead2)" d="M360 310 C250 310 176 250 176 176"></path>
+
+      <text class="note" x="314" y="116">calls</text>
+      <text class="note" x="596" y="116">validates</text>
+      <text class="note" x="214" y="384">uses</text>
+      <text class="note" x="518" y="408">optional</text>
+      <text class="note" x="724" y="394">loads</text>
+    </svg>
+  </section>
+</body>
+</html>

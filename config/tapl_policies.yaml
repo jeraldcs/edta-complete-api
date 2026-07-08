@@ -1,0 +1,27 @@
+consent:
+  required_flag: personalization
+  fallback_action: generic_fallback
+  reason: Personalization consent missing.
+
+fatigue:
+  delay_threshold: 0.70
+  delay_action: delay
+  reason: High fatigue detected from repeated exposure.
+
+sensitive_channels:
+  channels:
+    - sms
+    - push
+    - wearable
+    - voice_assistant
+    - iot
+  sensitivity_threshold: 0.80
+  action: suppress
+  reason: Sensitive recommendation is not suitable for this constrained channel.
+
+trust_weights:
+  consent: 0.30
+  memory_trust: 0.25
+  compliance: 0.20
+  fatigue_inverse: 0.15
+  sensitivity_inverse: 0.10

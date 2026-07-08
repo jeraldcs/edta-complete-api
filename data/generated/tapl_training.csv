@@ -1,0 +1,101 @@
+text,action
+unknown visitor comparing SUV rental options at airport for family trip,show
+known preferred customer searching family SUV airport rental,show
+traveler reviewing premium SUV upgrade before booking rental car,show
+customer checked SUV availability and started booking airport rental,show
+customer ready to reserve premium SUV for summer vacation,show
+family traveler wants larger vehicle with luggage space,show
+visitor browsing rental car early booking discount,show
+traveler comparing rental prices and discount offers,show
+customer looking for airport rental deal before checkout,show
+customer entered checkout for rental booking payment,show
+chatbot user asks if SUV rental is available at SFO,show
+customer needs help changing rental reservation in chatbot,show
+traveler asks chatbot to cancel or modify car rental booking,show
+driver in connected car needs nearby rental return location,show
+connected car user asks for closest fuel and return support,show
+customer received loyalty renewal rental offer,show
+frequent renter may churn after poor rental experience,soften
+business traveler searching airport car rental availability,show
+traveler wants premium rental car for work trip,show
+customer asks support about rental refund issue,show
+airport traveler searching SUV with child seats,show
+customer comparing compact car and SUV upgrade price,show
+traveler ready to book car rental after checking inventory,show
+loyalty customer looking at weekend rental discount,show
+mobile customer opens rental booking confirmation and needs return help,show
+guest looking for hotel room availability this weekend,show
+visitor comparing hotel rooms and stay options,show
+traveler browsing lodging offers near airport,show
+guest checking hotel room photos and amenities,show
+customer looking for hotel reservation website,show
+guest ready to reserve hotel room for tonight,show
+customer checking out hotel reservation payment,show
+known guest chooses room and starts hotel booking,show
+traveler wants suite upgrade during hotel booking,show
+preferred loyalty member looking for premium hotel room offer,show
+guest asks chatbot about hotel booking availability,show
+customer wants support for hotel reservation issue,show
+hotel guest needs help changing room reservation,show
+customer checking hotel cancellation policy after booking,show
+guest searches family hotel room near airport,show
+visitor comparing hotel rates and availability,show
+traveler is ready to book hotel stay after comparing rooms,show
+guest viewing hotel reservation confirmation,show
+loyalty guest receives renewal stay offer,show
+customer unhappy with hotel stay may churn,soften
+mobile visitor opens hotel room offer,show
+traveler asks for available rooms tonight in chat,show
+guest browsing spa and dining packages at hotel,show
+customer applying promo code to hotel checkout,show
+visitor looking for accessible hotel room reservation,show
+visitor looking for restaurant reservation for dinner table,show
+customer wants to book a restaurant table tonight,show
+guest checking table availability for dinner,show
+visitor comparing restaurant reservation times,show
+customer looking restaurant reservation website for dinner table,show
+person sitting in restaurant viewing menu from website,show
+unknown customer reading restaurant menu on website,show
+diner browsing cuisine and dishes before ordering,show
+customer seated at table reviews menu and specials,show
+visitor comparing restaurants and cuisine options,show
+visitor scans QR code at restaurant table and opens menu,show
+customer scans barcode on mobile to view restaurant menu,show
+mobile guest scans table QR code and reads menu,show
+diner uses phone camera to open restaurant menu,show
+customer on mobile browses food menu at restaurant,show
+guest asks chatbot to change restaurant reservation,show
+customer needs help canceling dinner reservation,show
+restaurant visitor wants support with booking issue,show
+customer receives loyalty dining offer by email,show
+diner may churn after bad restaurant experience,soften
+customer looking at wine pairing and dinner menu,show
+visitor searches vegetarian restaurant dishes,show
+guest ready to order after viewing menu online,show
+restaurant customer browsing dessert menu at table,show
+unknown visitor checks cuisine menu before making reservation,show
+doctor reading obesity product information on healthcare website,show
+hcp reviewing approved clinical education content,show
+physician accessing healthcare website for diabetes education,show
+healthcare professional reviewing obesity therapy information,show
+doctor comparing clinical data for obesity treatment,show
+hcp reads prescribing information and product education,show
+medical visitor downloads clinical education paper,show
+doctor searches diabetes clinical education materials,show
+hcp wants approved obesity product education,show
+healthcare professional reviewing therapy information on HCP site,show
+patient support issue on healthcare product website,soften
+visitor asks healthcare support question about product information,soften
+doctor on wearable device receiving disease specific promotional message,suppress
+patient wearable asks for wellness education reminder,soften
+wearable notification contains sensitive healthcare content,suppress
+hcp requests approved education by email,show
+medical visitor opted out of personalization while reading therapy page,generic_fallback
+healthcare visitor has no consent for personalized product content,generic_fallback
+physician reviews clinical trial summary for diabetes,show
+doctor looking for cardiology education resources,show
+hcp compares obesity therapy options before follow up,show
+medical professional ready to request product education follow up,show
+healthcare user asks service question about education access,soften
+doctor receives repeated healthcare offer after high fatigue,delay
+hcp on mobile opens approved product education page,show

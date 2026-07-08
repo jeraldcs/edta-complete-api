@@ -1,0 +1,34 @@
+{
+  "context": {
+    "anonymous_id": "chat-001",
+    "customer_id": "cust-chat-789",
+    "channel": "chatbot",
+    "session_events": [
+      "opened_chatbot",
+      "asked_about_booking",
+      "asked_availability"
+    ],
+    "search_terms": [
+      "can I change my reservation to SUV"
+    ],
+    "profile_attributes": {
+      "loyalty_tier": "preferred",
+      "fatigue_count": 0
+    },
+    "business_context": {
+      "inventory_suv": "available"
+    },
+    "channel_context": {
+      "conversation_turn": 3,
+      "bot_intent": "booking_change"
+    },
+    "device_context": {
+      "device": "web_chat"
+    },
+    "consent": {
+      "personalization": true
+    }
+  },
+  "limit": 3,
+  "use_ai_models": true
+}
