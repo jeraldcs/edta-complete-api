@@ -15,7 +15,7 @@ This package contains the complete end-to-end implementation of the Experience D
 ## Main API endpoints
 
 - `GET /` — health check
-- `GET /demo` — web demo
+- `GET /scenario-demo` — web demo (`/demo` redirects here)
 - `POST /recommend` — main recommendation API
 - `POST /simulate` — simulate all candidate outcomes
 - `POST /feedback` — capture user feedback
@@ -41,6 +41,6 @@ uvicorn app.main:app --reload --port 8000
 Open:
 
 ```text
-http://localhost:8000/demo
+http://localhost:8000/scenario-demo
 http://localhost:8000/docs
 ```

@@ -123,6 +123,19 @@ def test_demo_config_hides_key_when_disabled(client, monkeypatch):
     assert response.json()["api_key"] is None
 
 
+def test_demo_redirects_to_scenario_demo(client: TestClient):
+    response = client.get("/demo", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/scenario-demo"
+
+
+def test_scenario_demo_serves_html(client: TestClient):
+    response = client.get("/scenario-demo")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "scenario_app.js" in response.text
+
+
 def test_recommend_burst(client: TestClient, sample_recommend_payload):
     payload = json.loads(json.dumps(sample_recommend_payload))
     statuses = [client.post("/recommend", json=payload).status_code for _ in range(5)]

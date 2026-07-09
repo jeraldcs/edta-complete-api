@@ -1556,16 +1556,19 @@
       "get": {
         "operationId": "demo_demo_get",
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
+          "307": {
+            "description": "Redirect to /scenario-demo",
+            "headers": {
+              "Location": {
+                "description": "Scenario demo URL",
+                "schema": {
+                  "type": "string"
+                }
               }
-            },
-            "description": "Successful Response"
+            }
           }
         },
-        "summary": "Demo"
+        "summary": "Demo redirect"
       }
     },
     "/experience-memory": {

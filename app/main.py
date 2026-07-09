@@ -3,7 +3,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import router as v1_router
@@ -96,7 +96,7 @@ def _health_response():
         "tkge": "enabled",
         "hybrid_ai_orchestration": "rules_ml_distilled_pattern_llm",
         "supported_channels": [c.value for c in __import__("app.models", fromlist=["Channel"]).Channel],
-        "demo": "/demo",
+        "demo": "/scenario-demo",
         "scenario_demo": "/scenario-demo",
         "swagger": "/docs",
         "openapi": "/openapi.json",
@@ -152,8 +152,8 @@ def demo_config():
 
 
 @app.get("/demo")
-def demo():
-    return FileResponse(Path("static/index.html"))
+def demo_redirect():
+    return RedirectResponse(url="/scenario-demo", status_code=307)
 
 
 @app.get("/scenario-demo")
