@@ -250,7 +250,9 @@ Set `EXPERIENCE_MEMORY_FILE` to change the legacy JSON migration source. Runtime
 
 ### Temporal Knowledge Graph Engine TKGE
 
-`app/context_graph.py` builds temporal edges across session events, searches, and transactions. Snapshots persist per EML subject in SQLite, merge prior journey sequences on subsequent requests, and feed inferred intent/journey into the ranking pipeline when inputs are missing.
+`app/context_graph.py` builds a **subject timeline** with timestamped temporal edges across session events, searches, transactions, recommendations, and feedback. Snapshots persist per EML subject in SQLite, merge prior outcome nodes/timeline on subsequent requests, and apply recency-weighted intent/journey inference when inputs are missing.
+
+Each recommend call writes recommendation nodes to the graph; `/feedback` appends feedback nodes and returns an updated `context_graph` summary.
 
 Graph export:
 

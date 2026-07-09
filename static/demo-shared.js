@@ -62,6 +62,8 @@
         <dl>
           <div><dt>Nodes / edges</dt><dd>${escapeHtml(graph.node_count ?? 0)} / ${escapeHtml(graph.edge_count ?? 0)}</dd></div>
           <div><dt>Temporal edges</dt><dd>${escapeHtml(graph.temporal_edge_count ?? 0)}</dd></div>
+          <div><dt>Timeline events</dt><dd>${escapeHtml(graph.timeline_event_count ?? 0)}</dd></div>
+          <div><dt>Recent outcomes</dt><dd>${escapeHtml((graph.recent_outcomes || []).slice(-2).map(item => item.type + (item.candidate_id ? `:${item.candidate_id}` : item.recommendation_id ? `:${item.recommendation_id}` : "")).join(", ") || "None")}</dd></div>
           <div><dt>Inferred intent</dt><dd>${escapeHtml(pretty(graph.inferred_intent))} (${pct(graph.inferred_intent_confidence)})</dd></div>
           <div><dt>Next journey stage</dt><dd>${escapeHtml(pretty(graph.next_best_journey_stage || "unknown"))}</dd></div>
         </dl>

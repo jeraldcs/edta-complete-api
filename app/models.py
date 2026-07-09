@@ -124,6 +124,8 @@ class TemporalKnowledgeGraphSummary(BaseModel):
     inferred_intent_confidence: float = 0.0
     next_best_journey_stage: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
+    timeline_event_count: int = 0
+    recent_outcomes: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class OutcomeSimulation(BaseModel):
