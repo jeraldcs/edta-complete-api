@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from app.llm.llm_provider import LLMProvider
-from app.provider_telemetry import ProviderTelemetryStore
+
+if TYPE_CHECKING:
+    from app.provider_telemetry import ProviderTelemetryStore
 
 
 class LLMClient(LLMProvider):
@@ -11,7 +13,7 @@ class LLMClient(LLMProvider):
 
     def __init__(
         self,
-        telemetry: ProviderTelemetryStore | None = None,
+        telemetry: "ProviderTelemetryStore | None" = None,
         orchestrator_callback: Callable[[float], None] | None = None,
     ):
         super().__init__(telemetry=telemetry, orchestrator_callback=orchestrator_callback)

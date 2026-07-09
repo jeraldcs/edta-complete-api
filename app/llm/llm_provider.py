@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from app.llm.openai_compatible_client import OpenAICompatibleClient
 from app.llm.prompt_templates import (
@@ -10,7 +10,9 @@ from app.llm.prompt_templates import (
     synthetic_training_prompt,
 )
 from app.llm.provider_config import get_inference_provider_config
-from app.provider_telemetry import ProviderTelemetryStore
+
+if TYPE_CHECKING:
+    from app.provider_telemetry import ProviderTelemetryStore
 
 
 class LLMProvider:
@@ -18,7 +20,7 @@ class LLMProvider:
 
     def __init__(
         self,
-        telemetry: ProviderTelemetryStore | None = None,
+        telemetry: "ProviderTelemetryStore | None" = None,
         orchestrator_callback: Callable[[float], None] | None = None,
     ):
         self.settings = get_inference_provider_config().provider_settings("llm")

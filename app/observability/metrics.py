@@ -13,6 +13,9 @@ except ImportError:  # pragma: no cover - exercised when dependency missing
     CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
 
     class _NoopMetric:
+        def __init__(self, *args, **kwargs):
+            return None
+
         def labels(self, *args, **kwargs):
             return self
 
