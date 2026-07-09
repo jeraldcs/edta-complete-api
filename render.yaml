@@ -34,5 +34,11 @@ services:
         value: gpt-4o-mini
       - key: SLM_ENABLED
         value: true
+      # SLM runs pattern-only on Render free tier by default (no SLM_BASE_URL required).
+      # Optional: point SLM_BASE_URL at Ollama/vLLM for a local small-model endpoint.
+      - key: SLM_MODEL
+        value: edta-local-slm
+      - key: INFERENCE_PROVIDERS_FILE
+        value: config/inference_providers.yaml
       - key: LLM_REQUEST_TIMEOUT
         value: "30"
