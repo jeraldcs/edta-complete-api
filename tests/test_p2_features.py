@@ -9,7 +9,9 @@ def test_orchestration_status_endpoint(client):
     assert response.status_code == 200
     payload = response.json()
     assert "cost_budget" in payload
-    assert payload["distilled_tier_name"] == "distilled_pattern"
+    assert "public_tiers" in payload
+    assert payload["public_tiers"] == ["rules", "slm", "ml", "llm"]
+    assert payload["slm_tier_name"] == "slm"
 
 
 def test_context_graph_v1_endpoint(client, sample_recommend_payload):

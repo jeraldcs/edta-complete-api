@@ -174,7 +174,9 @@ class RecommendationRequest(BaseModel):
     limit: int = Field(default=3, ge=1, le=20)
     use_ai_models: bool = True
     use_llm: bool = False
+    use_slm: bool = False
     use_llm_explanation: bool = False
+    inference_mode: str = "auto"
 
 
 class ScenarioRecommendationRequest(BaseModel):
@@ -182,7 +184,9 @@ class ScenarioRecommendationRequest(BaseModel):
     limit: int = Field(default=3, ge=1, le=20)
     use_ai_models: bool = True
     use_llm: bool = False
+    use_slm: bool = False
     use_llm_explanation: bool = False
+    inference_mode: str = "auto"
 
 
 class RecommendationResponse(BaseModel):

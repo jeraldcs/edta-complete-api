@@ -94,7 +94,7 @@ def _health_response():
         "profile_lookup": app_container.container.profile_service.adapter.adapter_name,
         "experience_memory": "sqlite",
         "tkge": "enabled",
-        "hybrid_ai_orchestration": "rules_ml_distilled_pattern_llm",
+        "hybrid_ai_orchestration": "rules_slm_ml_llm",
         "supported_channels": [c.value for c in __import__("app.models", fromlist=["Channel"]).Channel],
         "demo": "/scenario-demo",
         "scenario_demo": "/scenario-demo",

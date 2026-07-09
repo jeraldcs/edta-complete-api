@@ -1,0 +1,28 @@
+intent_signals:
+  purchase: [buy, book, checkout, reserve, quote, price, purchase, order, converted]
+  support: [help, issue, maintenance, repair, support, problem, service, return]
+  upgrade: [upgrade, premium, suv, larger, better, enhanced]
+  retention: [renew, loyalty, churn, cancel, retain, "win back"]
+  research: [compare, research, browse, learn, options, explore, looking, dismiss]
+
+journey_signals:
+  purchase: [checkout, book, purchase, started_booking, apply]
+  consideration: [compare, availability, quote, shortlist, options]
+  research: [browse, search, viewed, research, learn]
+  retention: [renew, loyalty, churn, cancel]
+  service: [support, help, issue, maintenance]
+  awareness: [landing, discover, intro]
+
+channel_event_boosts:
+  web: [viewed, page, banner, detail]
+  mobile: [scan, qr, barcode, app]
+  chatbot: [chat, conversation, message]
+  email: [email, newsletter, campaign]
+
+confidence:
+  explicit_intent_base: 0.82
+  explicit_signal_bonus: 0.12
+  keyword_hit_base: 0.45
+  keyword_hit_increment: 0.12
+  channel_boost: 0.05
+  tkge_timeline_weight: 1.0

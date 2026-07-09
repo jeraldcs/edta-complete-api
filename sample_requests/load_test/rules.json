@@ -1,0 +1,14 @@
+{
+  "context": {
+    "anonymous_id": "load-rules-1",
+    "channel": "web",
+    "current_intent": "purchase",
+    "journey_stage": "consideration",
+    "session_events": ["viewed_vehicle_page", "started_booking"],
+    "search_terms": ["family SUV airport rental"],
+    "consent": {"personalization": true}
+  },
+  "limit": 3,
+  "use_ai_models": false,
+  "inference_mode": "rules"
+}

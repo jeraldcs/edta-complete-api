@@ -1,18 +1,18 @@
 import json
 import os
+import time
 from typing import Any, Optional
 
 
 class LLMClient:
-    """Optional OpenAI LLM helper.
-
-    The engine runs without an API key. If OPENAI_API_KEY is set, this class
-    can enrich intent, generate explanations, and create synthetic training data.
-    """
+    """Optional OpenAI-compatible LLM helper for cloud teacher models."""
 
     def __init__(self, model: str = "gpt-4o-mini"):
         self.model = os.getenv("OPENAI_MODEL", model)
         self.enabled = bool(os.getenv("OPENAI_API_KEY"))
+        self.base_url = os.getenv("OPENAI_BASE_URL") or None
+        self.timeout_seconds = float(os.getenv("LLM_REQUEST_TIMEOUT", "30"))
+        self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.client = None
         self.last_status = "not_configured" if not self.enabled else "ready"
         self.last_error = None
@@ -20,17 +20,26 @@ class LLMClient:
             try:
                 from openai import OpenAI
 
-                self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            except Exception:
+                kwargs: dict[str, Any] = {
+                    "api_key": os.getenv("OPENAI_API_KEY"),
+                    "timeout": self.timeout_seconds,
+                }
+                if self.base_url:
+                    kwargs["base_url"] = self.base_url
+                self.client = OpenAI(**kwargs)
+            except Exception as exc:
                 self.enabled = False
                 self.client = None
                 self.last_status = "client_init_failed"
-                self.last_error = "OpenAI client could not be initialized."
+                self.last_error = str(exc)
 
     def status(self) -> dict[str, Any]:
         return {
             "enabled": self.enabled,
             "model": self.model,
+            "base_url": self.base_url,
+            "timeout_seconds": self.timeout_seconds,
+            "max_retries": self.max_retries,
             "last_status": self.last_status,
             "last_error": self.last_error,
         }
@@ -61,6 +70,21 @@ class LLMClient:
             cleaned = cleaned[start:end + 1]
         return json.loads(cleaned)
 
+    def _call_responses_api(self, prompt: str) -> str:
+        if self.client is None:
+            raise RuntimeError("LLM client is not configured.")
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self.client.responses.create(model=self.model, input=prompt)
+                return self._response_text(response)
+            except Exception as exc:
+                last_error = exc
+                if attempt >= self.max_retries:
+                    break
+                time.sleep(min(2 ** attempt, 3))
+        raise last_error or RuntimeError("LLM request failed.")
+
     def enrich_intent(self, context_text: str) -> Optional[dict[str, Any]]:
         if not self.enabled or self.client is None:
             self.last_status = "not_configured"
@@ -82,10 +106,10 @@ Return exactly this schema:
 }}
 """
         try:
-            response = self.client.responses.create(model=self.model, input=prompt)
+            text = self._call_responses_api(prompt)
             self.last_status = "intent_enriched"
             self.last_error = None
-            return self._parse_json(self._response_text(response))
+            return self._parse_json(text)
         except Exception as exc:
             self.last_status = "intent_failed"
             self.last_error = str(exc)
@@ -116,8 +140,7 @@ Rules:
 - Do not invent facts.
 """
         try:
-            response = self.client.responses.create(model=self.model, input=prompt)
-            text = self._response_text(response)
+            text = self._call_responses_api(prompt)
             self.last_status = "explanation_generated"
             self.last_error = None
             return text
@@ -138,10 +161,10 @@ Return JSON array only. Each item must have: text, intent.
 Allowed intents: research, purchase, support, retention, upgrade, unknown.
 """
         try:
-            response = self.client.responses.create(model=self.model, input=prompt)
+            text = self._call_responses_api(prompt)
             self.last_status = "synthetic_data_generated"
             self.last_error = None
-            return self._parse_json(self._response_text(response))
+            return self._parse_json(text)
         except Exception as exc:
             self.last_status = "synthetic_data_failed"
             self.last_error = str(exc)
@@ -173,6 +196,7 @@ Return exactly this schema:
   "channel_context": {{}},
   "device_context": {{}},
   "consent": {{"personalization": true, "profile_lookup": true}},
+  "confidence": 0.0,
   "parse_reason": "short reason"
 }}
 
@@ -183,10 +207,10 @@ Rules:
 - If consent is explicitly missing or opted out, set personalization false.
 """
         try:
-            response = self.client.responses.create(model=self.model, input=prompt)
+            text = self._call_responses_api(prompt)
             self.last_status = "scenario_parsed"
             self.last_error = None
-            return self._parse_json(self._response_text(response))
+            return self._parse_json(text)
         except Exception as exc:
             self.last_status = "scenario_parse_failed"
             self.last_error = str(exc)

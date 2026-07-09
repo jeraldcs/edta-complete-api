@@ -48,7 +48,10 @@ class RequestSummary(BaseModel):
     experience_memory: Optional[Any] = None
     use_ai_models: Optional[bool] = None
     use_llm: Optional[bool] = None
+    use_slm: Optional[bool] = None
     use_llm_explanation: Optional[bool] = None
+    inference_mode: Optional[str] = None
+    inference: Optional[Dict[str, Any]] = None
     llm_enabled: Optional[bool] = None
     llm_status: Optional[Dict[str, Any]] = None
     self_distillation: Optional[Dict[str, Any]] = None

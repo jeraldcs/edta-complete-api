@@ -1,0 +1,14 @@
+{
+  "context": {
+    "anonymous_id": "load-llm-1",
+    "channel": "web",
+    "session_events": ["browsing"],
+    "search_terms": [],
+    "consent": {"personalization": true}
+  },
+  "limit": 3,
+  "use_ai_models": true,
+  "use_llm": true,
+  "use_slm": false,
+  "inference_mode": "llm"
+}

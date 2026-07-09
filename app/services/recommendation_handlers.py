@@ -78,6 +78,12 @@ def _profile_summary(raw: dict) -> ProfileLookupSummary:
     return ProfileLookupSummary(**raw)
 
 
+def _inference_summary(engine) -> dict | None:
+    if engine.last_inference is None:
+        return None
+    return engine.last_inference.model_dump_summary()
+
+
 class RecommendationHandlers:
     def __init__(self, services: ServiceContainer | None = None):
         self.services = services or container
@@ -171,7 +177,9 @@ class RecommendationHandlers:
             request.limit,
             request.use_ai_models,
             use_llm=request.use_llm,
+            use_slm=request.use_slm,
             use_llm_explanation=request.use_llm_explanation,
+            inference_mode=request.inference_mode,
             calibration=calibration,
             prior_graph_snapshot=prior_snapshot,
         )
@@ -201,9 +209,15 @@ class RecommendationHandlers:
                 experience_memory={"before": memory_before.model_dump(mode="json"), "after": memory_after.model_dump(mode="json")},
                 use_ai_models=request.use_ai_models,
                 use_llm=request.use_llm,
+                use_slm=request.use_slm,
                 use_llm_explanation=request.use_llm_explanation,
+                inference_mode=request.inference_mode,
+                inference=_inference_summary(self.services.engine),
                 llm_enabled=self.services.llm_client.enabled,
-                llm_status={"recommendation_engine": self.services.engine.llm.status()},
+                llm_status={
+                    "recommendation_engine": self.services.engine.llm.status(),
+                    "slm_engine": self.services.engine.slm.status(),
+                },
                 self_distillation=self.services.engine.distillation.status(),
                 haoe=self.services.engine.orchestrator.status(),
                 ose_calibration=calibration,
@@ -259,7 +273,9 @@ class RecommendationHandlers:
             request.limit,
             request.use_ai_models,
             use_llm=request.use_llm,
+            use_slm=request.use_slm,
             use_llm_explanation=request.use_llm_explanation,
+            inference_mode=request.inference_mode,
             calibration=calibration,
             prior_graph_snapshot=prior_snapshot,
         )
@@ -302,7 +318,10 @@ class RecommendationHandlers:
                 ),
                 use_ai_models=request.use_ai_models,
                 use_llm=request.use_llm,
+                use_slm=request.use_slm,
                 use_llm_explanation=request.use_llm_explanation,
+                inference_mode=request.inference_mode,
+                inference=_inference_summary(self.services.engine),
                 llm_enabled=self.services.llm_client.enabled,
                 self_distillation=self.services.engine.distillation.status(),
                 haoe=self.services.engine.orchestrator.status(),

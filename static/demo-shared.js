@@ -89,9 +89,12 @@
     const oseCalibration = summary.ose_calibration || {};
     const outcome = topRecommendation?.ai_score?.outcome_simulation || {};
     const orchestration = topRecommendation?.ai_score?.orchestration || {};
-    const intentSource = topRecommendation?.ai_score?.intent?.source || "unknown";
-    const journeySource = topRecommendation?.ai_score?.journey_stage?.source || "unknown";
-    const parserConfidence = summary.nlp?.parser_confidence;
+    const inference = summary.inference || {};
+    const intentSource = inference.intent_source || topRecommendation?.ai_score?.intent?.source || "unknown";
+    const journeySource = inference.journey_source || topRecommendation?.ai_score?.journey_stage?.source || "unknown";
+    const parserConfidence = summary.nlp?.parser_confidence ?? inference.confidence;
+    const routeTier = inference.tier || orchestration.tier || haoe.slm_tier_name || "unknown";
+    const publicTiers = (haoe.public_tiers || ["rules", "slm", "ml", "llm"]).join(", ");
 
     container.innerHTML = `
       <article class="architecture-card">
@@ -115,7 +118,10 @@
         <span class="architecture-label">HAOE</span>
         <h3>Hybrid AI Orchestration</h3>
         <dl>
-          <div><dt>Route tier</dt><dd>${escapeHtml(pretty(orchestration.tier || haoe.distilled_tier_name || "unknown"))}</dd></div>
+          <div><dt>Route tier</dt><dd>${escapeHtml(pretty(routeTier))}</dd></div>
+          <div><dt>Public tiers</dt><dd>${escapeHtml(publicTiers)}</dd></div>
+          <div><dt>Sub-source</dt><dd>${escapeHtml(pretty(inference.sub_source || "n/a"))}</dd></div>
+          <div><dt>Inference confidence</dt><dd>${inference.confidence != null ? pct(inference.confidence) : "n/a"}</dd></div>
           <div><dt>Reason</dt><dd>${escapeHtml(orchestration.reason || "Waiting for recommendation.")}</dd></div>
           <div><dt>Intent / journey source</dt><dd>${escapeHtml(pretty(intentSource))} / ${escapeHtml(pretty(journeySource))}</dd></div>
           <div><dt>Parser confidence</dt><dd>${parserConfidence != null ? pct(parserConfidence) : "n/a"}</dd></div>
