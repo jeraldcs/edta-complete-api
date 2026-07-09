@@ -110,6 +110,7 @@ Main demo (`/demo`):
 Scenario demo (`/scenario-demo`):
 
 - **Recommend**, **Simulate** (`POST /simulate`), and **Experience memory** (`GET /experience-memory`) modes
+- **Feedback capture** on the top recommendation (Click / Convert / Dismiss) — updates EML and TKGE timeline
 - NLP parsing drives ranking; training CSV rows contribute **alignment metadata only** (no forced candidate override)
 - Shared architecture panels after each run
 

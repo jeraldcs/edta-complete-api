@@ -202,7 +202,6 @@ function renderParsedContext(summary) {
 
 function renderRecommendation(data) {
   const rec = data.recommendations[0];
-  const outcome = rec.ai_score.outcome_simulation;
   scenarioRecommendation.innerHTML = `
     <p class="eyebrow">Top recommendation</p>
     <div class="offer-header">
@@ -219,7 +218,84 @@ function renderRecommendation(data) {
     </div>
     <p class="explanation">${escapeHtml(rec.explanation)}</p>
     <div class="pill-row">${rec.reason_codes.map(reason => `<span>${escapeHtml(reason.replaceAll("_", " "))}</span>`).join("")}</div>
+    <div class="feedback-row">
+      <span class="feedback-label">Capture feedback to EML + TKGE timeline</span>
+      <div class="feedback-actions">
+        <button type="button" class="feedback-btn" data-feedback="click">Click</button>
+        <button type="button" class="feedback-btn is-positive" data-feedback="convert">Convert</button>
+        <button type="button" class="feedback-btn is-muted" data-feedback="dismiss">Dismiss</button>
+      </div>
+      <p id="scenarioFeedbackStatus" class="feedback-status">Send feedback to update trust, fatigue, and the TKGE timeline.</p>
+    </div>
   `;
+
+  scenarioRecommendation.querySelectorAll("[data-feedback]").forEach(button => {
+    button.addEventListener("click", () => submitScenarioFeedback(button.dataset.feedback));
+  });
+}
+
+async function submitScenarioFeedback(kind) {
+  if (!lastScenarioData?.recommendations?.length) {
+    return;
+  }
+
+  const rec = lastScenarioData.recommendations[0];
+  const context = parsedContextFromSummary(lastScenarioData.request_summary);
+  const statusEl = document.getElementById("scenarioFeedbackStatus");
+  const converted = kind === "convert";
+  const eventType = kind === "dismiss" ? "dismiss" : "click";
+
+  const payload = {
+    anonymous_id: context.anonymous_id,
+    customer_id: context.customer_id,
+    recommendation_id: rec.candidate.id,
+    channel: context.channel,
+    event_type: eventType,
+    converted,
+    revenue: converted ? Number(rec.ai_score.outcome_simulation.revenue_impact || 0) : 0,
+    context_snapshot: {
+      scenario_text: scenarioText.value.trim(),
+      mode: "scenario-demo",
+    },
+  };
+
+  if (statusEl) {
+    statusEl.textContent = "Sending feedback...";
+  }
+
+  try {
+    const response = await DemoApi.fetch("/feedback", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error(`POST /feedback returned ${response.status}`);
+    }
+    const data = await response.json();
+    const updatedSummary = {
+      ...lastScenarioData.request_summary,
+      context_graph: data.context_graph || lastScenarioData.request_summary.context_graph,
+      experience_memory: {
+        before: lastScenarioData.request_summary.experience_memory?.after
+          || lastScenarioData.request_summary.experience_memory?.before
+          || {},
+        after: data.experience_memory || {},
+      },
+    };
+    lastScenarioData = {
+      ...lastScenarioData,
+      request_summary: updatedSummary,
+    };
+    if (statusEl) {
+      statusEl.textContent = `Feedback recorded (${eventType}${converted ? ", converted" : ""}). Total events: ${data.feedback_count}.`;
+    }
+    renderArchitecturePanels(scenarioArchitecturePanels, updatedSummary, rec);
+    scenarioStatus.textContent = "Feedback captured. TKGE timeline updated.";
+  } catch (error) {
+    if (statusEl) {
+      statusEl.textContent = error.message || "Feedback failed.";
+    }
+  }
 }
 
 function renderTechnicalExplanation(data) {
