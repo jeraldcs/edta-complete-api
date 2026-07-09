@@ -28,6 +28,15 @@ jobs:
       - name: Train models
         run: python scripts/train_all_models.py
 
+      - name: Evaluate ML models
+        run: python scripts/evaluate_ml_models.py
+
+      - name: Upload ML eval summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-eval-summary
+          path: data/generated/ml_eval_summary.json
+
       - name: Export OpenAPI schema
         run: python scripts/export_openapi.py
 

@@ -1,16 +1,10 @@
 from app.models import RankedRecommendation, AIModelBreakdown, ModelPrediction, IntentType, JourneyStage
 from app.context_graph import ContextGraph
 from app.catalog import DEFAULT_CANDIDATES
-from app.ai.intent_model import IntentModel
-from app.ai.journey_model import JourneyStageModel
-from app.ai.tapl_model import TAPLModel
-from app.ai.channel_model import ChannelFitModel
-from app.ai.semantic_similarity import SemanticSimilarityModel
-from app.ai.outcome_model import OutcomeSimulationModel
-from app.ai.ranker_model import FinalRankerModel
 from app.eml_scoring import preference_adjustment
 from app.eds import EDSScoringEngine
 from app.inference.contracts import InferenceResult
+from app.inference.ml_service import MLInferenceService
 from app.inference.providers.distilled_slm_provider import DistilledSLMProvider
 from app.llm.llm_client import LLMClient
 from app.llm.slm_client import SLMClient
@@ -28,13 +22,7 @@ class RecommendationEngine:
         tapl_audit: TAPLAuditLog | None = None,
         rules_audit: RulesAuditLog | None = None,
     ):
-        self.intent_model = IntentModel()
-        self.journey_model = JourneyStageModel()
-        self.tapl_model = TAPLModel()
-        self.channel_model = ChannelFitModel()
-        self.semantic_model = SemanticSimilarityModel()
-        self.outcome_model = OutcomeSimulationModel()
-        self.ranker_model = FinalRankerModel()
+        self.ml = MLInferenceService()
         self.eds_engine = EDSScoringEngine()
         self.rules = RulesEngine()
         self.distillation = SelfDistillationStore()
@@ -203,26 +191,16 @@ class RecommendationEngine:
             return rules_result.intent, rules_result.journey, route
 
         if use_ai_models:
-            intent, journey = self.intent_model.predict(context_text), self.journey_model.predict(context_text)
-            if intent.label == IntentType.unknown.value:
-                inferred_intent, inferred_confidence = graph.infer_intent()
-                if inferred_intent != IntentType.unknown.value:
-                    intent = ModelPrediction(label=inferred_intent, confidence=inferred_confidence, source="ml+tkge")
-            if journey.confidence < 0.5 or journey.label == JourneyStage.research.value:
-                inferred_journey, inferred_confidence = graph.infer_journey_stage()
-                if inferred_confidence >= journey.confidence:
-                    journey = ModelPrediction(label=inferred_journey, confidence=inferred_confidence, source="ml+tkge")
-            self.distillation.learn(context_text, intent, journey, teacher="local_ml", min_confidence=distill_min_confidence)
-            confidence = max(intent.confidence, journey.confidence)
-            self.last_inference = InferenceResult(
-                tier="ml",
-                provider="local_ml",
-                intent=intent,
-                journey_stage=journey,
-                confidence=confidence,
-                signals=["local_classifiers", "tkge_timeline"],
+            ml_result = self.ml.infer_intent_journey(context_text, graph)
+            self.distillation.learn(
+                context_text,
+                ml_result.intent,
+                ml_result.journey,
+                teacher="local_ml",
+                min_confidence=distill_min_confidence,
             )
-            return intent, journey, route
+            self.last_inference = self.ml.to_inference_result(ml_result)
+            return ml_result.intent, ml_result.journey, route
 
         inferred_intent, inferred_confidence = graph.infer_intent()
         inferred_journey, journey_confidence = graph.infer_journey_stage()
@@ -347,21 +325,21 @@ class RecommendationEngine:
         ])
 
         semantic_score = (
-            self.semantic_model.score(context_text, candidate_text)
+            self.ml.semantic_model.score(context_text, candidate_text)
             if use_ai_models
             else eds_score.context_relevance_score
         )
-        tapl = self.tapl_model.evaluate(context, candidate, context_text)
+        tapl = self.ml.tapl_model.evaluate(context, candidate, context_text)
         if self.tapl_audit:
             self.tapl_audit.record(
                 subject_id=context.profile_attributes.get("experience_memory_subject"),
                 candidate_id=candidate.id,
                 channel=context.channel.value,
                 decision=tapl,
-                policy_source=self.tapl_model.last_policy_source,
+                policy_source=self.ml.tapl_model.last_policy_source,
             )
-        channel_fit = self.channel_model.score(context.channel, candidate.type, candidate.compliance_sensitivity)
-        outcome = self.outcome_model.simulate(
+        channel_fit = self.ml.channel_model.score(context.channel, candidate.type, candidate.compliance_sensitivity)
+        outcome = self.ml.outcome_model.simulate(
             eds_score,
             semantic_score,
             channel_fit,
@@ -370,7 +348,7 @@ class RecommendationEngine:
             calibration=calibration,
         )
         ai_rank_score = (
-            self.ranker_model.score(eds_score, semantic_score, channel_fit, tapl, outcome, candidate)
+            self.ml.ranker_model.score(eds_score, semantic_score, channel_fit, tapl, outcome, candidate)
             if use_ai_models
             else eds_score.final_eds_score
         )

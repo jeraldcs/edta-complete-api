@@ -52,6 +52,7 @@ class RequestSummary(BaseModel):
     use_llm_explanation: Optional[bool] = None
     inference_mode: Optional[str] = None
     inference: Optional[Dict[str, Any]] = None
+    ml_inference: Optional[Dict[str, Any]] = None
     llm_enabled: Optional[bool] = None
     llm_status: Optional[Dict[str, Any]] = None
     self_distillation: Optional[Dict[str, Any]] = None
