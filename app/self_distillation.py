@@ -36,11 +36,12 @@ class SelfDistillationStore:
             if len(token) > 2
         }
 
-    def predict(self, context_text: str) -> tuple[ModelPrediction, ModelPrediction] | None:
+    def predict(self, context_text: str, min_overlap: float | None = None) -> tuple[ModelPrediction, ModelPrediction] | None:
         query = self._tokens(context_text)
         if not query:
             return None
 
+        threshold = 0.35 if min_overlap is None else float(min_overlap)
         best_record = None
         best_score = 0.0
         for record in self._load():
@@ -52,7 +53,7 @@ class SelfDistillationStore:
                 best_record = record
                 best_score = score
 
-        if not best_record or best_score < 0.35:
+        if not best_record or best_score < threshold:
             return None
 
         return (
@@ -74,8 +75,10 @@ class SelfDistillationStore:
         intent: ModelPrediction,
         journey: ModelPrediction,
         teacher: str,
+        min_confidence: float | None = None,
     ) -> dict[str, Any]:
-        if intent.confidence < 0.75 or journey.confidence < 0.75:
+        threshold = 0.75 if min_confidence is None else float(min_confidence)
+        if intent.confidence < threshold or journey.confidence < threshold:
             return {"stored": False, "reason": "confidence_below_distillation_threshold"}
 
         tokens = sorted(self._tokens(context_text))

@@ -47,7 +47,13 @@ class RecommendationEngine:
         return context
 
     def _resolve_predictions(self, context, context_text: str, use_ai_models: bool, use_llm: bool, graph: ContextGraph):
-        distilled_prediction = self.distillation.predict(context_text)
+        policy = self.orchestrator.policy
+        distilled_cfg = policy.section("distilled")
+        min_overlap = float(distilled_cfg.get("min_token_overlap", 0.35))
+        distill_min_confidence = float(distilled_cfg.get("distill_min_confidence", 0.75))
+
+        distilled_prediction = self.distillation.predict(context_text, min_overlap=min_overlap)
+        tkge_intent, tkge_intent_confidence = graph.infer_intent()
         route = self.orchestrator.choose_route(
             context=context,
             context_text=context_text,
@@ -55,6 +61,8 @@ class RecommendationEngine:
             use_llm=use_llm,
             llm_enabled=self.llm.enabled,
             distilled_pattern_available=distilled_prediction is not None,
+            tkge_intent_confidence=tkge_intent_confidence,
+            tkge_inferred_intent=tkge_intent,
         )
 
         if route.tier == "llm":
@@ -85,9 +93,17 @@ class RecommendationEngine:
                 confidence = max(0.0, min(1.0, confidence))
                 intent = ModelPrediction(label=intent_label, confidence=round(confidence, 4), source="llm")
                 journey = ModelPrediction(label=journey_label, confidence=round(confidence, 4), source="llm")
-                self.distillation.learn(context_text, intent, journey, teacher="llm")
+                self.distillation.learn(context_text, intent, journey, teacher="llm", min_confidence=distill_min_confidence)
                 return intent, journey, route
             self.orchestrator.record_llm_failure()
+
+        if route.tier == HybridAIOrchestrationEngine.TKGE_TIER:
+            inferred_journey, journey_confidence = graph.infer_journey_stage()
+            return (
+                ModelPrediction(label=tkge_intent, confidence=tkge_intent_confidence, source="tkge"),
+                ModelPrediction(label=inferred_journey, confidence=journey_confidence, source="tkge"),
+                route,
+            )
 
         if route.tier == "rules" and (
             getattr(context, "current_intent", None)
@@ -115,7 +131,7 @@ class RecommendationEngine:
                 inferred_journey, inferred_confidence = graph.infer_journey_stage()
                 if inferred_confidence >= journey.confidence:
                     journey = ModelPrediction(label=inferred_journey, confidence=inferred_confidence, source="tkge")
-            self.distillation.learn(context_text, intent, journey, teacher="local_ml")
+            self.distillation.learn(context_text, intent, journey, teacher="local_ml", min_confidence=distill_min_confidence)
             return intent, journey, route
 
         inferred_intent, inferred_confidence = graph.infer_intent()
