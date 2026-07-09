@@ -1,0 +1,31 @@
+id: restaurant
+domain: restaurant
+priority: 20
+enabled: true
+intent_signals:
+  purchase: [table reservation, book table, order menu, scan qr, barcode menu]
+  research: [compare restaurants, cuisine options, browse menu, vegetarian dishes]
+  support: [cancel reservation, booking issue, change reservation]
+  retention: [loyalty dining, churn restaurant]
+journey_signals:
+  consideration: [table availability, compare reservation, cuisine menu]
+  purchase: [book table, order menu, scan qr]
+rules:
+  - id: restaurant.intent.purchase
+    type: intent_match
+    label: purchase
+    signals: [table reservation, book table, scans qr, qr code, barcode menu, order menu]
+    weight: 0.14
+    priority: 100
+  - id: restaurant.intent.research
+    type: intent_match
+    label: research
+    signals: [browse menu, compare restaurants, cuisine options]
+    weight: 0.12
+    priority: 95
+  - id: restaurant.channel.mobile
+    type: channel_boost
+    channel: mobile
+    signals: [qr code, barcode, scan]
+    weight: 0.08
+    priority: 85

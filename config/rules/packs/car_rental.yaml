@@ -1,0 +1,38 @@
+id: car_rental
+domain: car_rental
+priority: 20
+enabled: true
+aliases: [travel]
+intent_signals:
+  purchase: [rental, airport, reserve, suv, vehicle, booking]
+  upgrade: [suv upgrade, premium rental, larger vehicle, premium]
+  support: [return location, refund, modify booking, cancel rental]
+  research: [compare rental, rental prices, discount offers, availability]
+journey_signals:
+  consideration: [availability, comparing, compare, shortlist]
+  purchase: [started booking, checkout, reserve rental]
+rules:
+  - id: car_rental.intent.purchase
+    type: intent_match
+    label: purchase
+    signals: [rental booking, airport rental, started booking, checkout rental]
+    weight: 0.14
+    priority: 100
+  - id: car_rental.intent.upgrade
+    type: intent_match
+    label: upgrade
+    signals: [suv upgrade, premium rental, larger vehicle]
+    weight: 0.12
+    priority: 95
+  - id: car_rental.intent.support
+    type: intent_match
+    label: support
+    signals: [return location, refund, modify booking, cancel rental]
+    weight: 0.12
+    priority: 90
+  - id: car_rental.channel.connected_car
+    type: channel_boost
+    channel: connected_car
+    signals: [return location, fuel, connected car]
+    weight: 0.08
+    priority: 80

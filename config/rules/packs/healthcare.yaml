@@ -1,0 +1,23 @@
+id: healthcare
+domain: healthcare
+priority: 20
+enabled: true
+intent_signals:
+  research: [hcp education, clinical content, obesity product, diabetes education]
+  purchase: [sample request, rep visit]
+  support: [adverse event, safety report]
+journey_signals:
+  research: [clinical education, product information, hcp website]
+  consideration: [therapy information, approved content]
+rules:
+  - id: healthcare.intent.research
+    type: intent_match
+    label: research
+    signals: [hcp education, clinical content, obesity product, diabetes education]
+    weight: 0.14
+    priority: 100
+  - id: healthcare.audience.hcp
+    type: boost
+    signals: [doctor, physician, hcp, healthcare professional]
+    weight: 0.1
+    priority: 90

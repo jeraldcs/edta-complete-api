@@ -10,19 +10,24 @@ from app.ai.outcome_model import OutcomeSimulationModel
 from app.ai.ranker_model import FinalRankerModel
 from app.eml_scoring import preference_adjustment
 from app.eds import EDSScoringEngine
-from app.inference.contracts import InferenceResult, RuleTrace
+from app.inference.contracts import InferenceResult
 from app.inference.providers.distilled_slm_provider import DistilledSLMProvider
 from app.llm.llm_client import LLMClient
 from app.llm.slm_client import SLMClient
 from app.orchestration import HybridAIOrchestrationEngine
-from app.rules.confidence import combined_rules_confidence, rules_signals_used, scenario_rules_ready
+from app.rules.confidence import rules_signals_used
 from app.rules_engine import RulesEngine
+from app.rules_audit import RulesAuditLog
 from app.self_distillation import SelfDistillationStore
 from app.tapl_audit import TAPLAuditLog
 
 
 class RecommendationEngine:
-    def __init__(self, tapl_audit: TAPLAuditLog | None = None):
+    def __init__(
+        self,
+        tapl_audit: TAPLAuditLog | None = None,
+        rules_audit: RulesAuditLog | None = None,
+    ):
         self.intent_model = IntentModel()
         self.journey_model = JourneyStageModel()
         self.tapl_model = TAPLModel()
@@ -42,6 +47,7 @@ class RecommendationEngine:
         self.llm = LLMClient()
         self.orchestrator = HybridAIOrchestrationEngine()
         self.tapl_audit = tapl_audit
+        self.rules_audit = rules_audit
         self.last_inference: InferenceResult | None = None
 
     def _apply_tkge_context(self, context, graph: ContextGraph):
@@ -160,65 +166,41 @@ class RecommendationEngine:
             return intent, journey, route
 
         if route.tier == "rules":
-            if scenario_rules_ready(context):
-                parser_score = float(context.channel_context.get("parser_confidence", 0.9))
-                combined = combined_rules_confidence(
-                    parser_confidence=parser_score,
-                    tkge_intent_confidence=tkge_intent_confidence,
-                    rules_engine_confidence=rules_engine_confidence,
-                )
-                signals = rules_signals_used(
-                    parser_confidence=parser_score,
-                    tkge_intent_confidence=tkge_intent_confidence,
-                    rules_engine_confidence=rules_engine_confidence,
-                )
-                intent = ModelPrediction(
-                    label=context.current_intent.value,
-                    confidence=combined,
-                    source="rules",
-                )
-                journey = ModelPrediction(
-                    label=context.journey_stage.value,
-                    confidence=combined,
-                    source="rules",
-                )
-                self.last_inference = InferenceResult(
-                    tier="rules",
-                    provider="rules_engine",
-                    intent=intent,
-                    journey_stage=journey,
-                    confidence=combined,
-                    signals=signals,
-                    rules_fired=[
-                        RuleTrace(rule_id="scenario_parser", contribution=parser_score, reason="Scenario NLP parser"),
-                        RuleTrace(rule_id="rules_engine", contribution=rules_engine_confidence, reason="Deterministic rules"),
-                        RuleTrace(rule_id="tkge_timeline", contribution=tkge_intent_confidence or 0.0, reason="TKGE timeline boost"),
-                    ],
-                )
-                return intent, journey, route
-
-            intent, journey, confidence = self.rules.infer_from_context(context)
-            combined = combined_rules_confidence(
-                parser_confidence=0.0,
+            rules_result = self.rules.infer_with_trace(
+                context,
+                parser_confidence=parser_confidence,
                 tkge_intent_confidence=tkge_intent_confidence,
-                rules_engine_confidence=confidence,
             )
-            intent = intent.model_copy(update={"confidence": combined, "source": "rules"})
-            journey = journey.model_copy(update={"confidence": combined, "source": "rules"})
             self.last_inference = InferenceResult(
                 tier="rules",
-                provider="rules_engine",
-                intent=intent,
-                journey_stage=journey,
-                confidence=combined,
+                provider=rules_result.provider,
+                intent=rules_result.intent,
+                journey_stage=rules_result.journey,
+                confidence=rules_result.confidence,
                 signals=rules_signals_used(
-                    parser_confidence=0.0,
+                    parser_confidence=rules_result.parser_confidence,
                     tkge_intent_confidence=tkge_intent_confidence,
-                    rules_engine_confidence=confidence,
+                    rules_engine_confidence=rules_result.rules_engine_confidence,
                 ),
-                rules_fired=[RuleTrace(rule_id="rules_engine", contribution=confidence, reason="Deterministic rules")],
+                rules_fired=rules_result.rules_fired,
+                metadata={"domain": rules_result.domain},
             )
-            return intent, journey, route
+            if self.rules_audit:
+                subject_id = None
+                if isinstance(context.profile_attributes, dict):
+                    subject_id = context.profile_attributes.get("experience_memory_subject")
+                self.rules_audit.record(
+                    subject_id=subject_id,
+                    domain=rules_result.domain,
+                    provider=rules_result.provider,
+                    intent_label=rules_result.intent.label,
+                    journey_label=rules_result.journey.label,
+                    confidence=rules_result.confidence,
+                    parser_confidence=rules_result.parser_confidence or None,
+                    tkge_confidence=tkge_intent_confidence,
+                    rules_fired=rules_result.rules_fired,
+                )
+            return rules_result.intent, rules_result.journey, route
 
         if use_ai_models:
             intent, journey = self.intent_model.predict(context_text), self.journey_model.predict(context_text)

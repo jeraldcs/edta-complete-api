@@ -150,6 +150,7 @@ class ScenarioNLPParser:
         context = context.model_copy(update={
             "channel_context": {
                 **channel_context,
+                "source": "free_text_scenario",
                 "parser_confidence": parser_confidence,
             },
         })

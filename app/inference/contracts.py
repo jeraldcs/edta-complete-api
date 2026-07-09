@@ -13,6 +13,7 @@ PUBLIC_INFERENCE_TIERS: tuple[str, ...] = ("rules", "slm", "ml", "llm")
 
 class RuleTrace(BaseModel):
     rule_id: str
+    priority: int = 0
     matched: bool = True
     contribution: float = 0.0
     reason: str = ""
@@ -44,5 +45,6 @@ class InferenceResult(BaseModel):
             "signals": self.signals,
             "sub_source": self.sub_source,
             "fallback_from": self.fallback_from,
+            "domain": self.metadata.get("domain"),
             "rules_fired": [item.model_dump() for item in self.rules_fired],
         }
