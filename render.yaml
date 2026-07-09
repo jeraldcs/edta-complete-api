@@ -27,7 +27,7 @@ services:
       - key: EDTA_EXPOSE_DEMO_API_KEY
         value: true
       - key: EDTA_CORS_ORIGINS
-        sync: false
+        value: https://edta-api.onrender.com
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
