@@ -90,8 +90,10 @@ uvicorn app.main:app --reload --port 8000
 Open:
 
 ```text
-http://localhost:8000/demo
+http://localhost:8000/scenario-demo
 ```
+
+(`/demo` redirects to the same page.)
 
 Swagger:
 
@@ -99,22 +101,15 @@ Swagger:
 http://localhost:8000/docs
 ```
 
-### Web demo features
+### Web demo (`/scenario-demo`)
 
-Main demo (`/demo`):
-
-- **16 catalog-aligned visitor scenarios** grouped by domain (car/travel, hotel, banking, restaurant, mobile, healthcare, chatbot, connected devices)
-- **Architecture panels** for TKGE, EML, HAOE, and OSE populated from each recommendation response
-- **Feedback capture** on the top recommendation (`POST /feedback` with click, convert, or dismiss)
-
-Scenario demo (`/scenario-demo`):
+Single browser demo for the full EDTA stack:
 
 - **Recommend**, **Simulate** (`POST /simulate`), and **Experience memory** (`GET /experience-memory`) modes
+- **100 training scenarios** plus free-text NLP parsing
+- **Architecture panels** for TKGE, EML, HAOE, and OSE
 - **Feedback capture** on the top recommendation (Click / Convert / Dismiss) — updates EML and TKGE timeline
-- NLP parsing drives ranking; training CSV rows contribute **alignment metadata only** (no forced candidate override)
-- Shared architecture panels after each run
-
-Hero image: `static/hero-suv-personalization.svg`
+- Training CSV rows contribute **alignment metadata only** (no forced candidate override)
 
 ## Observability and production hardening
 
@@ -144,7 +139,7 @@ Quick summary:
 1. Push this repo to GitHub
 2. Render → **New Blueprint** → connect repo
 3. Set `EDTA_CORS_ORIGINS` to your Render URL (e.g. `https://edta-api.onrender.com`)
-4. After deploy, open `https://<your-service>.onrender.com/demo`
+4. After deploy, open `https://<your-service>.onrender.com/scenario-demo`
 
 The Docker entrypoint binds to Render's `PORT` automatically.
 
@@ -226,8 +221,8 @@ python scripts/export_openapi.py
 
 - `GET /` — health check with dependency readiness
 - `GET /health` — detailed readiness probe
-- `GET /demo`
-- `GET /scenario-demo`
+- `GET /demo` — redirects to `/scenario-demo`
+- `GET /scenario-demo` — web demo
 - `GET /scenario-examples`
 - `GET /experience-memory?customer_id=...`
 - `GET /experience-memory?anonymous_id=...`

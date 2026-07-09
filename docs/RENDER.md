@@ -12,8 +12,8 @@ This guide deploys the Dockerized EDTA API to [Render](https://render.com) using
 Demo URLs after deploy:
 
 ```text
-https://<your-service>.onrender.com/demo
 https://<your-service>.onrender.com/scenario-demo
+https://<your-service>.onrender.com/demo            # redirects to /scenario-demo
 https://<your-service>.onrender.com/docs
 ```
 
@@ -60,7 +60,7 @@ Mutating endpoints require the key Render generated (or you set):
 X-API-Key: <EDTA_API_KEY>
 ```
 
-When `EDTA_EXPOSE_DEMO_API_KEY=true` (default in `render.yaml`), the web demos load the key from `GET /demo-config` and attach it automatically. Disable this for API-only deployments without browser demos.
+When `EDTA_EXPOSE_DEMO_API_KEY=true` (default in `render.yaml`), the web demo loads the key from `GET /demo-config` and attaches it automatically. Disable this for API-only deployments without a browser demo.
 
 ## Free tier limits
 
@@ -107,4 +107,4 @@ docker build -t edta-api .
 docker run -p 8000:8000 -e EDTA_API_KEY=test -e PORT=8000 edta-api
 ```
 
-Open [http://localhost:8000/demo](http://localhost:8000/demo).
+Open [http://localhost:8000/scenario-demo](http://localhost:8000/scenario-demo).
