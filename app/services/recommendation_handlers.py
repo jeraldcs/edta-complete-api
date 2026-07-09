@@ -82,9 +82,40 @@ class RecommendationHandlers:
     def __init__(self, services: ServiceContainer | None = None):
         self.services = services or container
 
-    def _build_graph(self, enriched_context: CustomerContext, memory_snapshot: ExperienceMemorySnapshot) -> ContextGraph:
+    def _build_graph(
+        self,
+        enriched_context: CustomerContext,
+        memory_snapshot: ExperienceMemorySnapshot,
+        recommendations=None,
+    ) -> ContextGraph:
         prior_snapshot = self.services.graph_store.latest_snapshot(memory_snapshot.subject_id)
         graph = ContextGraph(enriched_context, prior_snapshot=prior_snapshot)
+        if recommendations:
+            for recommendation in recommendations[:3]:
+                graph.record_recommendation(
+                    candidate_id=recommendation.candidate.id,
+                    title=recommendation.candidate.title,
+                    tapl_action=recommendation.ai_score.tapl.action,
+                    channel=str(enriched_context.channel.value),
+                )
+        self.services.graph_store.save_snapshot(memory_snapshot.subject_id, graph.export())
+        return graph
+
+    def _record_feedback_graph(self, event: FeedbackEvent, memory_snapshot: ExperienceMemorySnapshot) -> ContextGraph:
+        prior_snapshot = self.services.graph_store.latest_snapshot(memory_snapshot.subject_id)
+        context = CustomerContext(
+            customer_id=event.customer_id,
+            anonymous_id=event.anonymous_id,
+            channel=event.channel,
+        )
+        graph = ContextGraph(context, prior_snapshot=prior_snapshot)
+        graph.record_feedback(
+            recommendation_id=event.recommendation_id,
+            event_type=event.event_type,
+            converted=bool(event.converted),
+            revenue=float(event.revenue or 0.0),
+            channel=str(event.channel.value),
+        )
         self.services.graph_store.save_snapshot(memory_snapshot.subject_id, graph.export())
         return graph
 
@@ -145,7 +176,7 @@ class RecommendationHandlers:
             prior_graph_snapshot=prior_snapshot,
         )
         memory_after = self.services.experience_memory.record_recommendations(enriched_context, recommendations)
-        graph = self._build_graph(enriched_context, memory_after)
+        graph = self._build_graph(enriched_context, memory_after, recommendations)
         if recommendations:
             top = recommendations[0]
             log_recommendation_audit(
@@ -233,7 +264,7 @@ class RecommendationHandlers:
             prior_graph_snapshot=prior_snapshot,
         )
         memory_after = self.services.experience_memory.record_recommendations(enriched_context, recommendations)
-        graph = self._build_graph(enriched_context, memory_after)
+        graph = self._build_graph(enriched_context, memory_after, recommendations)
         if recommendations:
             top = recommendations[0]
             log_recommendation_audit(
@@ -291,7 +322,7 @@ class RecommendationHandlers:
             calibration=calibration,
             prior_graph_snapshot=prior_snapshot,
         )
-        graph = self._build_graph(enriched_context, memory_snapshot)
+        graph = self._build_graph(enriched_context, memory_snapshot, recommendations)
         return RecommendationResponseV1(
             request_summary=RequestSummary(
                 request_id=request_id,
@@ -361,12 +392,14 @@ class RecommendationHandlers:
     def feedback(self, event: FeedbackEvent):
         self.services.feedback_store.append(event)
         memory_snapshot = self.services.experience_memory.record_feedback(event)
+        graph = self._record_feedback_graph(event, memory_snapshot)
         record_feedback(event_type=event.event_type, converted=bool(event.converted))
         return {
             "status": "saved",
             "message": "Feedback captured and experience memory updated.",
             "feedback_count": self.services.feedback_store.count(),
             "experience_memory": memory_snapshot.model_dump(mode="json"),
+            "context_graph": graph.summary(),
         }
 
     def scenario_examples(self):
