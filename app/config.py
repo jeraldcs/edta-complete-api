@@ -50,6 +50,9 @@ class Settings:
         self.tapl_policy_file = Path(
             os.getenv("TAPL_POLICY_FILE", "config/tapl_policies.yaml")
         )
+        self.eml_policy_file = Path(
+            os.getenv("EML_POLICY_FILE", "config/eml_policies.yaml")
+        )
         self.profile_lookup_adapter = os.getenv("PROFILE_LOOKUP_ADAPTER", "json_file")
         self.rate_limit_per_minute = int(os.getenv("EDTA_RATE_LIMIT_PER_MINUTE", "120"))
         self.webhook_timeout_seconds = float(os.getenv("EDTA_WEBHOOK_TIMEOUT_SECONDS", "5.0"))

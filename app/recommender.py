@@ -8,7 +8,7 @@ from app.ai.channel_model import ChannelFitModel
 from app.ai.semantic_similarity import SemanticSimilarityModel
 from app.ai.outcome_model import OutcomeSimulationModel
 from app.ai.ranker_model import FinalRankerModel
-from app.eds import EDSScoringEngine
+from app.eml_scoring import preference_adjustment
 from app.llm.llm_client import LLMClient
 from app.orchestration import HybridAIOrchestrationEngine
 from app.self_distillation import SelfDistillationStore
@@ -246,6 +246,16 @@ class RecommendationEngine:
             if use_ai_models
             else eds_score.final_eds_score
         )
+
+        preferences = context.profile_attributes.get("experience_preferences", {})
+        preference_delta, preference_reasons = preference_adjustment(
+            preferences if isinstance(preferences, dict) else {},
+            candidate,
+            context.channel,
+        )
+        if preference_delta:
+            ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + preference_delta)), 4)
+            reasons.extend(preference_reasons)
 
         if tapl.action.value in {"suppress", "generic_fallback"}:
             final_hybrid = min(ai_rank_score, 0.15)
