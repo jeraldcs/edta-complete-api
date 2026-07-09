@@ -46,5 +46,6 @@ class InferenceResult(BaseModel):
             "sub_source": self.sub_source,
             "fallback_from": self.fallback_from,
             "domain": self.metadata.get("domain"),
+            "models_used": self.metadata.get("models_used"),
             "rules_fired": [item.model_dump() for item in self.rules_fired],
         }

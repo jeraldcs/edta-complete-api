@@ -12,6 +12,20 @@ class SemanticSimilarityModel:
             stop_words="english",
         )
         self._fitted = False
+        self._catalog_docs: list[str] = []
+
+    def warm_start(self, documents: list[str]) -> None:
+        unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
+        if not unique:
+            return
+        self._vectorizer = TfidfVectorizer(
+            ngram_range=(1, 2),
+            max_features=5000,
+            stop_words="english",
+        )
+        self._vectorizer.fit(unique)
+        self._catalog_docs = unique
+        self._fitted = True
 
     def _vectorizer_for(self, documents: list[str]) -> TfidfVectorizer:
         if self._fitted:
