@@ -120,6 +120,7 @@ Single browser demo for the full EDTA stack:
 - **Security headers** — applied on all responses; HSTS in production
 - **Graceful shutdown** — uvicorn `--timeout-graceful-shutdown 30` in Docker entrypoint
 - **Load test baseline** — `python scripts/load_test.py`
+- **Four-tier benchmark** — `python scripts/load_test_tiers.py` (see [docs/BENCHMARKS.md](docs/BENCHMARKS.md))
 
 Operator guides:
 
