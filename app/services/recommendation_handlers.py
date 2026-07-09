@@ -214,6 +214,8 @@ class RecommendationHandlers:
                 inference_mode=request.inference_mode,
                 inference=_inference_summary(self.services.engine),
                 ml_inference=self.services.engine.ml.status(),
+                provider_telemetry=self.services.provider_telemetry.summary(),
+                explanation_routing=self.services.engine.explanation_router.status(),
                 llm_enabled=self.services.llm_client.enabled,
                 llm_status={
                     "recommendation_engine": self.services.engine.llm.status(),
@@ -324,6 +326,8 @@ class RecommendationHandlers:
                 inference_mode=request.inference_mode,
                 inference=_inference_summary(self.services.engine),
                 ml_inference=self.services.engine.ml.status(),
+                provider_telemetry=self.services.provider_telemetry.summary(),
+                explanation_routing=self.services.engine.explanation_router.status(),
                 llm_enabled=self.services.llm_client.enabled,
                 self_distillation=self.services.engine.distillation.status(),
                 haoe=self.services.engine.orchestrator.status(),

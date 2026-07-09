@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import json
 import time
+from dataclasses import dataclass
 from typing import Any
 
+from app.llm.cost_estimator import CompletionUsage, estimate_cost_units, estimate_tokens
 from app.llm.provider_config import ProviderSettings
+
+
+@dataclass(frozen=True)
+class CompletionResult:
+    text: str
+    usage: CompletionUsage
 
 
 class OpenAICompatibleClient:
@@ -15,6 +23,7 @@ class OpenAICompatibleClient:
         self.client = None
         self.last_status = "not_configured"
         self.last_error: str | None = None
+        self.last_usage: CompletionUsage | None = None
         if settings.enabled and (settings.api_key or settings.base_url):
             try:
                 from openai import OpenAI
@@ -70,8 +79,39 @@ class OpenAICompatibleClient:
                 return str(content).strip()
         return ""
 
+    @staticmethod
+    def _build_usage(
+        response: Any,
+        prompt: str,
+        output_text: str,
+        settings: ProviderSettings,
+        operation: str,
+        latency_ms: int,
+    ) -> CompletionUsage:
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            input_tokens = int(getattr(usage, "input_tokens", 0) or getattr(usage, "prompt_tokens", 0) or 0)
+            output_tokens = int(getattr(usage, "output_tokens", 0) or getattr(usage, "completion_tokens", 0) or 0)
+        else:
+            input_tokens = estimate_tokens(prompt)
+            output_tokens = estimate_tokens(output_text)
+        return CompletionUsage(
+            provider=settings.name,
+            operation=operation,
+            model=settings.model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            estimated_cost_units=estimate_cost_units(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost_per_1k_input=settings.cost_per_1k_input_tokens,
+                cost_per_1k_output=settings.cost_per_1k_output_tokens,
+            ),
+            latency_ms=latency_ms,
+        )
+
     def status(self) -> dict[str, Any]:
-        return {
+        payload = {
             "provider": self.settings.name,
             "driver": self.settings.driver,
             "api_mode": self.settings.api_mode,
@@ -81,14 +121,25 @@ class OpenAICompatibleClient:
             "timeout_seconds": self.settings.timeout_seconds,
             "max_retries": self.settings.max_retries,
             "remote_available": self.settings.remote_available,
+            "cost_per_1k_input_tokens": self.settings.cost_per_1k_input_tokens,
+            "cost_per_1k_output_tokens": self.settings.cost_per_1k_output_tokens,
             "last_status": self.last_status,
             "last_error": self.last_error,
         }
+        if self.last_usage is not None:
+            payload["last_usage"] = {
+                "input_tokens": self.last_usage.input_tokens,
+                "output_tokens": self.last_usage.output_tokens,
+                "estimated_cost_units": self.last_usage.estimated_cost_units,
+                "latency_ms": self.last_usage.latency_ms,
+            }
+        return payload
 
-    def chat_text(self, prompt: str, *, temperature: float = 0.1) -> str:
+    def complete_text(self, prompt: str, *, operation: str, temperature: float = 0.1) -> CompletionResult:
         if self.client is None:
             raise RuntimeError(f"{self.settings.name} client is not configured.")
         last_error: Exception | None = None
+        started = time.perf_counter()
         for attempt in range(self.settings.max_retries + 1):
             try:
                 if self.settings.api_mode == "responses":
@@ -105,9 +156,12 @@ class OpenAICompatibleClient:
                 text = self._response_text(response)
                 if not text:
                     raise RuntimeError("Empty model response.")
+                latency_ms = int((time.perf_counter() - started) * 1000)
+                usage = self._build_usage(response, prompt, text, self.settings, operation, latency_ms)
+                self.last_usage = usage
                 self.last_status = "success"
                 self.last_error = None
-                return text
+                return CompletionResult(text=text, usage=usage)
             except Exception as exc:
                 last_error = exc
                 if attempt >= self.settings.max_retries:
@@ -117,6 +171,9 @@ class OpenAICompatibleClient:
         self.last_error = str(last_error)
         raise last_error or RuntimeError(f"{self.settings.name} request failed.")
 
-    def chat_json(self, prompt: str, *, temperature: float = 0.1) -> Any:
-        text = self.chat_text(prompt, temperature=temperature)
-        return self.parse_json(text)
+    def chat_text(self, prompt: str, *, temperature: float = 0.1, operation: str = "chat_text") -> str:
+        return self.complete_text(prompt, operation=operation, temperature=temperature).text
+
+    def chat_json(self, prompt: str, *, temperature: float = 0.1, operation: str = "chat_json") -> Any:
+        result = self.complete_text(prompt, operation=operation, temperature=temperature)
+        return self.parse_json(result.text)

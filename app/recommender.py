@@ -4,11 +4,13 @@ from app.catalog import DEFAULT_CANDIDATES
 from app.eml_scoring import preference_adjustment
 from app.eds import EDSScoringEngine
 from app.inference.contracts import InferenceResult
+from app.inference.explanation_router import ExplanationRouter
 from app.inference.ml_service import MLInferenceService
 from app.inference.providers.distilled_slm_provider import DistilledSLMProvider
 from app.llm.llm_client import LLMClient
 from app.llm.slm_client import SLMClient
 from app.orchestration import HybridAIOrchestrationEngine
+from app.provider_telemetry import ProviderTelemetryStore
 from app.rules.confidence import rules_signals_used
 from app.rules_engine import RulesEngine
 from app.rules_audit import RulesAuditLog
@@ -21,19 +23,37 @@ class RecommendationEngine:
         self,
         tapl_audit: TAPLAuditLog | None = None,
         rules_audit: RulesAuditLog | None = None,
+        provider_telemetry: ProviderTelemetryStore | None = None,
     ):
         self.ml = MLInferenceService()
         self.eds_engine = EDSScoringEngine()
         self.rules = RulesEngine()
         self.distillation = SelfDistillationStore()
-        self.slm = SLMClient(rules=self.rules, distillation=self.distillation)
+        self.orchestrator = HybridAIOrchestrationEngine()
+        self.provider_telemetry = provider_telemetry
+
+        def _record_provider_cost(cost_units: float) -> None:
+            self.orchestrator.session_cost_units += cost_units
+
+        self.slm = SLMClient(
+            rules=self.rules,
+            distillation=self.distillation,
+            telemetry=provider_telemetry,
+        )
         self.distilled_slm = DistilledSLMProvider(
             distillation=self.distillation,
             rules=self.rules,
             remote_enricher=self.slm.remote_enrich_intent if self.slm.remote and self.slm.remote.client else None,
         )
-        self.llm = LLMClient()
-        self.orchestrator = HybridAIOrchestrationEngine()
+        self.llm = LLMClient(
+            telemetry=provider_telemetry,
+            orchestrator_callback=_record_provider_cost,
+        )
+        self.explanation_router = ExplanationRouter(
+            self.slm,
+            self.llm,
+            on_provider_cost=_record_provider_cost,
+        )
         self.tapl_audit = tapl_audit
         self.rules_audit = rules_audit
         self.last_inference: InferenceResult | None = None
@@ -220,36 +240,25 @@ class RecommendationEngine:
         return intent, journey, route
 
     def _explain(self, candidate, eds_score, ai_breakdown, reasons, context, context_text: str, use_llm_explanation: bool):
-        if use_llm_explanation:
-            llm_text = self.llm.explain_recommendation(
-                context_text=context_text,
-                recommendation_payload={
-                    "candidate_id": candidate.id,
-                    "candidate_title": candidate.title,
-                    "candidate_type": candidate.type,
-                    "eds_score": eds_score.model_dump(),
-                    "ai_score": ai_breakdown.model_dump(mode="json"),
-                    "reason_codes": reasons,
-                    "intent": ai_breakdown.intent.label,
-                    "journey_stage": ai_breakdown.journey_stage.label,
-                    "tapl_action": ai_breakdown.tapl.action.value,
-                    "expected_outcome": ai_breakdown.outcome_simulation.expected_outcome_score,
-                },
-            )
-            if llm_text:
-                return llm_text, "llm"
-            slm_text = self.slm.explain_recommendation(
-                context_text=context_text,
-                recommendation_payload={
-                    "candidate_title": candidate.title,
-                    "intent": ai_breakdown.intent.label,
-                    "journey_stage": ai_breakdown.journey_stage.label,
-                    "tapl_action": ai_breakdown.tapl.action.value,
-                    "expected_outcome": ai_breakdown.outcome_simulation.expected_outcome_score,
-                },
-            )
-            if slm_text:
-                return slm_text, "slm"
+        explanation_payload = {
+            "candidate_id": candidate.id,
+            "candidate_title": candidate.title,
+            "candidate_type": candidate.type,
+            "eds_score": eds_score.model_dump(),
+            "ai_score": ai_breakdown.model_dump(mode="json"),
+            "reason_codes": reasons,
+            "intent": ai_breakdown.intent.label,
+            "journey_stage": ai_breakdown.journey_stage.label,
+            "tapl_action": ai_breakdown.tapl.action.value,
+            "expected_outcome": ai_breakdown.outcome_simulation.expected_outcome_score,
+        }
+        routed_text, routed_source = self.explanation_router.explain(
+            context_text,
+            explanation_payload,
+            use_llm_explanation=use_llm_explanation,
+        )
+        if routed_text:
+            return routed_text, routed_source or "slm"
 
         scenario_keywords = []
         for source in [context.profile_attributes, context.business_context, context.channel_context]:
