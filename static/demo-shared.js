@@ -22,6 +22,28 @@
     if (!memory) {
       return "<p>No experience memory snapshot yet.</p>";
     }
+
+    function preferenceSummary(preferences) {
+      if (!preferences || !Object.keys(preferences).length) {
+        return "None yet";
+      }
+      return Object.entries(preferences)
+        .sort((left, right) => (right[1]?.weight || 0) - (left[1]?.weight || 0))
+        .slice(0, 3)
+        .map(([key, value]) => `${escapeHtml(key.replace(/^candidate:|^channel:|^type:|^category:/, ""))} (${Number(value?.weight || 0).toFixed(2)})`)
+        .join(", ");
+    }
+
+    function historySummary(history) {
+      if (!Array.isArray(history) || !history.length) {
+        return "None yet";
+      }
+      return history.slice(-2).map(item => {
+        const outcome = item.outcome?.event_type || "shown";
+        return `${escapeHtml(item.candidate_id || item.title || "item")}:${escapeHtml(outcome)}`;
+      }).join(", ");
+    }
+
     if (memory.before && memory.after) {
       const before = memory.before;
       const after = memory.after;
@@ -31,6 +53,8 @@
           <div><dt>Trust</dt><dd>${pct(before.trust_score)} → ${pct(after.trust_score)}</dd></div>
           <div><dt>Fatigue</dt><dd>${pct(before.fatigue_score)} → ${pct(after.fatigue_score)}</dd></div>
           <div><dt>Impressions</dt><dd>${escapeHtml(after.outcomes?.impressions ?? before.outcomes?.impressions ?? 0)}</dd></div>
+          <div><dt>Top preferences</dt><dd>${preferenceSummary(after.preferences || before.preferences)}</dd></div>
+          <div><dt>Recent history</dt><dd>${historySummary(after.recommendation_history || before.recommendation_history)}</dd></div>
         </dl>
       `;
     }
@@ -40,6 +64,8 @@
         <div><dt>Trust</dt><dd>${pct(memory.trust_score)}</dd></div>
         <div><dt>Fatigue</dt><dd>${pct(memory.fatigue_score)}</dd></div>
         <div><dt>Impressions</dt><dd>${escapeHtml(memory.outcomes?.impressions ?? 0)}</dd></div>
+        <div><dt>Top preferences</dt><dd>${preferenceSummary(memory.preferences)}</dd></div>
+        <div><dt>Recent history</dt><dd>${historySummary(memory.recommendation_history)}</dd></div>
       </dl>
     `;
   }

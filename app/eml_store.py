@@ -1,18 +1,29 @@
 import json
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.catalog import DEFAULT_CANDIDATES
 from app.db import Database
+from app.eml_policy import EMLPolicyEngine
 from app.models import CustomerContext, ExperienceMemorySnapshot, FeedbackEvent
+
+CANDIDATE_BY_ID = {candidate.id: candidate for candidate in DEFAULT_CANDIDATES}
 
 
 class EMLStore:
     """SQLite-backed Experience Memory Layer with identity resolution."""
 
-    def __init__(self, db: Database | None = None, legacy_json_path: str | Path | None = None):
+    def __init__(
+        self,
+        db: Database | None = None,
+        legacy_json_path: str | Path | None = None,
+        policy: EMLPolicyEngine | None = None,
+    ):
         self.db = db or Database()
         self.legacy_json_path = Path(legacy_json_path) if legacy_json_path else None
+        self.policy = policy or EMLPolicyEngine()
         self.db.init_schema()
         self._migrate_legacy_json()
 
@@ -88,6 +99,138 @@ class EMLStore:
                         """,
                         (subject_id, key, Database.json_dumps(value), 1.0, self._now()),
                     )
+
+    @staticmethod
+    def _parse_iso(value: str | None) -> datetime | None:
+        if not value:
+            return None
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed
+        except ValueError:
+            return None
+
+    def _decay_toward_baseline(self, score: float, baseline: float, age_hours: float, half_life_hours: float) -> float:
+        if half_life_hours <= 0 or age_hours <= 0:
+            return score
+        decay_factor = math.exp(-age_hours / half_life_hours)
+        return baseline + (score - baseline) * decay_factor
+
+    def _apply_score_decay(self, trust_score: float, fatigue_score: float, updated_at: str | None) -> tuple[float, float]:
+        defaults = self.policy.section("defaults")
+        decay = self.policy.section("decay")
+        trust_baseline = float(defaults.get("trust_baseline", 0.65))
+        fatigue_baseline = float(defaults.get("fatigue_baseline", 0.0))
+        timestamp = self._parse_iso(updated_at)
+        if timestamp is None:
+            return trust_score, fatigue_score
+
+        age_hours = max(0.0, (datetime.now(timezone.utc) - timestamp).total_seconds() / 3600.0)
+        decayed_trust = self._decay_toward_baseline(
+            trust_score,
+            trust_baseline,
+            age_hours,
+            float(decay.get("trust_half_life_hours", 168.0)),
+        )
+        decayed_fatigue = self._decay_toward_baseline(
+            fatigue_score,
+            fatigue_baseline,
+            age_hours,
+            float(decay.get("fatigue_half_life_hours", 48.0)),
+        )
+        return round(max(0.0, min(1.0, decayed_trust)), 4), round(max(0.0, min(1.0, decayed_fatigue)), 4)
+
+    def _persist_decayed_scores(
+        self,
+        connection,
+        subject_id: str,
+        trust_score: float,
+        fatigue_score: float,
+        previous_trust: float,
+        previous_fatigue: float,
+    ) -> None:
+        if round(trust_score, 4) == round(previous_trust, 4) and round(fatigue_score, 4) == round(previous_fatigue, 4):
+            return
+        connection.execute(
+            "UPDATE eml_subjects SET trust_score = ?, fatigue_score = ?, updated_at = ? WHERE subject_id = ?",
+            (trust_score, fatigue_score, self._now(), subject_id),
+        )
+
+    def _lookup_candidate(self, recommendation_id: str):
+        return CANDIDATE_BY_ID.get(recommendation_id)
+
+    def _apply_feedback_preferences(
+        self,
+        connection,
+        subject_id: str,
+        recommendation_id: str,
+        event: FeedbackEvent,
+        feedback_policy: dict[str, Any],
+    ) -> None:
+        event_type = event.event_type.lower()
+        candidate = self._lookup_candidate(recommendation_id)
+
+        if event_type == "click":
+            self._update_preference(
+                connection,
+                subject_id,
+                f"candidate:{recommendation_id}",
+                float(feedback_policy.get("click_preference_delta", 0.25)),
+            )
+        elif event_type in {"dismiss", "unsubscribe", "complaint"}:
+            self._update_preference(
+                connection,
+                subject_id,
+                f"candidate:{recommendation_id}",
+                float(feedback_policy.get("dismiss_preference_delta", -0.5)),
+            )
+
+        if not event.converted:
+            return
+
+        self._update_preference(
+            connection,
+            subject_id,
+            f"candidate:{recommendation_id}",
+            float(feedback_policy.get("convert_candidate_preference_delta", 1.0)),
+        )
+        self._update_preference(
+            connection,
+            subject_id,
+            f"channel:{event.channel.value}",
+            float(feedback_policy.get("convert_channel_preference_delta", 0.5)),
+        )
+        if candidate:
+            self._update_preference(
+                connection,
+                subject_id,
+                f"type:{candidate.type}",
+                float(feedback_policy.get("convert_type_preference_delta", 0.35)),
+            )
+            category_delta = float(feedback_policy.get("convert_category_preference_delta", 0.2))
+            for tag in candidate.content_tags[:2]:
+                self._update_preference(connection, subject_id, f"category:{tag.lower()}", category_delta)
+
+    def _exposure_fatigue_delta(self, recommendation: Any) -> float:
+        exposure = self.policy.section("exposure")
+        ai_score = getattr(recommendation, "ai_score", None)
+        tapl = getattr(ai_score, "tapl", None) if ai_score else None
+        action = getattr(getattr(tapl, "action", None), "value", None)
+        if action in {"suppress", "generic_fallback"}:
+            return 0.0
+        if action == "delay":
+            return float(exposure.get("delay_fatigue_delta", 0.01))
+        if action == "soften":
+            return float(exposure.get("soften_fatigue_delta", 0.03))
+        return float(exposure.get("deliver_fatigue_delta", 0.04))
+
+    def _counts_as_impression(self, recommendation: Any) -> bool:
+        ai_score = getattr(recommendation, "ai_score", None)
+        tapl = getattr(ai_score, "tapl", None) if ai_score else None
+        action = getattr(getattr(tapl, "action", None), "value", None)
+        return action not in {"suppress", "generic_fallback", "delay"}
 
     def _upsert_subject(
         self,
@@ -292,6 +435,20 @@ class EMLStore:
                     (subject_id,),
                 ).fetchone()
 
+            trust_score, fatigue_score = self._apply_score_decay(
+                float(row["trust_score"]),
+                float(row["fatigue_score"]),
+                row["updated_at"],
+            )
+            self._persist_decayed_scores(
+                connection,
+                subject_id,
+                trust_score,
+                fatigue_score,
+                float(row["trust_score"]),
+                float(row["fatigue_score"]),
+            )
+
             outcomes_row = connection.execute(
                 "SELECT * FROM eml_outcomes WHERE subject_id = ?",
                 (subject_id,),
@@ -307,8 +464,8 @@ class EMLStore:
             return ExperienceMemorySnapshot(
                 subject_id=subject_id,
                 subject_type=row["subject_type"],
-                trust_score=row["trust_score"],
-                fatigue_score=row["fatigue_score"],
+                trust_score=trust_score,
+                fatigue_score=fatigue_score,
                 preferences=self._load_preferences(connection, subject_id),
                 recommendation_history=self._load_history(connection, subject_id),
                 outcomes=outcomes,
@@ -340,7 +497,13 @@ class EMLStore:
                 "SELECT trust_score, fatigue_score FROM eml_subjects WHERE subject_id = ?",
                 (subject_id,),
             ).fetchone()
-            fatigue_score = min(1.0, float(row["fatigue_score"]) + 0.04 * len(recommendations))
+            fatigue_score = float(row["fatigue_score"])
+            impression_count = 0
+            for item in recommendations:
+                fatigue_score = min(1.0, fatigue_score + self._exposure_fatigue_delta(item))
+                if self._counts_as_impression(item):
+                    impression_count += 1
+
             connection.execute(
                 "UPDATE eml_subjects SET fatigue_score = ?, updated_at = ? WHERE subject_id = ?",
                 (round(fatigue_score, 4), now, subject_id),
@@ -349,6 +512,8 @@ class EMLStore:
             for item in recommendations:
                 candidate = getattr(item, "candidate", None)
                 if candidate is None:
+                    continue
+                if not self._counts_as_impression(item):
                     continue
                 connection.execute(
                     """
@@ -372,7 +537,7 @@ class EMLStore:
                 SET impressions = impressions + ?, last_event_at = ?
                 WHERE subject_id = ?
                 """,
-                (len(recommendations), now, subject_id),
+                (impression_count, now, subject_id),
             )
 
         return self.get_snapshot(context)
@@ -398,30 +563,32 @@ class EMLStore:
         subject_id, subject_type = self.resolve_subject(event)
         now = self._now()
         event_type = event.event_type.lower()
+        feedback_policy = self.policy.section("feedback")
 
         with self.db.transaction() as connection:
             self._upsert_subject(connection, subject_id, subject_type)
             self._ensure_outcomes_row(connection, subject_id)
 
             row = connection.execute(
-                "SELECT trust_score, fatigue_score FROM eml_subjects WHERE subject_id = ?",
+                "SELECT trust_score, fatigue_score, updated_at FROM eml_subjects WHERE subject_id = ?",
                 (subject_id,),
             ).fetchone()
-            trust_score = float(row["trust_score"])
-            fatigue_score = float(row["fatigue_score"])
+            trust_score, fatigue_score = self._apply_score_decay(
+                float(row["trust_score"]),
+                float(row["fatigue_score"]),
+                row["updated_at"],
+            )
 
             if event_type == "click":
-                trust_score = min(1.0, trust_score + 0.03)
-                self._update_preference(connection, subject_id, f"candidate:{event.recommendation_id}", 0.25)
+                trust_score = min(1.0, trust_score + float(feedback_policy.get("click_trust_delta", 0.03)))
             elif event_type in {"dismiss", "unsubscribe", "complaint"}:
-                trust_score = max(0.0, trust_score - 0.08)
-                fatigue_score = min(1.0, fatigue_score + 0.12)
-                self._update_preference(connection, subject_id, f"candidate:{event.recommendation_id}", -0.5)
+                trust_score = max(0.0, trust_score + float(feedback_policy.get("dismiss_trust_delta", -0.08)))
+                fatigue_score = min(1.0, fatigue_score + float(feedback_policy.get("dismiss_fatigue_delta", 0.12)))
 
             if event.converted:
-                trust_score = min(1.0, trust_score + 0.05)
-                self._update_preference(connection, subject_id, f"candidate:{event.recommendation_id}", 1.0)
-                self._update_preference(connection, subject_id, f"channel:{event.channel.value}", 0.5)
+                trust_score = min(1.0, trust_score + float(feedback_policy.get("convert_trust_delta", 0.05)))
+
+            self._apply_feedback_preferences(connection, subject_id, event.recommendation_id, event, feedback_policy)
 
             connection.execute(
                 "UPDATE eml_subjects SET trust_score = ?, fatigue_score = ?, updated_at = ? WHERE subject_id = ?",
