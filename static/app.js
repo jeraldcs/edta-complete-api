@@ -502,6 +502,17 @@ async function submitFeedback(kind) {
     if (statusEl) {
       statusEl.textContent = `Feedback recorded (${eventType}${converted ? ", converted" : ""}). Total events: ${data.feedback_count}.`;
     }
+    if (data.context_graph) {
+      lastResponse.request_summary.context_graph = data.context_graph;
+    }
+    if (data.experience_memory) {
+      lastResponse.request_summary.experience_memory = {
+        before: lastResponse.request_summary.experience_memory?.after
+          || lastResponse.request_summary.experience_memory?.before
+          || {},
+        after: data.experience_memory,
+      };
+    }
     renderArchitecturePanels(architecturePanels, lastResponse.request_summary, rec);
   } catch (error) {
     if (statusEl) {
