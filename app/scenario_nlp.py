@@ -43,6 +43,7 @@ class ScenarioNLPParser:
                     "llm_status": self.llm.status(),
                     "llm_fallback": False,
                     "reason": parsed.get("parse_reason", "scenario parsed by LLM"),
+                    "parser_confidence": context.channel_context.get("parser_confidence", 0.85),
                 }
 
         context, details = self._heuristic_parse(scenario_text)
@@ -60,6 +61,15 @@ class ScenarioNLPParser:
         if not isinstance(parsed, dict):
             return None
         try:
+            channel_context = dict(parsed.get("channel_context") or {})
+            channel_context.setdefault("source", "free_text_scenario")
+            try:
+                channel_context["parser_confidence"] = round(
+                    max(0.0, min(1.0, float(parsed.get("confidence", 0.85)))),
+                    4,
+                )
+            except (TypeError, ValueError):
+                channel_context["parser_confidence"] = 0.85
             return CustomerContext(**{
                 "customer_id": parsed.get("customer_id"),
                 "anonymous_id": parsed.get("anonymous_id") or "scenario-user",
@@ -70,12 +80,35 @@ class ScenarioNLPParser:
                 "search_terms": parsed.get("search_terms") or [],
                 "profile_attributes": parsed.get("profile_attributes") or {},
                 "business_context": parsed.get("business_context") or {},
-                "channel_context": parsed.get("channel_context") or {},
+                "channel_context": channel_context,
                 "device_context": parsed.get("device_context") or {},
                 "consent": parsed.get("consent") or {"personalization": True, "profile_lookup": True},
             })
         except Exception:
             return None
+
+    @staticmethod
+    def _estimate_parser_confidence(
+        domain: str,
+        intent: IntentType,
+        journey: JourneyStage,
+        keywords: list[str],
+        search_terms: list[str],
+    ) -> float:
+        score = 0.45
+        if domain and domain != "general":
+            score += 0.15
+        if intent != IntentType.unknown:
+            score += 0.2
+        if journey is not None:
+            score += 0.1
+        if len(keywords) >= 4:
+            score += 0.1
+        elif len(keywords) >= 2:
+            score += 0.05
+        if search_terms:
+            score += 0.05
+        return round(min(0.95, score), 4)
 
     def _heuristic_parse(self, scenario_text: str) -> tuple[CustomerContext, dict[str, Any]]:
         text = scenario_text.strip()
@@ -113,6 +146,13 @@ class ScenarioNLPParser:
             device_context=device_context,
             consent=consent,
         )
+        parser_confidence = self._estimate_parser_confidence(domain, intent, journey, keywords, search_terms)
+        context = context.model_copy(update={
+            "channel_context": {
+                **channel_context,
+                "parser_confidence": parser_confidence,
+            },
+        })
         return context, {
             "parser": "keyword_heuristic",
             "reason": "scenario converted using channel, intent, journey, profile, and context keywords",
@@ -121,6 +161,7 @@ class ScenarioNLPParser:
             "detected_journey_stage": journey.value,
             "detected_domain": domain,
             "keywords": keywords,
+            "parser_confidence": parser_confidence,
         }
 
     @staticmethod

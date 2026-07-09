@@ -70,6 +70,15 @@
     `;
   }
 
+  function formatTierMix(tiers) {
+    if (!tiers || !Object.keys(tiers).length) {
+      return "No routes yet";
+    }
+    return Object.entries(tiers)
+      .map(([tier, count]) => `${escapeHtml(pretty(tier))}: ${escapeHtml(count)}`)
+      .join(", ");
+  }
+
   function renderArchitecturePanels(container, summary, topRecommendation) {
     if (!container) {
       return;
@@ -80,6 +89,9 @@
     const oseCalibration = summary.ose_calibration || {};
     const outcome = topRecommendation?.ai_score?.outcome_simulation || {};
     const orchestration = topRecommendation?.ai_score?.orchestration || {};
+    const intentSource = topRecommendation?.ai_score?.intent?.source || "unknown";
+    const journeySource = topRecommendation?.ai_score?.journey_stage?.source || "unknown";
+    const parserConfidence = summary.nlp?.parser_confidence;
 
     container.innerHTML = `
       <article class="architecture-card">
@@ -105,8 +117,12 @@
         <dl>
           <div><dt>Route tier</dt><dd>${escapeHtml(pretty(orchestration.tier || haoe.distilled_tier_name || "unknown"))}</dd></div>
           <div><dt>Reason</dt><dd>${escapeHtml(orchestration.reason || "Waiting for recommendation.")}</dd></div>
+          <div><dt>Intent / journey source</dt><dd>${escapeHtml(pretty(intentSource))} / ${escapeHtml(pretty(journeySource))}</dd></div>
+          <div><dt>Parser confidence</dt><dd>${parserConfidence != null ? pct(parserConfidence) : "n/a"}</dd></div>
           <div><dt>Est. latency</dt><dd>${escapeHtml(orchestration.estimated_latency_ms ?? "-")} ms</dd></div>
           <div><dt>Session cost</dt><dd>${escapeHtml(haoe.session_cost_units ?? 0)} / ${escapeHtml(haoe.cost_budget ?? "-")}</dd></div>
+          <div><dt>Circuit breaker</dt><dd>${escapeHtml(haoe.llm_circuit_open ? "Open" : "Closed")}</dd></div>
+          <div><dt>Route mix</dt><dd>${formatTierMix(haoe.telemetry?.tiers)}</dd></div>
         </dl>
       </article>
       <article class="architecture-card">
