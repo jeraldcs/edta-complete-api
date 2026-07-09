@@ -2,14 +2,15 @@ import os
 
 from app.haoe_policy import HAOEPolicyEngine
 from app.haoe_telemetry import HAOETelemetryStore
+from app.inference.contracts import PUBLIC_INFERENCE_TIERS
 from app.models import CustomerContext, IntentType, OrchestrationDecision
+from app.rules.confidence import combined_rules_confidence, scenario_rules_ready
 
 
 class HybridAIOrchestrationEngine:
-    """Routes inference to the cheapest tier that should be reliable enough."""
+    """Routes inference to the cheapest public tier that should be reliable enough."""
 
-    DISTILLED_TIER = "distilled_pattern"
-    TKGE_TIER = "tkge"
+    SLM_TIER = "slm"
 
     def __init__(
         self,
@@ -57,6 +58,16 @@ class HybridAIOrchestrationEngine:
         )
 
     @staticmethod
+    def _normalize_inference_mode(mode: str) -> str:
+        normalized = (mode or "auto").strip().lower()
+        aliases = {
+            "distilled_pattern": "slm",
+            "distilled": "slm",
+            "tkge": "rules",
+        }
+        return aliases.get(normalized, normalized)
+
+    @staticmethod
     def _parser_confidence(context: CustomerContext, parser_confidence: float | None) -> float:
         if parser_confidence is not None:
             return max(0.0, min(1.0, float(parser_confidence)))
@@ -67,20 +78,6 @@ class HybridAIOrchestrationEngine:
         if channel_context.get("source") == "free_text_scenario":
             return 0.9
         return 0.0
-
-    def _should_escalate_from_rules(
-        self,
-        parser_confidence: float,
-        tkge_intent_confidence: float | None,
-    ) -> bool:
-        confidence_cfg = self.policy.section("confidence")
-        rules_min = float(confidence_cfg.get("rules_min_confidence", 0.75))
-        delta = float(confidence_cfg.get("tkge_escalate_above_parser_delta", 0.15))
-        if parser_confidence < rules_min:
-            return True
-        if tkge_intent_confidence is None:
-            return False
-        return tkge_intent_confidence >= rules_min and (tkge_intent_confidence - parser_confidence) >= delta
 
     def _is_ambiguous(self, context: CustomerContext, context_text: str) -> bool:
         ambiguity = self.policy.section("ambiguity")
@@ -102,42 +99,41 @@ class HybridAIOrchestrationEngine:
         context_text: str,
         use_ai_models: bool,
         use_llm: bool,
+        use_slm: bool,
         llm_enabled: bool,
+        slm_enabled: bool,
         distilled_pattern_available: bool,
         parser_confidence: float | None = None,
         tkge_intent_confidence: float | None = None,
         tkge_inferred_intent: str | None = None,
+        rules_engine_confidence: float = 0.0,
+        inference_mode: str = "auto",
     ) -> OrchestrationDecision:
-        confidence_cfg = self.policy.section("confidence")
-        rules_min = float(confidence_cfg.get("rules_min_confidence", 0.75))
-        tkge_min = float(confidence_cfg.get("tkge_min_confidence", 0.55))
-        parser_score = self._parser_confidence(context, parser_confidence)
-        llm_cost = self.policy.cost("llm")
-
-        scenario_rules_ready = (
-            context.current_intent is not None
-            and context.journey_stage is not None
-            and context.current_intent != IntentType.unknown
-            and isinstance(context.channel_context, dict)
-            and context.channel_context.get("source") == "free_text_scenario"
-        )
-        if scenario_rules_ready and not self._should_escalate_from_rules(parser_score, tkge_intent_confidence):
+        mode = self._normalize_inference_mode(inference_mode)
+        if mode in PUBLIC_INFERENCE_TIERS:
             return self._finalize(self._decision(
-                "rules",
-                f"Scenario parser supplied intent and journey (confidence={parser_score:.2f}).",
+                mode,
+                f"Inference mode forced to {mode} for benchmarking or explicit request control.",
             ))
 
-        if scenario_rules_ready and self._should_escalate_from_rules(parser_score, tkge_intent_confidence):
-            if (
-                use_ai_models
-                and tkge_inferred_intent
-                and tkge_inferred_intent != IntentType.unknown.value
-                and (tkge_intent_confidence or 0.0) >= tkge_min
-            ):
-                return self._finalize(self._decision(
-                    self.TKGE_TIER,
-                    "Parser confidence was low or TKGE timeline strongly disagrees; using temporal graph inference.",
-                ))
+        confidence_cfg = self.policy.section("confidence")
+        rules_min = float(confidence_cfg.get("rules_min_confidence", 0.75))
+        parser_score = self._parser_confidence(context, parser_confidence)
+        combined_rules = combined_rules_confidence(
+            parser_confidence=parser_score,
+            tkge_intent_confidence=tkge_intent_confidence,
+            rules_engine_confidence=rules_engine_confidence,
+        )
+        llm_cost = self.policy.cost("llm")
+
+        if scenario_rules_ready(context) and combined_rules >= rules_min:
+            tkge_note = ""
+            if tkge_intent_confidence is not None and tkge_intent_confidence >= rules_min:
+                tkge_note = f" TKGE timeline boosted confidence to {combined_rules:.2f}."
+            return self._finalize(self._decision(
+                "rules",
+                f"Scenario parser and rules confidence met threshold ({combined_rules:.2f}).{tkge_note}",
+            ))
 
         high_ambiguity = self._is_ambiguous(context, context_text)
         if use_llm and llm_enabled and not self.llm_circuit_open:
@@ -159,22 +155,17 @@ class HybridAIOrchestrationEngine:
                 "LLM circuit breaker is open after repeated failures; using local ML.",
             ))
 
-        if distilled_pattern_available and use_ai_models:
+        slm_cfg = self.policy.section("slm")
+        slm_allowed = slm_enabled and slm_cfg.get("enabled", True)
+        if use_slm and slm_allowed and use_ai_models:
+            if distilled_pattern_available:
+                return self._finalize(self._decision(
+                    self.SLM_TIER,
+                    "Distilled pattern memory match available under the unified SLM tier.",
+                ))
             return self._finalize(self._decision(
-                self.DISTILLED_TIER,
-                "A distilled local pattern memory match was found for this request.",
-            ))
-
-        if (
-            use_ai_models
-            and tkge_inferred_intent
-            and tkge_inferred_intent != IntentType.unknown.value
-            and (tkge_intent_confidence or 0.0) >= tkge_min
-            and (high_ambiguity or parser_score < rules_min)
-        ):
-            return self._finalize(self._decision(
-                self.TKGE_TIER,
-                "Temporal graph inference selected because parser or ML context is uncertain.",
+                self.SLM_TIER,
+                "Local SLM route selected for deployed inference without external LLM dependency.",
             ))
 
         if use_ai_models:
@@ -195,8 +186,8 @@ class HybridAIOrchestrationEngine:
             "llm_failures": self.llm_failures,
             "llm_circuit_open": self.llm_circuit_open,
             "failure_threshold": self.failure_threshold,
-            "distilled_tier_name": self.DISTILLED_TIER,
-            "tkge_tier_name": self.TKGE_TIER,
+            "public_tiers": list(PUBLIC_INFERENCE_TIERS),
+            "slm_tier_name": self.SLM_TIER,
             "policy_file": str(self.policy.policy_path),
             "telemetry": self.telemetry.summary(),
         }

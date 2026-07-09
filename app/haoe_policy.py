@@ -9,6 +9,7 @@ DEFAULT_POLICIES: dict[str, Any] = {
     "costs": {
         "llm": 1.0,
         "ml": 0.05,
+        "slm": 0.02,
         "distilled_pattern": 0.02,
         "tkge": 0.01,
         "rules": 0.0,
@@ -16,6 +17,7 @@ DEFAULT_POLICIES: dict[str, Any] = {
     "latency_ms": {
         "llm": 900,
         "ml": 45,
+        "slm": 35,
         "distilled_pattern": 35,
         "tkge": 20,
         "rules": 5,

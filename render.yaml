@@ -32,3 +32,7 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
+      - key: SLM_ENABLED
+        value: true
+      - key: LLM_REQUEST_TIMEOUT
+        value: "30"

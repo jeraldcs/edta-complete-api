@@ -336,15 +336,11 @@ class ContextGraph:
         ])
 
     def infer_intent(self) -> tuple[str, float]:
+        from app.rules.loader import get_rules_config
+
         weighted_terms = self._weighted_terms()
         text = self.to_text().lower()
-        signal_map = {
-            IntentType.purchase.value: ["book", "checkout", "buy", "reserve", "quote", "price", "converted", "purchase"],
-            IntentType.support.value: ["help", "issue", "maintenance", "return", "repair", "support"],
-            IntentType.upgrade.value: ["upgrade", "premium", "suv", "larger", "better"],
-            IntentType.retention.value: ["renew", "loyalty", "churn", "cancel", "retain"],
-            IntentType.research.value: ["compare", "research", "browse", "learn", "options", "dismiss"],
-        }
+        signal_map = get_rules_config().signal_map("intent_signals")
         best_label = IntentType.unknown.value
         best_score = 0.0
         for label, signals in signal_map.items():

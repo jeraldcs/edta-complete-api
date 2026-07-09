@@ -9,8 +9,14 @@ from app.ai.semantic_similarity import SemanticSimilarityModel
 from app.ai.outcome_model import OutcomeSimulationModel
 from app.ai.ranker_model import FinalRankerModel
 from app.eml_scoring import preference_adjustment
+from app.eds import EDSScoringEngine
+from app.inference.contracts import InferenceResult, RuleTrace
+from app.inference.providers.distilled_slm_provider import DistilledSLMProvider
 from app.llm.llm_client import LLMClient
+from app.llm.slm_client import SLMClient
 from app.orchestration import HybridAIOrchestrationEngine
+from app.rules.confidence import combined_rules_confidence, rules_signals_used, scenario_rules_ready
+from app.rules_engine import RulesEngine
 from app.self_distillation import SelfDistillationStore
 from app.tapl_audit import TAPLAuditLog
 
@@ -25,10 +31,18 @@ class RecommendationEngine:
         self.outcome_model = OutcomeSimulationModel()
         self.ranker_model = FinalRankerModel()
         self.eds_engine = EDSScoringEngine()
+        self.rules = RulesEngine()
+        self.distillation = SelfDistillationStore()
+        self.slm = SLMClient(rules=self.rules, distillation=self.distillation)
+        self.distilled_slm = DistilledSLMProvider(
+            distillation=self.distillation,
+            rules=self.rules,
+            remote_enricher=self.slm.remote_enrich_intent if self.slm.client is not None else None,
+        )
         self.llm = LLMClient()
         self.orchestrator = HybridAIOrchestrationEngine()
-        self.distillation = SelfDistillationStore()
         self.tapl_audit = tapl_audit
+        self.last_inference: InferenceResult | None = None
 
     def _apply_tkge_context(self, context, graph: ContextGraph):
         updates = {}
@@ -46,92 +60,186 @@ class RecommendationEngine:
             return context.model_copy(update=updates)
         return context
 
-    def _resolve_predictions(self, context, context_text: str, use_ai_models: bool, use_llm: bool, graph: ContextGraph):
+    def _prediction_from_enrichment(self, enriched: dict, source: str, context, distill_min_confidence: float, context_text: str):
+        intent_label = enriched.get("intent", IntentType.unknown.value)
+        journey_label = enriched.get(
+            "journey_stage",
+            (context.journey_stage or JourneyStage.research).value,
+        )
+        try:
+            intent_label = IntentType(intent_label).value
+        except ValueError:
+            intent_label = IntentType.unknown.value
+        try:
+            journey_label = JourneyStage(journey_label).value
+        except ValueError:
+            journey_label = (context.journey_stage or JourneyStage.research).value
+        try:
+            confidence = float(enriched.get("confidence", 0.0))
+        except (TypeError, ValueError):
+            confidence = 0.0
+        confidence = max(0.0, min(1.0, confidence))
+        intent = ModelPrediction(label=intent_label, confidence=round(confidence, 4), source=source)
+        journey = ModelPrediction(label=journey_label, confidence=round(confidence, 4), source=source)
+        teacher = "llm" if source == "llm" else "slm"
+        self.distillation.learn(context_text, intent, journey, teacher=teacher, min_confidence=distill_min_confidence)
+        return intent, journey
+
+    def _resolve_predictions(
+        self,
+        context,
+        context_text: str,
+        use_ai_models: bool,
+        use_llm: bool,
+        use_slm: bool,
+        inference_mode: str,
+        graph: ContextGraph,
+    ):
         policy = self.orchestrator.policy
         distilled_cfg = policy.section("distilled")
         min_overlap = float(distilled_cfg.get("min_token_overlap", 0.35))
         distill_min_confidence = float(distilled_cfg.get("distill_min_confidence", 0.75))
 
+        self.last_inference = None
         distilled_prediction = self.distillation.predict(context_text, min_overlap=min_overlap)
         tkge_intent, tkge_intent_confidence = graph.infer_intent()
+        _, _, rules_engine_confidence = self.rules.infer_from_context(context)
+        parser_confidence = None
+        if isinstance(getattr(context, "channel_context", None), dict):
+            stored = context.channel_context.get("parser_confidence")
+            if stored is not None:
+                parser_confidence = float(stored)
+
         route = self.orchestrator.choose_route(
             context=context,
             context_text=context_text,
             use_ai_models=use_ai_models,
             use_llm=use_llm,
+            use_slm=use_slm,
             llm_enabled=self.llm.enabled,
+            slm_enabled=self.slm.enabled,
             distilled_pattern_available=distilled_prediction is not None,
+            parser_confidence=parser_confidence,
             tkge_intent_confidence=tkge_intent_confidence,
             tkge_inferred_intent=tkge_intent,
+            rules_engine_confidence=rules_engine_confidence,
+            inference_mode=inference_mode,
         )
 
         if route.tier == "llm":
             enriched = self.llm.enrich_intent(context_text)
             if enriched:
                 self.orchestrator.record_llm_success()
-                intent_label = enriched.get("intent", IntentType.unknown.value)
-                journey_label = enriched.get(
-                    "journey_stage",
-                    (context.journey_stage or JourneyStage.research).value,
+                intent, journey = self._prediction_from_enrichment(
+                    enriched, "llm", context, distill_min_confidence, context_text
                 )
-
-                try:
-                    intent_label = IntentType(intent_label).value
-                except ValueError:
-                    intent_label = IntentType.unknown.value
-
-                try:
-                    journey_label = JourneyStage(journey_label).value
-                except ValueError:
-                    journey_label = (context.journey_stage or JourneyStage.research).value
-
-                try:
-                    confidence = float(enriched.get("confidence", 0.0))
-                except (TypeError, ValueError):
-                    confidence = 0.0
-
-                confidence = max(0.0, min(1.0, confidence))
-                intent = ModelPrediction(label=intent_label, confidence=round(confidence, 4), source="llm")
-                journey = ModelPrediction(label=journey_label, confidence=round(confidence, 4), source="llm")
-                self.distillation.learn(context_text, intent, journey, teacher="llm", min_confidence=distill_min_confidence)
+                confidence = max(intent.confidence, journey.confidence)
+                self.last_inference = InferenceResult(
+                    tier="llm",
+                    provider="llm_client",
+                    intent=intent,
+                    journey_stage=journey,
+                    confidence=confidence,
+                    signals=["llm_teacher"],
+                )
                 return intent, journey, route
             self.orchestrator.record_llm_failure()
 
-        if route.tier == HybridAIOrchestrationEngine.TKGE_TIER:
-            inferred_journey, journey_confidence = graph.infer_journey_stage()
-            return (
-                ModelPrediction(label=tkge_intent, confidence=tkge_intent_confidence, source="tkge"),
-                ModelPrediction(label=inferred_journey, confidence=journey_confidence, source="tkge"),
-                route,
-            )
+        if route.tier == HybridAIOrchestrationEngine.SLM_TIER:
+            intent, journey, inference = self.distilled_slm.infer(context_text, min_overlap=min_overlap)
+            self.last_inference = inference
+            if inference.sub_source in {"slm_endpoint", "distilled_pattern"}:
+                teacher = "slm" if inference.sub_source == "slm_endpoint" else "slm"
+                self.distillation.learn(
+                    context_text,
+                    intent,
+                    journey,
+                    teacher=teacher,
+                    min_confidence=distill_min_confidence,
+                )
+            return intent, journey, route
 
-        if route.tier == "rules" and (
-            getattr(context, "current_intent", None)
-            and getattr(context, "journey_stage", None)
-            and isinstance(getattr(context, "channel_context", None), dict)
-            and context.channel_context.get("source") == "free_text_scenario"
-        ):
-            return (
-                ModelPrediction(label=context.current_intent.value, confidence=0.9, source="scenario_nlp"),
-                ModelPrediction(label=context.journey_stage.value, confidence=0.9, source="scenario_nlp"),
-                route,
-            )
+        if route.tier == "rules":
+            if scenario_rules_ready(context):
+                parser_score = float(context.channel_context.get("parser_confidence", 0.9))
+                combined = combined_rules_confidence(
+                    parser_confidence=parser_score,
+                    tkge_intent_confidence=tkge_intent_confidence,
+                    rules_engine_confidence=rules_engine_confidence,
+                )
+                signals = rules_signals_used(
+                    parser_confidence=parser_score,
+                    tkge_intent_confidence=tkge_intent_confidence,
+                    rules_engine_confidence=rules_engine_confidence,
+                )
+                intent = ModelPrediction(
+                    label=context.current_intent.value,
+                    confidence=combined,
+                    source="rules",
+                )
+                journey = ModelPrediction(
+                    label=context.journey_stage.value,
+                    confidence=combined,
+                    source="rules",
+                )
+                self.last_inference = InferenceResult(
+                    tier="rules",
+                    provider="rules_engine",
+                    intent=intent,
+                    journey_stage=journey,
+                    confidence=combined,
+                    signals=signals,
+                    rules_fired=[
+                        RuleTrace(rule_id="scenario_parser", contribution=parser_score, reason="Scenario NLP parser"),
+                        RuleTrace(rule_id="rules_engine", contribution=rules_engine_confidence, reason="Deterministic rules"),
+                        RuleTrace(rule_id="tkge_timeline", contribution=tkge_intent_confidence or 0.0, reason="TKGE timeline boost"),
+                    ],
+                )
+                return intent, journey, route
 
-        distilled_tiers = {HybridAIOrchestrationEngine.DISTILLED_TIER, "slm"}
-        if route.tier in distilled_tiers and distilled_prediction:
-            return (*distilled_prediction, route)
+            intent, journey, confidence = self.rules.infer_from_context(context)
+            combined = combined_rules_confidence(
+                parser_confidence=0.0,
+                tkge_intent_confidence=tkge_intent_confidence,
+                rules_engine_confidence=confidence,
+            )
+            intent = intent.model_copy(update={"confidence": combined, "source": "rules"})
+            journey = journey.model_copy(update={"confidence": combined, "source": "rules"})
+            self.last_inference = InferenceResult(
+                tier="rules",
+                provider="rules_engine",
+                intent=intent,
+                journey_stage=journey,
+                confidence=combined,
+                signals=rules_signals_used(
+                    parser_confidence=0.0,
+                    tkge_intent_confidence=tkge_intent_confidence,
+                    rules_engine_confidence=confidence,
+                ),
+                rules_fired=[RuleTrace(rule_id="rules_engine", contribution=confidence, reason="Deterministic rules")],
+            )
+            return intent, journey, route
 
         if use_ai_models:
             intent, journey = self.intent_model.predict(context_text), self.journey_model.predict(context_text)
             if intent.label == IntentType.unknown.value:
                 inferred_intent, inferred_confidence = graph.infer_intent()
                 if inferred_intent != IntentType.unknown.value:
-                    intent = ModelPrediction(label=inferred_intent, confidence=inferred_confidence, source="tkge")
+                    intent = ModelPrediction(label=inferred_intent, confidence=inferred_confidence, source="ml+tkge")
             if journey.confidence < 0.5 or journey.label == JourneyStage.research.value:
                 inferred_journey, inferred_confidence = graph.infer_journey_stage()
                 if inferred_confidence >= journey.confidence:
-                    journey = ModelPrediction(label=inferred_journey, confidence=inferred_confidence, source="tkge")
+                    journey = ModelPrediction(label=inferred_journey, confidence=inferred_confidence, source="ml+tkge")
             self.distillation.learn(context_text, intent, journey, teacher="local_ml", min_confidence=distill_min_confidence)
+            confidence = max(intent.confidence, journey.confidence)
+            self.last_inference = InferenceResult(
+                tier="ml",
+                provider="local_ml",
+                intent=intent,
+                journey_stage=journey,
+                confidence=confidence,
+                signals=["local_classifiers", "tkge_timeline"],
+            )
             return intent, journey, route
 
         inferred_intent, inferred_confidence = graph.infer_intent()
@@ -139,11 +247,17 @@ class RecommendationEngine:
         intent_label = context.current_intent.value if context.current_intent else inferred_intent
         journey_label = context.journey_stage.value if context.journey_stage else inferred_journey
         confidence = 1.0 if context.current_intent or context.journey_stage else max(inferred_confidence, journey_confidence)
-        return (
-            ModelPrediction(label=intent_label, confidence=confidence, source="input_or_tkge"),
-            ModelPrediction(label=journey_label, confidence=confidence, source="input_or_tkge"),
-            route,
+        intent = ModelPrediction(label=intent_label, confidence=confidence, source="rules")
+        journey = ModelPrediction(label=journey_label, confidence=confidence, source="rules")
+        self.last_inference = InferenceResult(
+            tier="rules",
+            provider="rules_engine",
+            intent=intent,
+            journey_stage=journey,
+            confidence=confidence,
+            signals=["input_or_tkge"],
         )
+        return intent, journey, route
 
     def _explain(self, candidate, eds_score, ai_breakdown, reasons, context, context_text: str, use_llm_explanation: bool):
         if use_llm_explanation:
@@ -156,10 +270,26 @@ class RecommendationEngine:
                     "eds_score": eds_score.model_dump(),
                     "ai_score": ai_breakdown.model_dump(mode="json"),
                     "reason_codes": reasons,
+                    "intent": ai_breakdown.intent.label,
+                    "journey_stage": ai_breakdown.journey_stage.label,
+                    "tapl_action": ai_breakdown.tapl.action.value,
+                    "expected_outcome": ai_breakdown.outcome_simulation.expected_outcome_score,
                 },
             )
             if llm_text:
                 return llm_text, "llm"
+            slm_text = self.slm.explain_recommendation(
+                context_text=context_text,
+                recommendation_payload={
+                    "candidate_title": candidate.title,
+                    "intent": ai_breakdown.intent.label,
+                    "journey_stage": ai_breakdown.journey_stage.label,
+                    "tapl_action": ai_breakdown.tapl.action.value,
+                    "expected_outcome": ai_breakdown.outcome_simulation.expected_outcome_score,
+                },
+            )
+            if slm_text:
+                return slm_text, "slm"
 
         scenario_keywords = []
         for source in [context.profile_attributes, context.business_context, context.channel_context]:
@@ -323,7 +453,9 @@ class RecommendationEngine:
         limit=3,
         use_ai_models=True,
         use_llm=False,
+        use_slm=False,
         use_llm_explanation=False,
+        inference_mode="auto",
         calibration=None,
         prior_graph_snapshot=None,
     ):
@@ -337,6 +469,8 @@ class RecommendationEngine:
             context_text,
             use_ai_models,
             use_llm,
+            use_slm,
+            inference_mode,
             graph,
         )
 
@@ -390,6 +524,8 @@ class RecommendationEngine:
             context_text,
             use_ai_models,
             use_llm=False,
+            use_slm=False,
+            inference_mode="auto",
             graph=graph,
         )
 
