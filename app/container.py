@@ -7,6 +7,7 @@ from app.graph_store import GraphStore
 from app.llm.llm_client import LLMClient
 from app.profile_service import ProfileLookupService
 from app.recommender import RecommendationEngine
+from app.rules_audit import RulesAuditLog
 from app.scenario_nlp import ScenarioNLPParser
 from app.tapl_audit import TAPLAuditLog
 
@@ -18,7 +19,11 @@ class ServiceContainer:
         self.database = Database(str(settings.edta_db_path))
         self.graph_store = GraphStore(self.database)
         self.tapl_audit = TAPLAuditLog(self.database)
-        self.engine = RecommendationEngine(tapl_audit=self.tapl_audit)
+        self.rules_audit = RulesAuditLog(self.database)
+        self.engine = RecommendationEngine(
+            tapl_audit=self.tapl_audit,
+            rules_audit=self.rules_audit,
+        )
         self.llm_client = LLMClient()
         self.profile_service = ProfileLookupService()
         self.scenario_parser = ScenarioNLPParser()

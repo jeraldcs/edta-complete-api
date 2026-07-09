@@ -112,6 +112,23 @@ class Database:
                     recorded_at TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS rules_audit (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject_id TEXT,
+                    domain TEXT,
+                    provider TEXT NOT NULL,
+                    intent_label TEXT NOT NULL,
+                    journey_label TEXT NOT NULL,
+                    confidence REAL NOT NULL,
+                    parser_confidence REAL,
+                    tkge_confidence REAL,
+                    rules_fired_json TEXT NOT NULL,
+                    recorded_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_rules_audit_recorded
+                    ON rules_audit(recorded_at DESC);
+
                 CREATE TABLE IF NOT EXISTS haoe_telemetry (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     tier TEXT NOT NULL,

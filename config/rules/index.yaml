@@ -1,0 +1,34 @@
+packs_dir: packs
+packs:
+  - id: base
+    file: base.yaml
+    domain: "*"
+    priority: 0
+    enabled: true
+  - id: car_rental
+    file: car_rental.yaml
+    domain: car_rental
+    aliases: [travel]
+    priority: 20
+    enabled: true
+  - id: hotel
+    file: hotel.yaml
+    domain: hotel
+    aliases: [lodging]
+    priority: 20
+    enabled: true
+  - id: restaurant
+    file: restaurant.yaml
+    domain: restaurant
+    priority: 20
+    enabled: true
+  - id: healthcare
+    file: healthcare.yaml
+    domain: healthcare
+    priority: 20
+    enabled: true
+  - id: banking
+    file: banking.yaml
+    domain: banking
+    priority: 20
+    enabled: true

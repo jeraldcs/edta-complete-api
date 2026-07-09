@@ -122,6 +122,8 @@
           <div><dt>Public tiers</dt><dd>${escapeHtml(publicTiers)}</dd></div>
           <div><dt>Sub-source</dt><dd>${escapeHtml(pretty(inference.sub_source || "n/a"))}</dd></div>
           <div><dt>Inference confidence</dt><dd>${inference.confidence != null ? pct(inference.confidence) : "n/a"}</dd></div>
+          <div><dt>Rules provider</dt><dd>${escapeHtml(pretty(inference.provider || "n/a"))}</dd></div>
+          <div><dt>Rules fired</dt><dd>${escapeHtml((inference.rules_fired || []).slice(0, 4).map(item => item.rule_id).join(", ") || "None yet")}</dd></div>
           <div><dt>Reason</dt><dd>${escapeHtml(orchestration.reason || "Waiting for recommendation.")}</dd></div>
           <div><dt>Intent / journey source</dt><dd>${escapeHtml(pretty(intentSource))} / ${escapeHtml(pretty(journeySource))}</dd></div>
           <div><dt>Parser confidence</dt><dd>${parserConfidence != null ? pct(parserConfidence) : "n/a"}</dd></div>

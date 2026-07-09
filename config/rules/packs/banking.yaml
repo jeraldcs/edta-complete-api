@@ -1,0 +1,25 @@
+id: banking
+domain: banking
+priority: 20
+enabled: true
+intent_signals:
+  research: [compare credit card, loan rates, mortgage options, rewards]
+  purchase: [apply credit card, loan application, open account]
+  support: [fraud issue, account help, dispute charge]
+  retention: [loyalty rewards, churn banking]
+journey_signals:
+  consideration: [compare rates, eligibility, shortlist product]
+  purchase: [apply, application, checkout]
+rules:
+  - id: banking.intent.research
+    type: intent_match
+    label: research
+    signals: [compare credit card, loan rates, mortgage options, rewards]
+    weight: 0.14
+    priority: 100
+  - id: banking.intent.purchase
+    type: intent_match
+    label: purchase
+    signals: [apply credit card, loan application, open account]
+    weight: 0.12
+    priority: 95

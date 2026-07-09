@@ -1,0 +1,32 @@
+id: hotel
+domain: hotel
+priority: 20
+enabled: true
+aliases: [lodging]
+intent_signals:
+  purchase: [hotel reservation, reserve room, book stay, checkout hotel]
+  upgrade: [suite upgrade, premium room, room upgrade]
+  support: [cancellation policy, reservation issue, change room]
+  research: [room availability, hotel rates, compare rooms, amenities]
+journey_signals:
+  consideration: [availability, compare rooms, shortlist hotel]
+  purchase: [reserve room, checkout hotel, book stay]
+rules:
+  - id: hotel.intent.purchase
+    type: intent_match
+    label: purchase
+    signals: [reserve hotel, book stay, checkout hotel, hotel reservation]
+    weight: 0.14
+    priority: 100
+  - id: hotel.intent.upgrade
+    type: intent_match
+    label: upgrade
+    signals: [suite upgrade, premium room, room upgrade]
+    weight: 0.12
+    priority: 95
+  - id: hotel.intent.support
+    type: intent_match
+    label: support
+    signals: [reservation issue, cancellation policy, change room]
+    weight: 0.12
+    priority: 90
