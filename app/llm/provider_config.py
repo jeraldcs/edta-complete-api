@@ -21,6 +21,8 @@ DEFAULT_PROVIDERS: dict[str, Any] = {
             "default_timeout_seconds": 30,
             "max_retries_env": "LLM_MAX_RETRIES",
             "default_max_retries": 2,
+            "cost_per_1k_input_tokens": 0.00015,
+            "cost_per_1k_output_tokens": 0.0006,
         },
         "slm": {
             "driver": "openai_compatible",
@@ -37,13 +39,19 @@ DEFAULT_PROVIDERS: dict[str, Any] = {
             "max_retries_env": "SLM_MAX_RETRIES",
             "default_max_retries": 1,
             "remote_requires_base_url": True,
+            "cost_per_1k_input_tokens": 0.0,
+            "cost_per_1k_output_tokens": 0.0,
         },
         "distilled": {
             "store_path_env": "DISTILLED_SLM_FILE",
             "default_store_path": "data/distilled_slm_memory.json",
             "min_overlap": 0.35,
         },
-    }
+    },
+    "explanation": {
+        "prefer_slm_first": True,
+        "allow_llm_escalation": True,
+    },
 }
 
 
@@ -59,6 +67,8 @@ class ProviderSettings:
     timeout_seconds: float
     max_retries: int
     remote_available: bool
+    cost_per_1k_input_tokens: float = 0.0
+    cost_per_1k_output_tokens: float = 0.0
 
 
 class InferenceProviderConfig:
@@ -85,7 +95,13 @@ class InferenceProviderConfig:
             else:
                 merged_providers[name] = values
         merged["providers"] = merged_providers
+        if isinstance(loaded.get("explanation"), dict):
+            merged["explanation"] = {**merged.get("explanation", {}), **loaded["explanation"]}
         return merged
+
+    def explanation_config(self) -> dict[str, Any]:
+        section = self.config.get("explanation", DEFAULT_PROVIDERS.get("explanation", {}))
+        return section if isinstance(section, dict) else {}
 
     def section(self, name: str) -> dict[str, Any]:
         section = self.config.get("providers", {}).get(name, {})
@@ -138,6 +154,9 @@ class InferenceProviderConfig:
         if name == "llm" and section.get("enabled_when_env_set"):
             enabled = bool(os.getenv(str(section["enabled_when_env_set"])))
 
+        cost_in = float(section.get("cost_per_1k_input_tokens", 0.0))
+        cost_out = float(section.get("cost_per_1k_output_tokens", 0.0))
+
         return ProviderSettings(
             name=name,
             driver=driver,
@@ -149,6 +168,8 @@ class InferenceProviderConfig:
             timeout_seconds=timeout_seconds,
             max_retries=max_retries,
             remote_available=remote_available and base_url is not None if remote_requires_base_url else enabled,
+            cost_per_1k_input_tokens=cost_in,
+            cost_per_1k_output_tokens=cost_out,
         )
 
 

@@ -139,6 +139,21 @@ class Database:
                     recorded_at TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS provider_telemetry (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    provider TEXT NOT NULL,
+                    operation TEXT NOT NULL,
+                    model TEXT,
+                    input_tokens INTEGER NOT NULL DEFAULT 0,
+                    output_tokens INTEGER NOT NULL DEFAULT 0,
+                    estimated_cost_units REAL NOT NULL DEFAULT 0,
+                    latency_ms INTEGER NOT NULL DEFAULT 0,
+                    recorded_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_provider_telemetry_recorded
+                    ON provider_telemetry(recorded_at DESC);
+
                 CREATE TABLE IF NOT EXISTS async_jobs (
                     id TEXT PRIMARY KEY,
                     job_type TEXT NOT NULL,

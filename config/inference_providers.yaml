@@ -11,6 +11,8 @@ providers:
     default_timeout_seconds: 30
     max_retries_env: LLM_MAX_RETRIES
     default_max_retries: 2
+    cost_per_1k_input_tokens: 0.00015
+    cost_per_1k_output_tokens: 0.0006
   slm:
     driver: openai_compatible
     api_mode: chat
@@ -26,7 +28,13 @@ providers:
     max_retries_env: SLM_MAX_RETRIES
     default_max_retries: 1
     remote_requires_base_url: true
+    cost_per_1k_input_tokens: 0.0
+    cost_per_1k_output_tokens: 0.0
   distilled:
     store_path_env: DISTILLED_SLM_FILE
     default_store_path: data/distilled_slm_memory.json
     min_overlap: 0.35
+
+explanation:
+  prefer_slm_first: true
+  allow_llm_escalation: true

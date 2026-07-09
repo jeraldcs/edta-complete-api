@@ -7,8 +7,8 @@ from app.llm.openai_compatible_client import OpenAICompatibleClient
 from app.llm.prompt_templates import enrich_intent_prompt, explain_recommendation_prompt
 from app.llm.provider_config import ProviderSettings, get_inference_provider_config
 from app.models import IntentType, JourneyStage
+from app.provider_telemetry import ProviderTelemetryStore
 from app.rules_engine import RulesEngine
-from app.scenario_nlp import ScenarioNLPParser
 from app.self_distillation import SelfDistillationStore
 
 
@@ -25,14 +25,18 @@ class SLMClient:
         *,
         rules: RulesEngine | None = None,
         distillation: SelfDistillationStore | None = None,
+        telemetry: ProviderTelemetryStore | None = None,
     ):
         self.settings = get_inference_provider_config().provider_settings("slm")
         self.model = model or self.settings.model
         self.enabled = self.settings.enabled
         self.base_url = self.settings.base_url
         self.timeout_seconds = self.settings.timeout_seconds
+        self.telemetry = telemetry
         self.distillation = distillation or SelfDistillationStore()
         self.rules = rules or RulesEngine()
+        from app.scenario_nlp import ScenarioNLPParser
+
         self.parser = ScenarioNLPParser()
         self.remote: OpenAICompatibleClient | None = None
         self.last_status = "ready" if self.enabled else "disabled"
@@ -81,7 +85,13 @@ class SLMClient:
         if self.remote is None or self.remote.client is None:
             return None
         try:
-            payload = self.remote.chat_json(enrich_intent_prompt(context_text))
+            result = self.remote.complete_text(
+                enrich_intent_prompt(context_text),
+                operation="slm_enrich_intent",
+            )
+            if self.telemetry is not None:
+                self.telemetry.record(result.usage)
+            payload = self.remote.parse_json(result.text)
             self.last_status = "remote_slm_success"
             self.last_error = None
             return payload
@@ -114,10 +124,14 @@ class SLMClient:
             return None
         if self.remote is not None and self.remote.client is not None:
             try:
-                text = self.remote.chat_text(
+                result = self.remote.complete_text(
                     explain_recommendation_prompt(context_text, recommendation_payload),
+                    operation="slm_explain_recommendation",
                     temperature=0.2,
                 )
+                if self.telemetry is not None:
+                    self.telemetry.record(result.usage)
+                text = result.text.strip()
                 if text:
                     self.last_status = "remote_explanation_generated"
                     return text

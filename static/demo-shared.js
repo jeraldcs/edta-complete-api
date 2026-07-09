@@ -126,6 +126,7 @@
           <div><dt>Rules fired</dt><dd>${escapeHtml((inference.rules_fired || []).slice(0, 4).map(item => item.rule_id).join(", ") || "None yet")}</dd></div>
           <div><dt>ML catalog warmed</dt><dd>${escapeHtml(String(summary.ml_inference?.catalog_warmed ?? "n/a"))}</dd></div>
           <div><dt>SLM mode</dt><dd>${escapeHtml(pretty(summary.llm_status?.slm_engine?.mode || "n/a"))}</dd></div>
+          <div><dt>Explanation routing</dt><dd>${escapeHtml(pretty(summary.explanation_routing?.prefer_slm_first ? "slm first" : "llm first"))}</dd></div>
           <div><dt>Reason</dt><dd>${escapeHtml(orchestration.reason || "Waiting for recommendation.")}</dd></div>
           <div><dt>Intent / journey source</dt><dd>${escapeHtml(pretty(intentSource))} / ${escapeHtml(pretty(journeySource))}</dd></div>
           <div><dt>Parser confidence</dt><dd>${parserConfidence != null ? pct(parserConfidence) : "n/a"}</dd></div>

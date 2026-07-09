@@ -4,8 +4,8 @@ from app.events import EventBus, JobStore
 from app.experience_memory import ExperienceMemoryLayer
 from app.feedback_store import FeedbackStore
 from app.graph_store import GraphStore
-from app.llm.llm_client import LLMClient
 from app.profile_service import ProfileLookupService
+from app.provider_telemetry import ProviderTelemetryStore
 from app.recommender import RecommendationEngine
 from app.rules_audit import RulesAuditLog
 from app.scenario_nlp import ScenarioNLPParser
@@ -20,11 +20,13 @@ class ServiceContainer:
         self.graph_store = GraphStore(self.database)
         self.tapl_audit = TAPLAuditLog(self.database)
         self.rules_audit = RulesAuditLog(self.database)
+        self.provider_telemetry = ProviderTelemetryStore(self.database)
         self.engine = RecommendationEngine(
             tapl_audit=self.tapl_audit,
             rules_audit=self.rules_audit,
+            provider_telemetry=self.provider_telemetry,
         )
-        self.llm_client = LLMClient()
+        self.llm_client = self.engine.llm
         self.profile_service = ProfileLookupService()
         self.scenario_parser = ScenarioNLPParser()
         self.experience_memory = ExperienceMemoryLayer(
