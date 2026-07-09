@@ -1,0 +1,32 @@
+providers:
+  llm:
+    driver: openai_compatible
+    api_mode: responses
+    enabled_when_env_set: OPENAI_API_KEY
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+    model_env: OPENAI_MODEL
+    default_model: gpt-4o-mini
+    timeout_env: LLM_REQUEST_TIMEOUT
+    default_timeout_seconds: 30
+    max_retries_env: LLM_MAX_RETRIES
+    default_max_retries: 2
+  slm:
+    driver: openai_compatible
+    api_mode: chat
+    enabled_env: SLM_ENABLED
+    default_enabled: true
+    base_url_env: SLM_BASE_URL
+    api_key_env: SLM_API_KEY
+    model_env: SLM_MODEL
+    default_model: edta-local-slm
+    default_api_key: local-slm
+    timeout_env: SLM_REQUEST_TIMEOUT
+    default_timeout_seconds: 15
+    max_retries_env: SLM_MAX_RETRIES
+    default_max_retries: 1
+    remote_requires_base_url: true
+  distilled:
+    store_path_env: DISTILLED_SLM_FILE
+    default_store_path: data/distilled_slm_memory.json
+    min_overlap: 0.35

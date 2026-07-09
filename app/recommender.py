@@ -30,7 +30,7 @@ class RecommendationEngine:
         self.distilled_slm = DistilledSLMProvider(
             distillation=self.distillation,
             rules=self.rules,
-            remote_enricher=self.slm.remote_enrich_intent if self.slm.client is not None else None,
+            remote_enricher=self.slm.remote_enrich_intent if self.slm.remote and self.slm.remote.client else None,
         )
         self.llm = LLMClient()
         self.orchestrator = HybridAIOrchestrationEngine()

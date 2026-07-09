@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import json
-import os
 from typing import Any, Optional
 
 from app.inference.providers.distilled_slm_provider import DistilledSLMProvider
+from app.llm.openai_compatible_client import OpenAICompatibleClient
+from app.llm.prompt_templates import enrich_intent_prompt, explain_recommendation_prompt
+from app.llm.provider_config import ProviderSettings, get_inference_provider_config
 from app.models import IntentType, JourneyStage
 from app.rules_engine import RulesEngine
 from app.scenario_nlp import ScenarioNLPParser
@@ -14,42 +15,50 @@ from app.self_distillation import SelfDistillationStore
 class SLMClient:
     """Local Small Language Model strategy for deployed environments.
 
-    Public surface mirrors LLMClient; inference runs through DistilledSLMProvider:
-    distilled pattern memory -> optional OpenAI-compatible endpoint -> rules fallback.
+    Unified SLM tier: distilled pattern memory -> optional OpenAI-compatible
+    endpoint -> rules fallback. Works with no external API when SLM_BASE_URL is unset.
     """
 
     def __init__(
         self,
-        model: str = "edta-local-slm",
+        model: str | None = None,
         *,
         rules: RulesEngine | None = None,
         distillation: SelfDistillationStore | None = None,
     ):
-        self.model = os.getenv("SLM_MODEL", model)
-        self.enabled = os.getenv("SLM_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
-        self.base_url = os.getenv("SLM_BASE_URL") or None
-        self.api_key = os.getenv("SLM_API_KEY") or "local-slm"
-        self.timeout_seconds = float(os.getenv("SLM_REQUEST_TIMEOUT", "15"))
+        self.settings = get_inference_provider_config().provider_settings("slm")
+        self.model = model or self.settings.model
+        self.enabled = self.settings.enabled
+        self.base_url = self.settings.base_url
+        self.timeout_seconds = self.settings.timeout_seconds
         self.distillation = distillation or SelfDistillationStore()
         self.rules = rules or RulesEngine()
         self.parser = ScenarioNLPParser()
-        self.client = None
+        self.remote: OpenAICompatibleClient | None = None
         self.last_status = "ready" if self.enabled else "disabled"
         self.last_error = None
-        if self.base_url:
-            try:
-                from openai import OpenAI
-
-                self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout_seconds)
-                self.last_status = "remote_endpoint_ready"
-            except Exception as exc:
-                self.client = None
-                self.last_status = "remote_endpoint_init_failed"
-                self.last_error = str(exc)
+        if self.enabled and self.settings.base_url:
+            remote_settings = ProviderSettings(
+                name=self.settings.name,
+                driver=self.settings.driver,
+                api_mode="chat",
+                enabled=True,
+                model=self.model,
+                api_key=self.settings.api_key,
+                base_url=self.settings.base_url,
+                timeout_seconds=self.settings.timeout_seconds,
+                max_retries=self.settings.max_retries,
+                remote_available=True,
+            )
+            self.remote = OpenAICompatibleClient(remote_settings)
+            self.last_status = self.remote.last_status
+            self.last_error = self.remote.last_error
+        elif self.enabled:
+            self.last_status = "local_only"
         self.provider = DistilledSLMProvider(
             distillation=self.distillation,
             rules=self.rules,
-            remote_enricher=self.remote_enrich_intent if self.client is not None else None,
+            remote_enricher=self.remote_enrich_intent if self.remote and self.remote.client else None,
         )
 
     def status(self) -> dict[str, Any]:
@@ -58,44 +67,24 @@ class SLMClient:
             "enabled": self.enabled,
             "model": self.model,
             "base_url": self.base_url,
+            "adapter": "openai_compatible",
+            "mode": "distilled_pattern_only" if not self.base_url else "distilled_plus_remote",
             "last_status": self.last_status,
             "last_error": self.last_error,
             "pattern_count": provider_status.get("pattern_count", 0),
             "strategy": "distilled_slm_unified",
             "provider": provider_status,
+            "remote": self.remote.status() if self.remote else None,
         }
 
-    @staticmethod
-    def _parse_json(text: str) -> Any:
-        cleaned = text.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.strip("`")
-            cleaned = cleaned.removeprefix("json").strip()
-        start = min([index for index in [cleaned.find("{"), cleaned.find("[")] if index >= 0], default=0)
-        end = max(cleaned.rfind("}"), cleaned.rfind("]"))
-        if end >= start:
-            cleaned = cleaned[start:end + 1]
-        return json.loads(cleaned)
-
     def remote_enrich_intent(self, context_text: str) -> Optional[dict[str, Any]]:
-        if self.client is None:
+        if self.remote is None or self.remote.client is None:
             return None
-        prompt = f"""
-Analyze this customer session context and return JSON only.
-Context:
-{context_text}
-Return schema: {{"intent":"research|purchase|support|retention|upgrade|unknown","confidence":0.0,"journey_stage":"awareness|research|consideration|purchase|service|retention","reason":"short reason"}}
-"""
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-            )
-            content = response.choices[0].message.content or ""
+            payload = self.remote.chat_json(enrich_intent_prompt(context_text))
             self.last_status = "remote_slm_success"
             self.last_error = None
-            return self._parse_json(content)
+            return payload
         except Exception as exc:
             self.last_status = "remote_slm_failed"
             self.last_error = str(exc)
@@ -123,18 +112,12 @@ Return schema: {{"intent":"research|purchase|support|retention|upgrade|unknown",
     ) -> Optional[str]:
         if not self.enabled:
             return None
-        if self.client is not None:
-            prompt = (
-                "Explain this recommendation in under 70 words using the payload JSON.\n"
-                f"Context:\n{context_text}\nPayload:\n{json.dumps(recommendation_payload, indent=2)}"
-            )
+        if self.remote is not None and self.remote.client is not None:
             try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
+                text = self.remote.chat_text(
+                    explain_recommendation_prompt(context_text, recommendation_payload),
                     temperature=0.2,
                 )
-                text = (response.choices[0].message.content or "").strip()
                 if text:
                     self.last_status = "remote_explanation_generated"
                     return text
