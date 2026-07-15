@@ -66,6 +66,9 @@ class RequestSummary(BaseModel):
     parsed_context: Optional[Dict[str, Any]] = None
     training_alignment: Optional[TrainingAlignmentSummary] = None
     candidate_preselection: Optional[CandidatePreselectionSummary] = None
+    empathy: Optional[Dict[str, Any]] = None
+    enrichment: Optional[Dict[str, Any]] = None
+    tco: Optional[Dict[str, Any]] = None
     simulation: Optional[str] = None
     comparison: Optional[str] = None
     winner_candidate_id: Optional[str] = None

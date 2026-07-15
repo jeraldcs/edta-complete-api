@@ -166,6 +166,9 @@ class RankedRecommendation(BaseModel):
     reason_codes: List[str]
     explanation: str
     explanation_source: str = "local"
+    empathy_match: Optional[Dict[str, Any]] = None
+    tco: Optional[Dict[str, Any]] = None
+    enrichment_notes: List[str] = Field(default_factory=list)
 
 
 class RecommendationRequest(BaseModel):
@@ -187,6 +190,17 @@ class ScenarioRecommendationRequest(BaseModel):
     use_slm: bool = False
     use_llm_explanation: bool = False
     inference_mode: str = "auto"
+    include_empathy: bool = False
+    destination: Optional[str] = None
+    route_miles: Optional[float] = Field(default=None, ge=0)
+    rental_days: int = Field(default=3, ge=1, le=30)
+
+
+class EmpathySimulationRequest(BaseModel):
+    scenario_text: str = Field(min_length=10, max_length=4000)
+    destination: Optional[str] = None
+    route_miles: Optional[float] = Field(default=None, ge=0)
+    rental_days: int = Field(default=3, ge=1, le=30)
 
 
 class RecommendationResponse(BaseModel):

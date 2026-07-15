@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EDTA Empathy Engine Simulator</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body class="scenario-page empathy-page">
+  <main>
+    <section class="scenario-hero">
+      <nav class="topbar scenario-topbar" aria-label="Primary">
+        <div class="nav-links">
+          <a href="/scenario-demo">EDTA demo</a>
+          <a href="/empathy-demo" aria-current="page">Empathy Engine</a>
+          <a href="/docs">Swagger</a>
+        </div>
+      </nav>
+      <div class="scenario-hero-content">
+        <h1>Empathy Engine Simulator</h1>
+        <p class="hero-subtitle">
+          Adjust trip details to see hidden constraints, live weather/terrain enrichment,
+          cost-to-drive economics, and a tailored recommendation pitch.
+        </p>
+      </div>
+    </section>
+
+    <section class="site-section scenario-workbench">
+      <article class="scenario-input-panel">
+        <div class="panel-title-row">
+          <span class="step-badge">Trip input</span>
+          <p>Try a preset or edit your own scenario</p>
+        </div>
+        <div class="empathy-preset-row">
+          <button type="button" class="example-chip empathy-preset" data-preset="family">Grandmother + toddler</button>
+          <button type="button" class="example-chip empathy-preset" data-preset="pch">PCH road trip</button>
+          <button type="button" class="example-chip empathy-preset" data-preset="dorm">College dorm move</button>
+          <button type="button" class="example-chip empathy-preset" data-preset="denver">Denver winter (500 mi)</button>
+        </div>
+        <label class="scenario-text-label" for="empathyScenarioText">
+          <span class="eyebrow">Scenario</span>
+          <strong>What the user says</strong>
+        </label>
+        <textarea id="empathyScenarioText" rows="5">Traveling with my 80-year-old grandmother and toddler. Need a rental car for a week-long family trip.</textarea>
+
+        <div class="empathy-controls-grid">
+          <label>
+            <span class="eyebrow">Destination</span>
+            <input id="empathyDestination" type="text" placeholder="Optional override"/>
+          </label>
+          <label>
+            <span class="eyebrow">Route miles</span>
+            <input id="empathyRouteMiles" type="number" min="0" step="1" placeholder="e.g. 500"/>
+          </label>
+          <label>
+            <span class="eyebrow">Rental days</span>
+            <input id="empathyRentalDays" type="number" min="1" max="30" value="7"/>
+          </label>
+        </div>
+
+        <div class="scenario-actions">
+          <button id="empathyRunBtn" type="button">Run Empathy Engine</button>
+        </div>
+        <div id="empathyStatus" class="scenario-status">Ready</div>
+      </article>
+    </section>
+
+    <section class="site-section scenario-results">
+      <div id="empathyLoading" class="loading hidden">
+        <div class="spinner"></div>
+        <span>Extracting hidden needs and enriching route data...</span>
+      </div>
+
+      <div class="empathy-results-grid">
+        <article class="offer-card empathy-panel">
+          <h2>Hidden needs</h2>
+          <div id="empathyHiddenNeeds" class="empathy-panel-body">Run the simulator to see implicit constraints.</div>
+        </article>
+        <article class="offer-card empathy-panel">
+          <h2>Weather &amp; terrain</h2>
+          <div id="empathyEnrichment" class="empathy-panel-body">Live or stub enrichment appears here.</div>
+        </article>
+        <article class="offer-card empathy-panel">
+          <h2>Cost-to-drive (TCO)</h2>
+          <div id="empathyTco" class="empathy-panel-body">Fuel and total trip cost comparisons.</div>
+        </article>
+        <article class="offer-card empathy-panel empathy-panel-wide">
+          <h2>Tailored recommendation pitch</h2>
+          <div id="empathyPitch" class="empathy-panel-body empathy-pitch">Your empathy-aware pitch will appear here.</div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/demo-api.js"></script>
+  <script src="/static/demo-shared.js"></script>
+  <script src="/static/empathy_app.js"></script>
+</body>
+</html>

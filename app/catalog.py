@@ -1,4 +1,48 @@
+import json
+from functools import lru_cache
+from pathlib import Path
+
 from app.models import RecommendationCandidate, Channel, IntentType, JourneyStage
+
+VEHICLE_CATALOG_PATH = Path("data/catalog/vehicles.json")
+
+
+@lru_cache(maxsize=1)
+def vehicle_specs_by_id() -> dict[str, dict]:
+    if not VEHICLE_CATALOG_PATH.exists():
+        return {}
+    payload = json.loads(VEHICLE_CATALOG_PATH.read_text(encoding="utf-8"))
+    return {item["id"]: item for item in payload.get("vehicles", [])}
+
+
+def vehicle_candidates() -> list[RecommendationCandidate]:
+    candidates: list[RecommendationCandidate] = []
+    for spec in vehicle_specs_by_id().values():
+        tags = ["travel", "car rental", "vehicle", spec.get("fuel_type", "gas")]
+        if spec.get("awd"):
+            tags.append("awd")
+        if spec.get("convertible"):
+            tags.append("convertible")
+        if spec.get("cargo_volume_cu_ft", 0) >= 50:
+            tags.append("cargo")
+        candidates.append(
+            RecommendationCandidate(
+                id=spec["id"],
+                title=spec["title"],
+                type="offer",
+                channel=Channel.web,
+                description=spec.get("description", ""),
+                intent_tags=[IntentType.purchase, IntentType.upgrade],
+                journey_tags=[JourneyStage.consideration, JourneyStage.purchase],
+                content_tags=tags,
+                business_value=0.75,
+                margin_weight=0.60,
+                inventory_weight=0.70,
+                compliance_sensitivity=0.05,
+            )
+        )
+    return candidates
+
 
 DEFAULT_CANDIDATES = [
     RecommendationCandidate(

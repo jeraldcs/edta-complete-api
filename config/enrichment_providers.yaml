@@ -1,0 +1,41 @@
+weather:
+  cache_ttl_seconds: 3600
+  stub_destinations:
+    denver:
+      forecast: snow
+      wind_mph: 25
+      note: Snow is forecast along your route.
+    colorado:
+      forecast: snow
+      wind_mph: 22
+      note: Winter conditions expected in the mountains.
+    seattle:
+      forecast: heavy_rain
+      wind_mph: 18
+      note: Heavy rain is forecast during your rental window.
+
+route:
+  elevation_threshold_ft: 5000
+  stub_routes:
+    denver:
+      max_elevation_ft: 7200
+      steep_grade: true
+      distance_miles: 180
+    "pacific coast":
+      max_elevation_ft: 1200
+      steep_grade: false
+      distance_miles: 450
+    pch:
+      max_elevation_ft: 1200
+      steep_grade: false
+      distance_miles: 450
+
+gas_price:
+  default_usd_per_gallon: 3.85
+  by_state:
+    CA: 4.65
+    CO: 3.55
+    WA: 4.20
+
+fallback:
+  mode: rules_only

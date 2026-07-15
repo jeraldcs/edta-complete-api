@@ -372,6 +372,19 @@ class RecommendationEngine:
             ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + preference_delta)), 4)
             reasons.extend(preference_reasons)
 
+        business_context = context.business_context if isinstance(context.business_context, dict) else {}
+        empathy_ranking = business_context.get("empathy_ranking") or {}
+        empathy_entry = empathy_ranking.get(candidate.id)
+        if empathy_entry:
+            empathy_score = float(empathy_entry.get("match_score") or 0.0)
+            empathy_boost = round(empathy_score * 0.18, 4)
+            if empathy_boost:
+                ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + empathy_boost)), 4)
+                reasons.append(f"empathy_constraint_match:{empathy_score:.2f}")
+                satisfied = empathy_entry.get("satisfied") or []
+                if satisfied:
+                    reasons.append(f"empathy_satisfied:{','.join(satisfied[:4])}")
+
         if tapl.action.value in {"suppress", "generic_fallback"}:
             final_hybrid = min(ai_rank_score, 0.15)
             reasons.append("tapl_governance_block_or_fallback")

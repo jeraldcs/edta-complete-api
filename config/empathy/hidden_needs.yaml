@@ -1,0 +1,80 @@
+patterns:
+  elderly_mobility:
+    triggers:
+      - grandmother
+      - grandfather
+      - 80-year-old
+      - elderly
+      - mobility
+      - wheelchair
+    constraints:
+      - low_step_in
+      - wide_door_opening
+      - easy_entry
+    persona: elderly_passenger
+
+  toddler_family:
+    triggers:
+      - toddler
+      - infant
+      - car seat
+      - isofix
+      - child seat
+    constraints:
+      - isofix_anchors
+      - rear_legroom
+    persona: toddler_family
+
+  scenic_couple:
+    triggers:
+      - pacific coast
+      - pch
+      - road trip
+      - partner
+      - scenic
+      - convertible
+    constraints:
+      - panoramic_roof
+      - convertible_option
+      - premium_audio
+      - handling
+    persona: couple_leisure
+
+  dorm_move:
+    triggers:
+      - college
+      - dorm
+      - moving
+      - haul
+      - move in
+    constraints:
+      - fold_flat_seats
+      - wide_tailgate
+      - cargo_volume
+    persona: college_move
+
+  mountain_drive:
+    triggers:
+      - denver
+      - colorado
+      - mountains
+      - elevation
+      - steep
+    constraints:
+      - awd_preferred
+      - strong_engine
+    persona: mountain_travel
+
+constraint_weights:
+  low_step_in: 0.15
+  isofix_anchors: 0.12
+  rear_legroom: 0.10
+  panoramic_roof: 0.08
+  convertible_option: 0.10
+  premium_audio: 0.06
+  handling: 0.08
+  fold_flat_seats: 0.12
+  wide_tailgate: 0.08
+  cargo_volume: 0.12
+  awd_preferred: 0.15
+  strong_engine: 0.08
