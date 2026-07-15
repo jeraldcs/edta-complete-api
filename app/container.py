@@ -1,5 +1,6 @@
 from app.config import settings
 from app.db import Database
+from app.empathy.service import EmpathyEngine
 from app.events import EventBus, JobStore
 from app.experience_memory import ExperienceMemoryLayer
 from app.feedback_store import FeedbackStore
@@ -29,6 +30,7 @@ class ServiceContainer:
         self.llm_client = self.engine.llm
         self.profile_service = ProfileLookupService()
         self.scenario_parser = ScenarioNLPParser()
+        self.empathy_engine = EmpathyEngine()
         self.experience_memory = ExperienceMemoryLayer(
             memory_path=str(settings.experience_memory_file),
             db_path=str(settings.edta_db_path),

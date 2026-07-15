@@ -29,6 +29,7 @@ from app.models import (
     ScenarioRecommendationRequest,
     SimulationRequest,
     SyntheticTrainingRequest,
+    EmpathySimulationRequest,
 )
 
 
@@ -266,7 +267,25 @@ class RecommendationHandlers:
             }
 
         prior_snapshot, calibration = self._recommendation_runtime(enriched_context, memory_before)
-        preselected = self._scenario_candidates(enriched_context)
+
+        empathy_bundle = None
+        enriched_context, empathy_bundle = self.services.empathy_engine.process(
+            request.scenario_text,
+            enriched_context,
+            include_empathy=request.include_empathy,
+            destination=request.destination,
+            route_miles=request.route_miles,
+            rental_days=request.rental_days,
+        )
+        if empathy_bundle.active:
+            nlp_summary["empathy"] = {
+                "active": True,
+                "persona_tags": empathy_bundle.hidden_needs.persona_tags,
+                "standard_filter_match": empathy_bundle.hidden_needs.standard_filter_match,
+            }
+
+        empathy_candidates = self.services.empathy_engine.candidates_for_context(enriched_context)
+        preselected = empathy_candidates or self._scenario_candidates(enriched_context)
         candidates = preselected if preselected is not None else [
             candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == enriched_context.channel
         ]
@@ -282,6 +301,11 @@ class RecommendationHandlers:
             calibration=calibration,
             prior_graph_snapshot=prior_snapshot,
         )
+        if empathy_bundle and empathy_bundle.active:
+            recommendations, empathy_bundle = self.services.empathy_engine.attach_results(
+                recommendations,
+                empathy_bundle,
+            )
         memory_after = self.services.experience_memory.record_recommendations(enriched_context, recommendations)
         graph = self._build_graph(enriched_context, memory_after, recommendations)
         if recommendations:
@@ -319,6 +343,12 @@ class RecommendationHandlers:
                     enabled=preselected is not None,
                     candidate_count=len(candidates),
                 ),
+                empathy=empathy_bundle.model_dump_public() if empathy_bundle and empathy_bundle.active else None,
+                enrichment=empathy_bundle.enrichment.model_dump() if empathy_bundle and empathy_bundle.active else None,
+                tco={
+                    "comparisons": [item.model_dump() for item in empathy_bundle.tco_comparisons],
+                    "top_pitch": empathy_bundle.empathy_pitch,
+                } if empathy_bundle and empathy_bundle.active and empathy_bundle.tco_comparisons else None,
                 use_ai_models=request.use_ai_models,
                 use_llm=request.use_llm,
                 use_slm=request.use_slm,
@@ -436,6 +466,16 @@ class RecommendationHandlers:
         for record in records:
             record["purpose"] = record.get("purpose") or _scenario_purpose(record)
         return {"count": len(records), "records": records}
+
+    def empathy_simulate(self, request: EmpathySimulationRequest, request_id: str) -> dict:
+        payload = self.services.empathy_engine.simulate(
+            request.scenario_text,
+            destination=request.destination,
+            route_miles=request.route_miles,
+            rental_days=request.rental_days,
+        )
+        payload["request_id"] = request_id
+        return payload
 
     def process_batch(self, job_id: str, batch: BatchRecommendationRequest) -> None:
         self.services.job_store.mark_running(job_id)

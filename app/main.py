@@ -27,6 +27,7 @@ from app.models import (
     ScenarioRecommendationRequest,
     SimulationRequest,
     SyntheticTrainingRequest,
+    EmpathySimulationRequest,
 )
 from app.observability.logging import configure_logging, get_logger
 from app.observability.metrics import metrics_enabled, render_metrics
@@ -161,6 +162,11 @@ def scenario_demo():
     return FileResponse(Path("static/scenario.html"))
 
 
+@app.get("/empathy-demo")
+def empathy_demo():
+    return FileResponse(Path("static/empathy.html"))
+
+
 @app.get("/scenario-examples")
 def scenario_examples():
     return recommendation_handlers.handlers.scenario_examples()
@@ -179,6 +185,11 @@ async def recommend_legacy(request: RecommendationRequest, http_request: Request
 @app.post("/recommend-from-scenario", response_model=RecommendationResponse, dependencies=[Depends(require_api_key)])
 def recommend_from_scenario_legacy(request: ScenarioRecommendationRequest, http_request: Request):
     return recommendation_handlers.handlers.recommend_from_scenario(request, request_id=get_request_id(http_request)).model_dump(mode="json")
+
+
+@app.post("/empathy/simulate", dependencies=[Depends(require_api_key)])
+def empathy_simulate_legacy(request: EmpathySimulationRequest, http_request: Request):
+    return recommendation_handlers.handlers.empathy_simulate(request, request_id=get_request_id(http_request))
 
 
 @app.post("/simulate", response_model=RecommendationResponse, dependencies=[Depends(require_api_key)])

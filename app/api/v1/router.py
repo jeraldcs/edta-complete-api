@@ -16,6 +16,7 @@ from app.models import (
     SimulationRequest,
     SyntheticTrainingRequest,
     WebhookRegistrationRequest,
+    EmpathySimulationRequest,
 )
 from app.security import require_api_key
 from app.services import recommendation_handlers
@@ -60,6 +61,11 @@ def get_job_v1(job_id: str):
 @router.post("/recommend-from-scenario", response_model=RecommendationResponseV1, dependencies=[Depends(require_api_key)])
 def recommend_from_scenario_v1(request: ScenarioRecommendationRequest, http_request: Request):
     return recommendation_handlers.handlers.recommend_from_scenario(request, request_id=get_request_id(http_request))
+
+
+@router.post("/empathy/simulate", dependencies=[Depends(require_api_key)])
+def empathy_simulate_v1(request: EmpathySimulationRequest, http_request: Request):
+    return recommendation_handlers.handlers.empathy_simulate(request, request_id=get_request_id(http_request))
 
 
 @router.post("/simulate", response_model=RecommendationResponseV1, dependencies=[Depends(require_api_key)])
