@@ -164,7 +164,7 @@ def scenario_demo():
 
 @app.get("/empathy-demo")
 def empathy_demo():
-    return FileResponse(Path("static/empathy.html"))
+    return RedirectResponse(url="/scenario-demo?mode=empathy", status_code=307)
 
 
 @app.get("/scenario-examples")

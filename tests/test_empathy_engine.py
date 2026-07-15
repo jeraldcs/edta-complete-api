@@ -123,6 +123,10 @@ def test_recommend_from_scenario_with_empathy(client):
 
 
 def test_empathy_demo_page(client):
-    response = client.get("/empathy-demo")
-    assert response.status_code == 200
-    assert "Empathy Engine Simulator" in response.text
+    response = client.get("/empathy-demo", follow_redirects=False)
+    assert response.status_code == 307
+    assert "mode=empathy" in response.headers.get("location", "")
+
+    scenario = client.get("/scenario-demo")
+    assert scenario.status_code == 200
+    assert "Empathy Engine" in scenario.text

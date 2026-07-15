@@ -1403,6 +1403,25 @@ textarea:focus,
   }
 }
 
+.empathy-controls {
+  margin-top: 12px;
+}
+
+.empathy-controls.hidden {
+  display: none;
+}
+
+.empathy-results-section.hidden {
+  display: none;
+}
+
+.empathy-inline-tco {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--sky);
+  border-radius: 8px;
+}
+
 .empathy-page .hero-subtitle {
   max-width: 720px;
   margin-top: 12px;
