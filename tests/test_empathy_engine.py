@@ -31,13 +31,25 @@ def test_hidden_needs_grandmother_toddler():
     assert profile.standard_filter_match
 
 
-def test_empathy_only_activates_when_requested():
+def test_empathy_ranking_only_when_signals_present():
+    engine = EmpathyEngine()
+    profile = engine.hidden_needs.extract(FAMILY_SCENARIO)
+    assert engine.should_rank_with_empathy(profile, include_empathy=False) is True
+    assert engine.should_rank_with_empathy(profile, include_empathy=True) is True
+    generic = engine.hidden_needs.extract("chatbot user asks if SUV rental is available at SFO")
+    assert engine.should_rank_with_empathy(generic, include_empathy=False) is False
+
+
+def test_unified_process_always_exposes_insights():
     engine = EmpathyEngine()
     context = CustomerContext(channel=Channel.web)
-    _, bundle = engine.process(FAMILY_SCENARIO, context, include_empathy=False)
+    _, bundle = engine.process(
+        "chatbot user asks if SUV rental is available at SFO",
+        context,
+        include_empathy=False,
+    )
+    assert bundle.insights_available is True
     assert bundle.active is False
-    _, bundle = engine.process(FAMILY_SCENARIO, context, include_empathy=True)
-    assert bundle.active is True
 
 
 def test_hidden_needs_pch_couple():

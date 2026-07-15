@@ -19,8 +19,8 @@
         <h1>EDTA Personalization Demo — Trust-Aware, Outcome-Simulated Recommendations</h1>
         <div class="hero-stat-row" aria-label="Demo capabilities">
           <span>100 training scenarios</span>
-          <span>Recommend · Simulate · Memory · Empathy</span>
-          <span>TKGE timeline + feedback</span>
+          <span>Recommend · Simulate · Memory</span>
+          <span>Empathy-aware unified ranking</span>
         </div>
       </div>
     </section>
@@ -65,9 +65,9 @@
             <button type="button" class="scenario-mode-tab is-active" data-mode="recommend" role="tab" aria-selected="true">Recommend</button>
             <button type="button" class="scenario-mode-tab" data-mode="simulate" role="tab" aria-selected="false">Simulate</button>
             <button type="button" class="scenario-mode-tab" data-mode="memory" role="tab" aria-selected="false">Experience memory</button>
-            <button type="button" class="scenario-mode-tab" data-mode="empathy" role="tab" aria-selected="false">Empathy Engine</button>
           </div>
-          <div id="empathyControls" class="empathy-controls hidden" aria-hidden="true">
+          <div id="empathyControls" class="empathy-controls" aria-hidden="false">
+            <p class="eyebrow">Travel empathy examples (optional)</p>
             <div class="empathy-preset-row">
               <button type="button" class="example-chip empathy-preset" data-preset="family">Grandmother + toddler</button>
               <button type="button" class="example-chip empathy-preset" data-preset="pch">PCH road trip</button>
@@ -120,13 +120,13 @@
 
     <section id="empathyResultsSection" class="site-section scenario-results empathy-results-section hidden" aria-hidden="true">
       <div class="section-heading">
-        <p class="eyebrow">Empathy Engine</p>
-        <h2>Hidden needs, enrichment, and cost-to-drive</h2>
+        <p class="eyebrow">Empathy insights</p>
+        <h2>Hidden needs, enrichment, and cost-to-drive (included in the recommendation above)</h2>
       </div>
       <div class="empathy-results-grid">
         <article class="offer-card empathy-panel">
           <h2>Hidden needs</h2>
-          <div id="scenarioEmpathyHiddenNeeds" class="empathy-panel-body">Run Empathy Engine mode to see implicit constraints.</div>
+          <div id="scenarioEmpathyHiddenNeeds" class="empathy-panel-body">Run Recommend to see implicit constraints extracted from your scenario.</div>
         </article>
         <article class="offer-card empathy-panel">
           <h2>Weather &amp; terrain</h2>

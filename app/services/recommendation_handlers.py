@@ -11,7 +11,7 @@ from app.api.schemas import (
     RequestSummary,
     TrainingAlignmentSummary,
 )
-from app.catalog import DEFAULT_CANDIDATES
+from app.catalog import DEFAULT_CANDIDATES, vehicle_candidates
 from app.container import ServiceContainer, container
 from app.context_graph import ContextGraph
 from app.observability.audit import log_recommendation_audit
@@ -174,8 +174,14 @@ class RecommendationHandlers:
         empathy_bundle,
         nlp_summary: dict,
     ) -> tuple[CustomerContext, list]:
+        preselected = self._scenario_candidates(enriched_context)
+        base_candidates = preselected if preselected is not None else [
+            candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == enriched_context.channel
+        ]
+
         if empathy_bundle and empathy_bundle.active:
-            candidates = self.services.empathy_engine.candidates_for_context(enriched_context)
+            vehicle_pool = vehicle_candidates()
+            candidates = self.services.empathy_engine.merge_candidate_pools(base_candidates, vehicle_pool)
             if candidates:
                 business_context = dict(enriched_context.business_context)
                 if enriched_context.channel != Channel.web:
@@ -184,17 +190,13 @@ class RecommendationHandlers:
                     nlp_summary["empathy_channel_override"] = {
                         "from": enriched_context.channel.value,
                         "to": "web",
-                        "reason": "Empathy vehicle catalog uses web-channel demo SKUs.",
+                        "reason": "Empathy vehicle SKUs merged using relaxed web-channel ranking.",
                     }
                     enriched_context = enriched_context.model_copy(update={"business_context": business_context})
                 return enriched_context, candidates
 
-        preselected = self._scenario_candidates(enriched_context)
-        candidates = preselected if preselected is not None else [
-            candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == enriched_context.channel
-        ]
-        if candidates:
-            return enriched_context, candidates
+        if base_candidates:
+            return enriched_context, base_candidates
 
         fallback_context = enriched_context.model_copy(update={"channel": Channel.web})
         preselected = self._scenario_candidates(fallback_context)
@@ -328,6 +330,11 @@ class RecommendationHandlers:
                 "persona_tags": empathy_bundle.hidden_needs.persona_tags,
                 "standard_filter_match": empathy_bundle.hidden_needs.standard_filter_match,
             }
+        elif empathy_bundle.insights_available:
+            nlp_summary["empathy"] = {
+                "active": False,
+                "insights_available": True,
+            }
 
         enriched_context, candidates = self._resolve_scenario_candidates(
             enriched_context,
@@ -346,11 +353,10 @@ class RecommendationHandlers:
             calibration=calibration,
             prior_graph_snapshot=prior_snapshot,
         )
-        if empathy_bundle and empathy_bundle.active:
-            recommendations, empathy_bundle = self.services.empathy_engine.attach_results(
-                recommendations,
-                empathy_bundle,
-            )
+        recommendations, empathy_bundle = self.services.empathy_engine.attach_results(
+            recommendations,
+            empathy_bundle,
+        )
         memory_after = self.services.experience_memory.record_recommendations(enriched_context, recommendations)
         graph = self._build_graph(enriched_context, memory_after, recommendations)
         if recommendations:
@@ -388,12 +394,12 @@ class RecommendationHandlers:
                     enabled=bool(candidates),
                     candidate_count=len(candidates),
                 ),
-                empathy=empathy_bundle.model_dump_public() if empathy_bundle and empathy_bundle.active else None,
-                enrichment=empathy_bundle.enrichment.model_dump() if empathy_bundle and empathy_bundle.active else None,
+                empathy=empathy_bundle.model_dump_public() if empathy_bundle and empathy_bundle.insights_available else None,
+                enrichment=empathy_bundle.enrichment.model_dump() if empathy_bundle and empathy_bundle.insights_available else None,
                 tco={
                     "comparisons": [item.model_dump() for item in empathy_bundle.tco_comparisons],
                     "top_pitch": empathy_bundle.empathy_pitch,
-                } if empathy_bundle and empathy_bundle.active and empathy_bundle.tco_comparisons else None,
+                } if empathy_bundle and empathy_bundle.tco_comparisons else None,
                 use_ai_models=request.use_ai_models,
                 use_llm=request.use_llm,
                 use_slm=request.use_slm,

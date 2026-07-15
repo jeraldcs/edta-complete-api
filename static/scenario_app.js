@@ -191,18 +191,15 @@ function buildPayload() {
     use_ai_models: true,
     use_llm: scenarioUseLlm.checked,
     use_llm_explanation: scenarioUseLlmExplanation.checked,
+    rental_days: Number(empathyRentalDays.value || 3),
   };
-  if (activeMode === "empathy") {
-    payload.include_empathy = true;
-    payload.rental_days = Number(empathyRentalDays.value || 3);
-    const destination = empathyDestination.value.trim();
-    const routeMiles = empathyRouteMiles.value.trim();
-    if (destination) {
-      payload.destination = destination;
-    }
-    if (routeMiles) {
-      payload.route_miles = Number(routeMiles);
-    }
+  const destination = empathyDestination.value.trim();
+  const routeMiles = empathyRouteMiles.value.trim();
+  if (destination) {
+    payload.destination = destination;
+  }
+  if (routeMiles) {
+    payload.route_miles = Number(routeMiles);
   }
   return payload;
 }
@@ -222,16 +219,20 @@ function setActiveMode(mode) {
     recommend: "Run recommendation",
     simulate: "Simulate all outcomes",
     memory: "Load experience memory",
-    empathy: "Run Empathy Engine",
   };
   scenarioRunBtn.textContent = labels[mode] || "Run";
-  const empathyActive = mode === "empathy";
-  empathyControls.classList.toggle("hidden", !empathyActive);
-  empathyControls.setAttribute("aria-hidden", empathyActive ? "false" : "true");
-  if (!empathyActive) {
-    empathyResultsSection.classList.add("hidden");
-    empathyResultsSection.setAttribute("aria-hidden", "true");
+}
+
+function hasEmpathyInsights(summary) {
+  const empathy = summary?.empathy;
+  if (!empathy) {
+    return false;
   }
+  if (empathy.active || empathy.insights_available) {
+    return true;
+  }
+  const profile = empathy.hidden_needs || {};
+  return Boolean((profile.persona_tags || []).length || (profile.implicit_constraints || []).length);
 }
 
 function applyEmpathyPreset(name) {
@@ -247,13 +248,13 @@ function applyEmpathyPreset(name) {
 }
 
 function renderEmpathyPanels(summary, topRec) {
-  const empathy = summary.empathy;
-  if (!empathy || !empathy.active) {
+  if (!hasEmpathyInsights(summary)) {
     empathyResultsSection.classList.add("hidden");
     empathyResultsSection.setAttribute("aria-hidden", "true");
     return;
   }
 
+  const empathy = summary.empathy || {};
   empathyResultsSection.classList.remove("hidden");
   empathyResultsSection.setAttribute("aria-hidden", "false");
 
@@ -394,9 +395,9 @@ function renderParsedContext(summary) {
 function renderRecommendation(data) {
   const rec = data.recommendations[0];
   const summary = data.request_summary || {};
-  const empathyActive = summary.empathy?.active;
-  const empathyBadge = empathyActive
-    ? `<span class="example-chip">Empathy Engine</span>`
+  const empathyInsights = hasEmpathyInsights(summary);
+  const empathyBadge = empathyInsights
+    ? `<span class="example-chip">Empathy-aware</span>`
     : "";
   const empathyMetrics = rec.empathy_match
     ? `<div><span>Empathy match</span><strong>${pct(rec.empathy_match.match_score || 0)}</strong><small>${escapeHtml((rec.empathy_match.satisfied || []).slice(0, 3).join(", ").replaceAll("_", " "))}</small></div>`
@@ -524,7 +525,8 @@ function renderTechnicalExplanation(data) {
   const expected = training.expected_candidate_id || example?.expected_candidate_id || "not provided";
   const matchedExpected = expected === candidate.id;
   const empathy = summary.empathy || {};
-  const empathyArticle = empathy.active ? `
+  const empathyInsights = hasEmpathyInsights(summary);
+  const empathyArticle = empathyInsights ? `
       <article>
         <span>5. Empathy Engine</span>
         <p>Hidden needs, route enrichment, and TCO adjusted the vehicle ranking beyond standard filters.</p>
@@ -616,9 +618,7 @@ async function runScenario() {
   const payload = buildPayload();
   updatePayloadPreview();
   scenarioLoading.classList.remove("hidden");
-  scenarioStatus.textContent = activeMode === "empathy"
-    ? "Running Empathy Engine recommendation..."
-    : "Parsing scenario...";
+  scenarioStatus.textContent = "Parsing scenario and building unified recommendation...";
 
   try {
     const response = await DemoApi.fetch("/recommend-from-scenario", {
@@ -641,10 +641,8 @@ async function runScenario() {
     renderTechnicalExplanation(data);
     renderArchitecturePanels(scenarioArchitecturePanels, data.request_summary, data.recommendations[0]);
     const parser = pretty((data.request_summary.nlp || {}).parser || "unknown");
-    if (activeMode === "empathy" && data.request_summary.empathy?.active) {
-      scenarioStatus.textContent = `Empathy Engine complete. Top vehicle: ${data.recommendations[0].candidate.title}.`;
-    } else if (activeMode === "empathy") {
-      scenarioStatus.textContent = "Done. Empathy did not activate for this scenario — try a travel/car rental preset.";
+    if (hasEmpathyInsights(data.request_summary)) {
+      scenarioStatus.textContent = `Unified recommendation ready (${parser} + empathy insights).`;
     } else {
       scenarioStatus.textContent = `Done. Parsed with ${parser}.`;
     }
@@ -755,9 +753,6 @@ scenarioExampleSelect.addEventListener("change", () => {
   renderExampleMeta(example);
   scenarioText.value = example.scenario_text;
   lastParsedScenarioText = "";
-  if (activeMode === "empathy") {
-    clearEmpathyTripFields();
-  }
   updatePayloadPreview();
 });
 
@@ -765,9 +760,7 @@ scenarioLoadExampleBtn.addEventListener("click", () => {
   const example = selectedExample();
   scenarioText.value = example.scenario_text;
   lastParsedScenarioText = "";
-  if (activeMode === "empathy") {
-    clearEmpathyTripFields();
-  }
+  clearEmpathyTripFields();
   updatePayloadPreview();
   runScenario();
 });
@@ -780,7 +773,6 @@ scenarioUseLlmExplanation.addEventListener("change", updatePayloadPreview);
 });
 document.querySelectorAll(".empathy-preset").forEach(button => {
   button.addEventListener("click", () => {
-    setActiveMode("empathy");
     applyEmpathyPreset(button.dataset.preset);
     runScenario();
   });
@@ -795,10 +787,8 @@ scenarioModeTabs.forEach(tab => {
 
 const initialMode = new URLSearchParams(window.location.search).get("mode");
 if (initialMode === "empathy") {
-  setActiveMode("empathy");
   applyEmpathyPreset("family");
-} else {
-  setActiveMode("recommend");
 }
+setActiveMode("recommend");
 updatePayloadPreview();
 loadScenarioExamples().then(() => runScenario());

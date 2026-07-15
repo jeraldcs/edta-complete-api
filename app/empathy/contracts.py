@@ -73,10 +73,12 @@ class EmpathyBundle(BaseModel):
     tco_comparisons: list[TCOBreakdown] = Field(default_factory=list)
     empathy_pitch: str = ""
     active: bool = False
+    insights_available: bool = False
 
     def model_dump_public(self) -> dict[str, Any]:
         return {
             "active": self.active,
+            "insights_available": self.insights_available,
             "hidden_needs": self.hidden_needs.model_dump(),
             "trip": self.trip.model_dump(),
             "enrichment": self.enrichment.model_dump(),

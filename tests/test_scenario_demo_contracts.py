@@ -34,7 +34,7 @@ def test_all_training_scenarios_return_recommendations(client: TestClient, scena
     assert not failures, f"Scenario recommend failures: {failures[:10]}"
 
 
-def test_car_rental_without_empathy_uses_channel_catalog(client: TestClient):
+def test_car_rental_chatbot_stays_on_channel_catalog(client: TestClient):
     response = client.post(
         "/recommend-from-scenario",
         json={
@@ -45,7 +45,7 @@ def test_car_rental_without_empathy_uses_channel_catalog(client: TestClient):
     assert response.status_code == 200
     data = response.json()
     assert data["recommendations"], "chatbot car rental should rank chatbot candidates"
-    assert data["request_summary"].get("empathy") is None
+    assert data["request_summary"]["empathy"]["active"] is False
     assert data["recommendations"][0]["candidate"]["id"] == "chatbot_booking_assist"
 
 
@@ -63,12 +63,11 @@ def test_email_scenario_uses_demo_channel_fallback(client: TestClient):
     assert data["request_summary"]["nlp"]["demo_channel_fallback"]["from"] == "email"
 
 
-def test_empathy_mode_returns_vehicle_for_family_preset(client: TestClient):
+def test_unified_recommendation_auto_applies_empathy_for_family_scenario(client: TestClient):
     response = client.post(
         "/recommend-from-scenario",
         json={
             "scenario_text": "Traveling with my 80-year-old grandmother and toddler.",
-            "include_empathy": True,
             "rental_days": 7,
             "limit": 3,
         },
@@ -77,10 +76,13 @@ def test_empathy_mode_returns_vehicle_for_family_preset(client: TestClient):
     data = response.json()
     assert data["request_summary"]["empathy"]["active"] is True
     assert data["recommendations"][0]["candidate"]["id"] == "family_friendly_suv"
+    explanation = data["recommendations"][0]["explanation"].lower()
+    assert "grandmother" in explanation or "toddler" in explanation or "isofix" in explanation or "step-in" in explanation
 
 
-def test_scenario_demo_page_has_empathy_tab(client: TestClient):
+def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     response = client.get("/scenario-demo")
     assert response.status_code == 200
-    assert "Empathy Engine" in response.text
+    assert "Travel empathy examples" in response.text
     assert "scenario_app.js" in response.text
+    assert 'data-mode="empathy"' not in response.text
