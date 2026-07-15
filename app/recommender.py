@@ -379,7 +379,8 @@ class RecommendationEngine:
         empathy_entry = empathy_ranking.get(candidate.id)
         if empathy_entry:
             empathy_score = float(empathy_entry.get("match_score") or 0.0)
-            empathy_boost = round(empathy_score * 0.18, 4)
+            empathy_weight = 0.40 if business_context.get("empathy_active") else 0.18
+            empathy_boost = round(empathy_score * empathy_weight, 4)
             if empathy_boost:
                 ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + empathy_boost)), 4)
                 reasons.append(f"empathy_constraint_match:{empathy_score:.2f}")
@@ -475,9 +476,23 @@ class RecommendationEngine:
             if item:
                 ranked.append(item)
 
+        empathy_ranking = (
+            context.business_context.get("empathy_ranking")
+            if isinstance(context.business_context, dict)
+            else {}
+        ) or {}
+
+        def empathy_tiebreak(candidate_id: str) -> float:
+            entry = empathy_ranking.get(candidate_id) or {}
+            try:
+                return float(entry.get("match_score") or 0.0)
+            except (TypeError, ValueError):
+                return 0.0
+
         ranked.sort(
             key=lambda r: (
                 r.ai_score.final_hybrid_score,
+                empathy_tiebreak(r.candidate.id),
                 r.candidate.business_value,
                 r.ai_score.semantic_similarity_score,
                 r.eds_score.final_eds_score,

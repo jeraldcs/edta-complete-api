@@ -12,11 +12,6 @@ from app.models import CustomerContext, RankedRecommendation, Channel
 class EmpathyEngine:
     """Orchestrates hidden needs, enrichment, constraint matching, and TCO."""
 
-    EMPATHY_KEYWORDS = {
-        "rental", "vehicle", "car", "suv", "road trip", "traveling", "grandmother",
-        "toddler", "college", "dorm", "pacific coast", "denver", "partner", "moving",
-    }
-
     PERSONA_PITCHES = {
         "elderly_passenger": "Low step-in height and easy entry for your 80-year-old grandmother.",
         "toddler_family": "ISOFIX child-seat anchors and generous rear legroom for your toddler.",
@@ -32,9 +27,18 @@ class EmpathyEngine:
         self.constraint_matcher = ConstraintMatcher()
         self.tco_calculator = TCOCalculator()
 
-    def should_activate(self, scenario_text: str, include_empathy: bool = False) -> bool:
-        """Empathy ranking runs only when the client explicitly requests it."""
-        return include_empathy
+    def should_rank_with_empathy(
+        self,
+        profile: HiddenNeedsProfile,
+        *,
+        include_empathy: bool = False,
+        force_disable: bool = False,
+    ) -> bool:
+        if force_disable:
+            return False
+        if include_empathy:
+            return True
+        return bool(profile.persona_tags or profile.implicit_constraints)
 
     def process(
         self,
@@ -46,7 +50,6 @@ class EmpathyEngine:
         route_miles: float | None = None,
         rental_days: int = 3,
     ) -> tuple[CustomerContext, EmpathyBundle]:
-        active = self.should_activate(scenario_text, include_empathy)
         profile = self.hidden_needs.extract(scenario_text)
         trip = self.trip_extractor.extract(scenario_text, destination, route_miles, rental_days)
         enrichment = self.enrichment_service.enrich(trip, scenario_text)
@@ -55,6 +58,8 @@ class EmpathyEngine:
             trip = trip.model_copy(update={"distance_miles": enrichment.route.distance_miles})
         if not trip.distance_miles and "500" in (scenario_text or ""):
             trip = trip.model_copy(update={"distance_miles": 500.0})
+
+        ranking_active = self.should_rank_with_empathy(profile, include_empathy=include_empathy)
 
         all_constraints = list(profile.implicit_constraints)
         for constraint_id in enrichment.derived_constraints:
@@ -68,11 +73,12 @@ class EmpathyEngine:
             )
 
         specs = vehicle_specs_by_id()
-        matches = self.constraint_matcher.score_all(specs, all_constraints) if active else {}
+        matches = self.constraint_matcher.score_all(specs, all_constraints) if all_constraints else {}
 
         business_context = dict(context.business_context)
         business_context.update({
-            "empathy_active": active,
+            "empathy_active": ranking_active,
+            "empathy_insights": True,
             "empathy_constraints": [item.model_dump() for item in all_constraints],
             "empathy_persona_tags": profile.persona_tags,
             "trip": trip.model_dump(),
@@ -90,51 +96,58 @@ class EmpathyEngine:
             trip=trip,
             enrichment=enrichment,
             constraint_matches=matches,
-            active=active,
+            active=ranking_active,
+            insights_available=True,
         )
         bundle.empathy_pitch = self._build_pitch(profile, enrichment)
         return updated_context, bundle
 
-    def candidates_for_context(self, context: CustomerContext):
-        if not context.business_context.get("empathy_active"):
-            return None
-        return vehicle_candidates()
+    @staticmethod
+    def merge_candidate_pools(*pools) -> list:
+        merged: dict[str, object] = {}
+        for pool in pools:
+            for candidate in pool or []:
+                merged.setdefault(candidate.id, candidate)
+        return list(merged.values())
 
     def attach_results(
         self,
         recommendations: list[RankedRecommendation],
         bundle: EmpathyBundle,
     ) -> tuple[list[RankedRecommendation], EmpathyBundle]:
-        if not bundle.active or not recommendations:
+        if not recommendations:
             return recommendations, bundle
 
         specs = vehicle_specs_by_id()
         ranked_ids = [item.candidate.id for item in recommendations]
-        bundle.tco_comparisons = self.tco_calculator.compare_candidates(
-            specs,
-            bundle.trip,
-            bundle.enrichment,
-            ranked_ids,
-        )
+        vehicle_ids = [candidate_id for candidate_id in ranked_ids if candidate_id in specs]
+        if vehicle_ids and bundle.trip.distance_miles:
+            bundle.tco_comparisons = self.tco_calculator.compare_candidates(
+                specs,
+                bundle.trip,
+                bundle.enrichment,
+                vehicle_ids,
+            )
         tco_by_id = {item.candidate_id: item for item in bundle.tco_comparisons}
         enrichment_notes = self.enrichment_service.enrichment_notes(bundle.enrichment)
 
         updated: list[RankedRecommendation] = []
-        for recommendation in recommendations:
+        for index, recommendation in enumerate(recommendations):
             candidate_id = recommendation.candidate.id
             match = bundle.constraint_matches.get(candidate_id)
             tco = tco_by_id.get(candidate_id)
-            notes = list(enrichment_notes)
+            notes = list(enrichment_notes) if index == 0 else []
             empathy_match = match.model_dump() if match else None
 
             explanation = recommendation.explanation
-            if match and match.satisfied:
-                empathy_line = f" Empathy match: {', '.join(match.satisfied[:4]).replace('_', ' ')}."
-                explanation = f"{explanation}{empathy_line}"
-            if tco and tco.recommendation_pitch:
-                explanation = f"{explanation} {tco.recommendation_pitch}"
-            if notes and candidate_id == recommendations[0].candidate.id:
-                explanation = f"{explanation} {' '.join(notes)}"
+            if index == 0:
+                explanation = self._build_unified_explanation(
+                    recommendation,
+                    bundle,
+                    empathy_match,
+                    tco,
+                    notes,
+                )
 
             updated.append(
                 recommendation.model_copy(
@@ -142,7 +155,7 @@ class EmpathyEngine:
                         "explanation": explanation.strip(),
                         "empathy_match": empathy_match,
                         "tco": tco.model_dump() if tco else None,
-                        "enrichment_notes": notes if candidate_id == recommendations[0].candidate.id else [],
+                        "enrichment_notes": notes,
                     }
                 )
             )
@@ -152,6 +165,26 @@ class EmpathyEngine:
             if top_tco and top_tco.net_savings and top_tco.net_savings > 0:
                 bundle.empathy_pitch = top_tco.recommendation_pitch
         return updated, bundle
+
+    def _build_unified_explanation(
+        self,
+        recommendation: RankedRecommendation,
+        bundle: EmpathyBundle,
+        empathy_match: dict | None,
+        tco,
+        enrichment_notes: list[str],
+    ) -> str:
+        parts = [recommendation.explanation.strip()]
+        if bundle.empathy_pitch:
+            parts.append(bundle.empathy_pitch)
+        elif empathy_match and empathy_match.get("satisfied"):
+            labels = ", ".join(item.replace("_", " ") for item in empathy_match["satisfied"][:4])
+            parts.append(f"This recommendation reflects hidden needs we inferred: {labels}.")
+        if enrichment_notes:
+            parts.extend(enrichment_notes)
+        if tco and tco.recommendation_pitch and tco.recommendation_pitch not in " ".join(parts):
+            parts.append(tco.recommendation_pitch)
+        return " ".join(part for part in parts if part).strip()
 
     def _build_pitch(self, profile: HiddenNeedsProfile, enrichment) -> str:
         parts: list[str] = []
@@ -188,25 +221,23 @@ class EmpathyEngine:
             route_miles=route_miles,
             rental_days=rental_days,
         )
-        candidates = vehicle_candidates()
         ranking = updated_context.business_context.get("empathy_ranking") or {}
         ranked_specs = sorted(
             ranking.items(),
             key=lambda item: item[1].get("match_score", 0),
             reverse=True,
         )
-        top_id = ranked_specs[0][0] if ranked_specs else candidates[0].id
+        top_id = ranked_specs[0][0] if ranked_specs else vehicle_candidates()[0].id
         specs = vehicle_specs_by_id()
-        tco = self.tco_calculator.compare_candidates(
+        bundle.tco_comparisons = self.tco_calculator.compare_candidates(
             specs,
             bundle.trip,
             bundle.enrichment,
             [top_id, "economy_compact", "hybrid_midsize"],
         )
-        bundle.tco_comparisons = tco
         return {
             "empathy": bundle.model_dump_public(),
             "parsed_context": updated_context.model_dump(mode="json"),
             "top_vehicle_id": top_id,
-            "vehicle_catalog_count": len(candidates),
+            "vehicle_catalog_count": len(vehicle_candidates()),
         }
