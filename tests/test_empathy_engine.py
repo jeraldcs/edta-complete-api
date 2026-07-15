@@ -31,6 +31,15 @@ def test_hidden_needs_grandmother_toddler():
     assert profile.standard_filter_match
 
 
+def test_empathy_only_activates_when_requested():
+    engine = EmpathyEngine()
+    context = CustomerContext(channel=Channel.web)
+    _, bundle = engine.process(FAMILY_SCENARIO, context, include_empathy=False)
+    assert bundle.active is False
+    _, bundle = engine.process(FAMILY_SCENARIO, context, include_empathy=True)
+    assert bundle.active is True
+
+
 def test_hidden_needs_pch_couple():
     profile = HiddenNeedsExtractor().extract(PCH_SCENARIO)
     constraint_ids = {item.constraint_id for item in profile.implicit_constraints}

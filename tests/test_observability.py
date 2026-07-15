@@ -1,7 +1,21 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 
+import pytest
 from fastapi.testclient import TestClient
+
+try:
+    from prometheus_client import Counter  # noqa: F401
+
+    PROMETHEUS_AVAILABLE = True
+except ImportError:
+    PROMETHEUS_AVAILABLE = False
+
+
+requires_prometheus = pytest.mark.skipif(
+    not PROMETHEUS_AVAILABLE,
+    reason="prometheus_client is not installed",
+)
 
 
 def test_live_probe(client: TestClient):
@@ -34,6 +48,7 @@ def test_ready_probe_returns_503_when_not_ready(client, monkeypatch):
     assert response.json()["ready"] is False
 
 
+@requires_prometheus
 def test_metrics_endpoint_exposes_prometheus(client: TestClient):
     response = client.get("/metrics")
     assert response.status_code == 200
@@ -48,6 +63,7 @@ def test_security_headers_present(client: TestClient):
     assert "X-Request-ID" in response.headers
 
 
+@requires_prometheus
 def test_access_log_and_metrics_increment(client: TestClient, sample_recommend_payload):
     client.get("/health")
     metrics = client.get("/metrics").text
@@ -59,6 +75,7 @@ def test_access_log_and_metrics_increment(client: TestClient, sample_recommend_p
     assert "edta_recommendations_total" in metrics
 
 
+@requires_prometheus
 def test_feedback_records_metric(client: TestClient, sample_recommend_payload):
     recommend = client.post("/recommend", json=sample_recommend_payload)
     top_id = recommend.json()["recommendations"][0]["candidate"]["id"]
