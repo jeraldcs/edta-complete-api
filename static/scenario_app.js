@@ -68,6 +68,7 @@ const EMPATHY_PRESETS = {
 };
 let scenarioExamples = fallbackExamples;
 let lastScenarioData = null;
+let lastParsedScenarioText = "";
 let activeMode = "recommend";
 
 const scenarioText = document.getElementById("scenarioText");
@@ -176,10 +177,11 @@ async function loadScenarioExamples() {
     scenarioStatus.textContent = "Loaded fallback scenarios.";
   }
   renderExampleOptions();
-  if (selectedExample()) {
+  const preserveText = scenarioText.value.trim();
+  if (!preserveText && selectedExample()) {
     scenarioText.value = selectedExample().scenario_text;
-    updatePayloadPreview();
   }
+  updatePayloadPreview();
 }
 
 function buildPayload() {
@@ -332,6 +334,38 @@ function renderEmpathyPanels(summary, topRec) {
   `;
 }
 
+function clearEmpathyTripFields() {
+  empathyDestination.value = "";
+  empathyRouteMiles.value = "";
+  empathyRentalDays.value = "3";
+}
+
+async function parseScenarioContext() {
+  const payload = buildPayload();
+  const response = await DemoApi.fetch("/recommend-from-scenario", {
+    method: "POST",
+    body: JSON.stringify({ ...payload, limit: 1 }),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Could not parse scenario (${response.status}): ${body}`);
+  }
+  const parsed = await response.json();
+  lastScenarioData = parsed;
+  lastParsedScenarioText = scenarioText.value.trim();
+  renderParsedContext(parsed.request_summary);
+  return parsed.request_summary.parsed_context;
+}
+
+async function ensureParsedContext() {
+  const currentText = scenarioText.value.trim();
+  const cached = parsedContextFromSummary(lastScenarioData?.request_summary || {});
+  if (cached.channel && lastParsedScenarioText === currentText) {
+    return cached;
+  }
+  return parseScenarioContext();
+}
+
 function parsedContextFromSummary(summary) {
   return summary?.parsed_context || summary?.context || lastScenarioData?.request_summary?.parsed_context || {};
 }
@@ -349,6 +383,7 @@ function renderParsedContext(summary) {
     <div><span>Journey</span><strong>${escapeHtml(pretty(context.journey_stage))}</strong></div>
     <div><span>Customer</span><strong>${escapeHtml(context.customer_id || "anonymous")}</strong></div>
     <div><span>Training reference</span><strong>${training.matched ? `Matched (${training.expected_candidate_id || "unknown"})` : "None"}</strong></div>
+    <div><span>Channel fallback</span><strong>${escapeHtml(nlp.demo_channel_fallback ? `${nlp.demo_channel_fallback.from} → ${nlp.demo_channel_fallback.to}` : (nlp.empathy_channel_override ? `${nlp.empathy_channel_override.from} → ${nlp.empathy_channel_override.to}` : "None"))}</strong></div>
     <div><span>LLM fallback</span><strong>${escapeHtml(nlp.llm_fallback ? (nlp.llm_fallback_reason || "Yes") : "No")}</strong></div>
     <div><span>Profile lookup</span><strong>${escapeHtml(pretty((summary.profile || {}).profile_lookup || "not used"))}</strong></div>
     <div><span>Events</span><strong>${escapeHtml((context.session_events || []).join(", "))}</strong></div>
@@ -474,7 +509,11 @@ function renderTechnicalExplanation(data) {
   const summary = data.request_summary || {};
   const context = summary.parsed_context || {};
   const nlp = summary.nlp || {};
-  const rec = data.recommendations[0];
+  const rec = data.recommendations?.[0];
+  if (!rec) {
+    technicalExplanation.textContent = "No recommendation was returned for this scenario.";
+    return;
+  }
   const candidate = rec.candidate;
   const eds = rec.eds_score;
   const ai = rec.ai_score;
@@ -562,6 +601,8 @@ function showError(error) {
   `;
   responsePreview.textContent = String(error.stack || error.message || error);
   scenarioStatus.textContent = "Error";
+  empathyResultsSection.classList.add("hidden");
+  empathyResultsSection.setAttribute("aria-hidden", "true");
 }
 
 async function runScenario() {
@@ -590,6 +631,7 @@ async function runScenario() {
     }
     const data = await response.json();
     lastScenarioData = data;
+    lastParsedScenarioText = scenarioText.value.trim();
     responsePreview.textContent = JSON.stringify(data, null, 2);
     renderParsedContext(data.request_summary);
     if (!data.recommendations.length) {
@@ -618,19 +660,7 @@ async function runSimulate() {
   scenarioStatus.textContent = "Parsing scenario for simulation...";
 
   try {
-    let context = parsedContextFromSummary(lastScenarioData?.request_summary || {});
-    if (!context.channel) {
-      const parseResponse = await DemoApi.fetch("/recommend-from-scenario", {
-        method: "POST",
-        body: JSON.stringify(buildPayload())
-      });
-      if (!parseResponse.ok) {
-        throw new Error(`Could not parse scenario before simulate (${parseResponse.status}).`);
-      }
-      const parsed = await parseResponse.json();
-      lastScenarioData = parsed;
-      context = parsed.request_summary.parsed_context;
-    }
+    const context = await ensureParsedContext();
 
     const payload = { context };
     payloadPreview.textContent = JSON.stringify(payload, null, 2);
@@ -681,20 +711,7 @@ async function runExperienceMemory() {
   scenarioStatus.textContent = "Resolving subject for experience memory...";
 
   try {
-    let context = parsedContextFromSummary(lastScenarioData?.request_summary || {});
-    if (!context.channel) {
-      const parseResponse = await DemoApi.fetch("/recommend-from-scenario", {
-        method: "POST",
-        body: JSON.stringify(buildPayload())
-      });
-      if (!parseResponse.ok) {
-        throw new Error(`Could not parse scenario before memory lookup (${parseResponse.status}).`);
-      }
-      const parsed = await parseResponse.json();
-      lastScenarioData = parsed;
-      context = parsed.request_summary.parsed_context;
-      renderParsedContext(parsed.request_summary);
-    }
+    const context = await ensureParsedContext();
 
     const params = new URLSearchParams();
     if (context.customer_id) {
@@ -737,12 +754,20 @@ scenarioExampleSelect.addEventListener("change", () => {
   const example = selectedExample();
   renderExampleMeta(example);
   scenarioText.value = example.scenario_text;
+  lastParsedScenarioText = "";
+  if (activeMode === "empathy") {
+    clearEmpathyTripFields();
+  }
   updatePayloadPreview();
 });
 
 scenarioLoadExampleBtn.addEventListener("click", () => {
   const example = selectedExample();
   scenarioText.value = example.scenario_text;
+  lastParsedScenarioText = "";
+  if (activeMode === "empathy") {
+    clearEmpathyTripFields();
+  }
   updatePayloadPreview();
   runScenario();
 });
@@ -776,10 +801,4 @@ if (initialMode === "empathy") {
   setActiveMode("recommend");
 }
 updatePayloadPreview();
-loadScenarioExamples().then(() => {
-  if (initialMode === "empathy") {
-    runScenario();
-  } else {
-    runScenario();
-  }
-});
+loadScenarioExamples().then(() => runScenario());

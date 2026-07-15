@@ -313,7 +313,9 @@ class RecommendationEngine:
         use_llm_explanation: bool,
         calibration=None,
     ) -> RankedRecommendation | None:
-        if candidate.channel != context.channel:
+        business_context = context.business_context if isinstance(context.business_context, dict) else {}
+        channel_relaxed = bool(business_context.get("demo_channel_fallback"))
+        if candidate.channel != context.channel and not channel_relaxed:
             return None
 
         scoring_context = context.model_copy(

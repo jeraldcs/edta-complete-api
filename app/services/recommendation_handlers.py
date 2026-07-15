@@ -168,6 +168,51 @@ class RecommendationHandlers:
         scored.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
         return [candidate for _, _, _, candidate in scored]
 
+    def _resolve_scenario_candidates(
+        self,
+        enriched_context: CustomerContext,
+        empathy_bundle,
+        nlp_summary: dict,
+    ) -> tuple[CustomerContext, list]:
+        if empathy_bundle and empathy_bundle.active:
+            candidates = self.services.empathy_engine.candidates_for_context(enriched_context)
+            if candidates:
+                business_context = dict(enriched_context.business_context)
+                if enriched_context.channel != Channel.web:
+                    business_context["demo_channel_fallback"] = True
+                    business_context["demo_channel_requested"] = enriched_context.channel.value
+                    nlp_summary["empathy_channel_override"] = {
+                        "from": enriched_context.channel.value,
+                        "to": "web",
+                        "reason": "Empathy vehicle catalog uses web-channel demo SKUs.",
+                    }
+                    enriched_context = enriched_context.model_copy(update={"business_context": business_context})
+                return enriched_context, candidates
+
+        preselected = self._scenario_candidates(enriched_context)
+        candidates = preselected if preselected is not None else [
+            candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == enriched_context.channel
+        ]
+        if candidates:
+            return enriched_context, candidates
+
+        fallback_context = enriched_context.model_copy(update={"channel": Channel.web})
+        preselected = self._scenario_candidates(fallback_context)
+        candidates = preselected if preselected is not None else [
+            candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == Channel.web
+        ]
+        if candidates:
+            business_context = dict(enriched_context.business_context)
+            business_context["demo_channel_fallback"] = True
+            business_context["demo_channel_requested"] = enriched_context.channel.value
+            nlp_summary["demo_channel_fallback"] = {
+                "from": enriched_context.channel.value,
+                "to": "web",
+                "reason": "No demo catalog items for parsed channel; using closest web offers.",
+            }
+            enriched_context = enriched_context.model_copy(update={"business_context": business_context})
+        return enriched_context, candidates
+
     def recommend(self, request: RecommendationRequest, request_id: str) -> RecommendationResponseV1:
         enriched_context, profile_summary = self.services.profile_service.enrich_context(request.context)
         enriched_context, memory_before = self.services.experience_memory.enrich_context(enriched_context)
@@ -284,11 +329,11 @@ class RecommendationHandlers:
                 "standard_filter_match": empathy_bundle.hidden_needs.standard_filter_match,
             }
 
-        empathy_candidates = self.services.empathy_engine.candidates_for_context(enriched_context)
-        preselected = empathy_candidates or self._scenario_candidates(enriched_context)
-        candidates = preselected if preselected is not None else [
-            candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == enriched_context.channel
-        ]
+        enriched_context, candidates = self._resolve_scenario_candidates(
+            enriched_context,
+            empathy_bundle,
+            nlp_summary,
+        )
         recommendations = self.services.engine.recommend(
             enriched_context,
             candidates,
@@ -340,7 +385,7 @@ class RecommendationHandlers:
                     purpose=training_match.get("purpose") if training_match else None,
                 ),
                 candidate_preselection=CandidatePreselectionSummary(
-                    enabled=preselected is not None,
+                    enabled=bool(candidates),
                     candidate_count=len(candidates),
                 ),
                 empathy=empathy_bundle.model_dump_public() if empathy_bundle and empathy_bundle.active else None,

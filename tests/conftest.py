@@ -32,6 +32,7 @@ def temp_data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("FEEDBACK_STORE_FILE", str(feedback_file))
     monkeypatch.setenv("DISTILLED_SLM_FILE", str(distilled_file))
     monkeypatch.setenv("EDTA_RATE_LIMIT_PER_MINUTE", "0")
+    monkeypatch.setenv("EDTA_METRICS_ENABLED", "true")
     monkeypatch.delenv("EDTA_API_KEY", raising=False)
 
     import app.config

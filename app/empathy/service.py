@@ -33,10 +33,8 @@ class EmpathyEngine:
         self.tco_calculator = TCOCalculator()
 
     def should_activate(self, scenario_text: str, include_empathy: bool = False) -> bool:
-        if include_empathy:
-            return True
-        text = (scenario_text or "").lower()
-        return any(keyword in text for keyword in self.EMPATHY_KEYWORDS)
+        """Empathy ranking runs only when the client explicitly requests it."""
+        return include_empathy
 
     def process(
         self,
