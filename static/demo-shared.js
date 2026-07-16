@@ -87,16 +87,48 @@
     const memory = summary.experience_memory || {};
     const haoe = summary.haoe || {};
     const oseCalibration = summary.ose_calibration || {};
+    const nlp = summary.nlp || {};
+    const empathy = summary.empathy || {};
+    const trip = empathy.trip || {};
+    const enrichment = summary.enrichment || empathy.enrichment || {};
     const outcome = topRecommendation?.ai_score?.outcome_simulation || {};
     const orchestration = topRecommendation?.ai_score?.orchestration || {};
     const inference = summary.inference || {};
     const intentSource = inference.intent_source || topRecommendation?.ai_score?.intent?.source || "unknown";
     const journeySource = inference.journey_source || topRecommendation?.ai_score?.journey_stage?.source || "unknown";
-    const parserConfidence = summary.nlp?.parser_confidence ?? inference.confidence;
+    const parserConfidence = nlp.parser_confidence ?? inference.confidence;
     const routeTier = inference.tier || orchestration.tier || haoe.slm_tier_name || "unknown";
     const publicTiers = (haoe.public_tiers || ["rules", "slm", "ml", "llm"]).join(", ");
+    const scenarioSnippet = String(summary.scenario_text || "").trim();
+    const shortScenario = scenarioSnippet.length > 96
+      ? `${scenarioSnippet.slice(0, 95)}…`
+      : (scenarioSnippet || "No scenario text");
+    const empathyVehicle = empathy.vehicle_recommendation || {};
+    const empathyTco = empathyVehicle.tco || {};
+    const recentOutcomes = (graph.recent_outcomes || []).slice(-3).map(item => {
+      const id = item.candidate_id || item.recommendation_id || item.type || "event";
+      return `${item.type || "event"}:${id}`;
+    }).join(", ") || "None yet";
+    const journeyEvents = (graph.journey_sequence || []).slice(-4).map(item => escapeHtml(String(item))).join(", ") || "None yet";
+    const keywords = (nlp.keywords || graph.keywords || []).slice(0, 6).join(", ") || "none";
+    const personaTags = (empathy.hidden_needs?.persona_tags || []).join(", ") || "none";
+    const routeLabel = trip.route_label || (trip.stops?.length ? `${trip.stops.length} stops` : "not inferred");
+    const routeMiles = trip.distance_miles ?? enrichment.route?.distance_miles ?? "—";
 
     container.innerHTML = `
+      <article class="architecture-card architecture-card-wide">
+        <span class="architecture-label">Scenario context</span>
+        <h3>Input driving this run</h3>
+        <p class="architecture-scenario-text">${escapeHtml(shortScenario)}</p>
+        <dl>
+          <div><dt>Detected domain</dt><dd>${escapeHtml(pretty(nlp.detected_domain || inference.domain || "unknown"))}</dd></div>
+          <div><dt>Parser</dt><dd>${escapeHtml(pretty(nlp.parser || inference.provider || "rules"))}</dd></div>
+          <div><dt>Keywords</dt><dd>${escapeHtml(keywords)}</dd></div>
+          <div><dt>Empathy personas</dt><dd>${escapeHtml(personaTags)}</dd></div>
+          <div><dt>Route / miles</dt><dd>${escapeHtml(String(routeLabel))} · ${escapeHtml(String(routeMiles))} mi</dd></div>
+          <div><dt>Top recommendation</dt><dd>${escapeHtml(topRecommendation?.candidate?.id || "pending")}</dd></div>
+        </dl>
+      </article>
       <article class="architecture-card">
         <span class="architecture-label">TKGE</span>
         <h3>Temporal Knowledge Graph</h3>
@@ -104,9 +136,10 @@
           <div><dt>Nodes / edges</dt><dd>${escapeHtml(graph.node_count ?? 0)} / ${escapeHtml(graph.edge_count ?? 0)}</dd></div>
           <div><dt>Temporal edges</dt><dd>${escapeHtml(graph.temporal_edge_count ?? 0)}</dd></div>
           <div><dt>Timeline events</dt><dd>${escapeHtml(graph.timeline_event_count ?? 0)}</dd></div>
-          <div><dt>Recent outcomes</dt><dd>${escapeHtml((graph.recent_outcomes || []).slice(-2).map(item => item.type + (item.candidate_id ? `:${item.candidate_id}` : item.recommendation_id ? `:${item.recommendation_id}` : "")).join(", ") || "None")}</dd></div>
-          <div><dt>Inferred intent</dt><dd>${escapeHtml(pretty(graph.inferred_intent))} (${pct(graph.inferred_intent_confidence)})</dd></div>
-          <div><dt>Next journey stage</dt><dd>${escapeHtml(pretty(graph.next_best_journey_stage || "unknown"))}</dd></div>
+          <div><dt>Journey sequence</dt><dd>${journeyEvents}</dd></div>
+          <div><dt>Recent outcomes</dt><dd>${escapeHtml(recentOutcomes)}</dd></div>
+          <div><dt>Inferred intent</dt><dd>${escapeHtml(pretty(graph.inferred_intent || inference.intent_label))} (${pct(graph.inferred_intent_confidence ?? inference.confidence)})</dd></div>
+          <div><dt>Next journey stage</dt><dd>${escapeHtml(pretty(graph.next_best_journey_stage || inference.journey_label || "unknown"))}</dd></div>
         </dl>
       </article>
       <article class="architecture-card">
@@ -119,21 +152,15 @@
         <h3>Hybrid AI Orchestration</h3>
         <dl>
           <div><dt>Route tier</dt><dd>${escapeHtml(pretty(routeTier))}</dd></div>
+          <div><dt>Empathy ranking</dt><dd>${empathy.active ? "Active for this scenario" : "Insights only"}</dd></div>
           <div><dt>Public tiers</dt><dd>${escapeHtml(publicTiers)}</dd></div>
-          <div><dt>Sub-source</dt><dd>${escapeHtml(pretty(inference.sub_source || "n/a"))}</dd></div>
           <div><dt>Inference confidence</dt><dd>${inference.confidence != null ? pct(inference.confidence) : "n/a"}</dd></div>
           <div><dt>Rules provider</dt><dd>${escapeHtml(pretty(inference.provider || "n/a"))}</dd></div>
           <div><dt>Rules fired</dt><dd>${escapeHtml((inference.rules_fired || []).slice(0, 4).map(item => item.rule_id).join(", ") || "None yet")}</dd></div>
-          <div><dt>ML catalog warmed</dt><dd>${escapeHtml(String(summary.ml_inference?.catalog_warmed ?? "n/a"))}</dd></div>
-          <div><dt>SLM mode</dt><dd>${escapeHtml(pretty(summary.llm_status?.slm_engine?.mode || "n/a"))}</dd></div>
-          <div><dt>Explanation routing</dt><dd>${escapeHtml(pretty(summary.explanation_routing?.prefer_slm_first ? "slm first" : "llm first"))}</dd></div>
-          <div><dt>Reason</dt><dd>${escapeHtml(orchestration.reason || "Waiting for recommendation.")}</dd></div>
           <div><dt>Intent / journey source</dt><dd>${escapeHtml(pretty(intentSource))} / ${escapeHtml(pretty(journeySource))}</dd></div>
           <div><dt>Parser confidence</dt><dd>${parserConfidence != null ? pct(parserConfidence) : "n/a"}</dd></div>
-          <div><dt>Est. latency</dt><dd>${escapeHtml(orchestration.estimated_latency_ms ?? "-")} ms</dd></div>
+          <div><dt>Reason</dt><dd>${escapeHtml(orchestration.reason || "Scenario parsed and ranked with rules tier.")}</dd></div>
           <div><dt>Session cost</dt><dd>${escapeHtml(haoe.session_cost_units ?? 0)} / ${escapeHtml(haoe.cost_budget ?? "-")}</dd></div>
-          <div><dt>Circuit breaker</dt><dd>${escapeHtml(haoe.llm_circuit_open ? "Open" : "Closed")}</dd></div>
-          <div><dt>Route mix</dt><dd>${formatTierMix(haoe.telemetry?.tiers)}</dd></div>
         </dl>
       </article>
       <article class="architecture-card">
@@ -144,6 +171,8 @@
           <div><dt>Revenue impact</dt><dd>$${Number(outcome.revenue_impact || 0).toFixed(0)}</dd></div>
           <div><dt>Expected outcome</dt><dd>${pct(outcome.expected_outcome_score)}</dd></div>
           <div><dt>Historical CVR</dt><dd>${pct(oseCalibration.historical_cvr)}</dd></div>
+          <div><dt>Empathy vehicle TCO</dt><dd>${empathyTco.total_trip_cost != null ? `$${Number(empathyTco.total_trip_cost).toFixed(0)}` : "Add route miles for TCO"}</dd></div>
+          <div><dt>Hybrid rank score</dt><dd>${pct(topRecommendation?.ai_score?.final_hybrid_score)}</dd></div>
         </dl>
       </article>
     `;

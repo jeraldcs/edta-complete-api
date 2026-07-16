@@ -341,6 +341,18 @@ function renderRecommendation(data) {
   renderEmpathyPanels(summary, rec);
 }
 
+function updateRuntimeSectionHeadings(summary) {
+  const archTitle = document.querySelector(".architecture-section h2");
+  const techTitle = document.querySelector(".technical-section h2");
+  const domain = pretty((summary?.nlp || {}).detected_domain || "scenario");
+  if (archTitle) {
+    archTitle.textContent = `TKGE, EML, HAOE, and OSE for this ${domain.toLowerCase()} run`;
+  }
+  if (techTitle) {
+    techTitle.textContent = "Why this recommendation was selected for your scenario";
+  }
+}
+
 function renderTechnicalExplanation(data) {
   const summary = data.request_summary || {};
   const context = summary.parsed_context || {};
@@ -358,47 +370,56 @@ function renderTechnicalExplanation(data) {
   const empathy = summary.empathy || {};
   const empathyVehicle = empathyVehicleRecommendation(summary);
   const empathyInsights = hasEmpathyInsights(summary);
+  const trip = empathy.trip || {};
+  const enrichment = summary.enrichment || empathy.enrichment || {};
+  const scenarioSnippet = String(summary.scenario_text || scenarioText?.value || "").trim();
+  const shortScenario = scenarioSnippet.length > 140
+    ? `${scenarioSnippet.slice(0, 139)}…`
+    : scenarioSnippet;
   const empathyArticle = empathyInsights ? `
-      <article>
+      <article class="technical-span-full">
         <span>5. Empathy Engine</span>
-        <p>Every scenario includes an empathy vehicle recommendation with hidden needs, enrichment, and optional TCO.</p>
+        <p>Scenario-derived hidden needs, route enrichment, and optional TCO for this input.</p>
         <dl>
           <div><dt>Persona</dt><dd>${escapeHtml((empathy.hidden_needs?.persona_tags || []).join(", ") || "none")}</dd></div>
-          <div><dt>Standard filter</dt><dd>${escapeHtml(empathy.hidden_needs?.standard_filter_match || "n/a")}</dd></div>
+          <div><dt>Route miles</dt><dd>${escapeHtml(trip.distance_miles ?? enrichment.route?.distance_miles ?? "—")}</dd></div>
           <div><dt>Empathy vehicle</dt><dd>${escapeHtml(empathyVehicle?.candidate_id || rec.candidate.id)}</dd></div>
           <div><dt>Empathy match</dt><dd>${num(empathyVehicle?.match_score ?? rec.empathy_match?.match_score ?? 0)}</dd></div>
           <div><dt>Constraints met</dt><dd>${escapeHtml((empathyVehicle?.satisfied || rec.empathy_match?.satisfied || []).join(", ") || "none")}</dd></div>
-          <div><dt>Weather</dt><dd>${escapeHtml(summary.enrichment?.weather?.forecast || "clear")}</dd></div>
+          <div><dt>Weather</dt><dd>${escapeHtml(enrichment.weather?.forecast || "clear")}</dd></div>
           <div><dt>TCO total</dt><dd>${(empathyVehicle?.tco?.total_trip_cost ?? rec.tco?.total_trip_cost) != null ? `$${Number(empathyVehicle?.tco?.total_trip_cost ?? rec.tco?.total_trip_cost).toFixed(0)}` : "n/a"}</dd></div>
         </dl>
       </article>
   ` : "";
 
   technicalExplanation.innerHTML = `
+    <p class="technical-scenario-lead">${escapeHtml(shortScenario || "Scenario text drives all panels below.")}</p>
     <div class="technical-grid">
       <article>
         <span>1. Scenario NLP</span>
-        <p>The free-text scenario was converted into structured context before ranking.</p>
+        <p>Free-text input converted into structured context before ranking.</p>
         <dl>
           <div><dt>Domain</dt><dd>${escapeHtml(pretty(nlp.detected_domain || "unknown"))}</dd></div>
           <div><dt>Channel</dt><dd>${escapeHtml(pretty(context.channel))}</dd></div>
           <div><dt>Intent</dt><dd>${escapeHtml(pretty(context.current_intent))}</dd></div>
           <div><dt>Journey</dt><dd>${escapeHtml(pretty(context.journey_stage))}</dd></div>
           <div><dt>Keywords</dt><dd>${escapeHtml((nlp.keywords || []).join(", ") || "none")}</dd></div>
-          <div><dt>LLM status</dt><dd>${escapeHtml(pretty((nlp.llm_status || {}).last_status || "not requested"))}</dd></div>
+          <div><dt>Parser</dt><dd>${escapeHtml(pretty(nlp.parser || summary.inference?.provider || "rules"))}</dd></div>
         </dl>
       </article>
       <article>
         <span>2. Candidate Filtering</span>
-        <p>The API first narrowed the catalog using channel and scenario keyword overlap.</p>
+        <p>Catalog narrowed using channel and scenario keyword overlap from your text.</p>
         <dl>
           <div><dt>Candidate selected</dt><dd>${escapeHtml(candidate.id)}</dd></div>
           <div><dt>Candidate count</dt><dd>${escapeHtml(summary.candidate_preselection?.candidate_count ?? "n/a")}</dd></div>
+          <div><dt>Empathy vehicle</dt><dd>${escapeHtml(empathyVehicle?.candidate_id || "n/a")}</dd></div>
+          <div><dt>Reason codes</dt><dd>${escapeHtml((rec.reason_codes || []).slice(0, 4).join(", ") || "none")}</dd></div>
         </dl>
       </article>
       <article>
         <span>3. Scoring Signals</span>
-        <p>The ranker combines EDS relevance, semantic similarity, channel fit, and simulated outcome.</p>
+        <p>EDS relevance, semantic similarity, channel fit, and simulated outcome combined.</p>
         <dl>
           <div><dt>EDS score</dt><dd>${num(eds.final_eds_score)}</dd></div>
           <div><dt>Semantic similarity</dt><dd>${num(ai.semantic_similarity_score)}</dd></div>
@@ -410,18 +431,33 @@ function renderTechnicalExplanation(data) {
       </article>
       <article>
         <span>4. Trust And TAPL</span>
-        <p>TAPL decides whether to show, soften, delay, suppress, or fallback based on sensitivity, fatigue, and trust.</p>
+        <p>Trust, fatigue, and compliance govern whether to show, soften, delay, or suppress.</p>
         <dl>
           <div><dt>Action</dt><dd>${escapeHtml(pretty(tapl.action))}</dd></div>
           <div><dt>Trust</dt><dd>${num(tapl.trust_score)}</dd></div>
           <div><dt>Fatigue</dt><dd>${num(tapl.fatigue_score)}</dd></div>
           <div><dt>Compliance</dt><dd>${num(tapl.compliance_score)}</dd></div>
-          <div><dt>Reason codes</dt><dd>${escapeHtml((rec.reason_codes || []).join(", "))}</dd></div>
+          <div><dt>TAPL reason</dt><dd>${escapeHtml((rec.reason_codes || []).slice(0, 4).join(", ") || "none")}</dd></div>
         </dl>
       </article>
       ${empathyArticle}
     </div>
   `;
+}
+
+function renderRuntimeInsights(data) {
+  if (!data?.request_summary) {
+    return;
+  }
+  updateRuntimeSectionHeadings(data.request_summary);
+  renderTechnicalExplanation(data);
+  if (data.recommendations?.length) {
+    renderArchitecturePanels(
+      scenarioArchitecturePanels,
+      data.request_summary,
+      data.recommendations[0],
+    );
+  }
 }
 
 function showError(error) {
@@ -467,8 +503,7 @@ async function runScenario() {
       throw new Error("The API returned no recommendations for this scenario.");
     }
     renderRecommendation(data);
-    renderTechnicalExplanation(data);
-    renderArchitecturePanels(scenarioArchitecturePanels, data.request_summary, data.recommendations[0]);
+    renderRuntimeInsights(data);
     const parser = pretty((data.request_summary.nlp || {}).parser || "unknown");
     if (hasEmpathyInsights(data.request_summary)) {
       scenarioStatus.textContent = `Unified recommendation ready (${parser} + empathy vehicle).`;
@@ -524,6 +559,7 @@ async function runSimulate() {
       </div>
     `;
     technicalExplanation.textContent = "Simulate ranks every catalog candidate for the parsed context without TAPL delivery filtering.";
+    updateRuntimeSectionHeadings(data.request_summary);
     renderArchitecturePanels(scenarioArchitecturePanels, data.request_summary, data.recommendations[0]);
     scenarioStatus.textContent = "Simulation complete.";
   } catch (error) {
@@ -563,6 +599,9 @@ async function runExperienceMemory() {
       ${window.DemoShared.memoryBlock(memory)}
     `;
     technicalExplanation.textContent = "Experience memory stores trust, fatigue, preferences, and outcome history for the parsed subject.";
+    if (lastScenarioData?.request_summary) {
+      updateRuntimeSectionHeadings(lastScenarioData.request_summary);
+    }
     renderArchitecturePanels(scenarioArchitecturePanels, {
       experience_memory: { before: memory, after: memory },
       haoe: lastScenarioData?.request_summary?.haoe || {},
