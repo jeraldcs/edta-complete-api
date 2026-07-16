@@ -119,6 +119,8 @@ def test_hotel_scenario_includes_empathy_vehicle_recommendation(client: TestClie
 def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     response = client.get("/scenario-demo")
     assert response.status_code == 200
-    assert "Trained travel scenarios" in response.text
     assert "scenario_app.js" in response.text
     assert 'data-mode="empathy"' not in response.text
+    assert "Trained travel scenarios" not in response.text
+    assert "empathy-preset" not in response.text
+    assert 'id="empathyDestination"' not in response.text

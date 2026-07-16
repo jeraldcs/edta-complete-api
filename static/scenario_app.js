@@ -1,83 +1,3 @@
-const EMPATHY_PRESETS = {
-  family: {
-    scenario_text: "Traveling with my 80-year-old grandmother and toddler. Need a rental car for a week-long family trip.",
-    destination: "",
-    routeMiles: "",
-    rentalDays: 7,
-  },
-  pch: {
-    scenario_text: "Road trip along the Pacific Coast Highway, just me and my partner. We want something special for the scenic drive.",
-    destination: "Pacific Coast Highway",
-    routeMiles: 450,
-    rentalDays: 5,
-  },
-  dorm: {
-    scenario_text: "Moving my kid into their college dorm 3 hours away. Need space for boxes, bins, and a mini-fridge.",
-    destination: "",
-    routeMiles: 180,
-    rentalDays: 2,
-  },
-  denver: {
-    scenario_text: "I am planning a 500-mile one-way road trip to Denver, Colorado during the winter season. The journey may include interstate highways, mountain roads, steep inclines and declines, snow-covered roads, icy pavement, and rapidly changing weather conditions. I will be traveling with my spouse and luggage. My highest priorities are passenger safety, winter traction, braking performance, driver confidence, and reliability. Please recommend the most suitable vehicle for this trip and explain why.",
-    destination: "Denver, CO",
-    routeMiles: 500,
-    rentalDays: 4,
-  },
-  family_vacation: {
-    scenario_text: "I am planning a 1,200-mile family vacation from New Jersey to Orlando, Florida during the summer. We are a family of five with three children, multiple suitcases, a stroller, and sports equipment. Most driving will be on interstate highways with occasional city traffic. Comfort, cargo capacity, fuel efficiency, reliability, and advanced driver assistance features are my highest priorities. Please recommend the best vehicle for this trip.",
-    destination: "Orlando, FL",
-    routeMiles: 1200,
-    rentalDays: 7,
-  },
-  business_executive: {
-    scenario_text: "I travel frequently for business, averaging 35,000 highway miles annually. Most trips involve airport transfers, interstate driving, and meetings with clients. I want a premium vehicle that provides excellent comfort, advanced technology, outstanding safety, a quiet cabin, and strong fuel efficiency while maintaining a professional appearance. Recommend the most suitable vehicle.",
-    destination: "",
-    routeMiles: "",
-    rentalDays: 3,
-  },
-  national_parks: {
-    scenario_text: "I am planning a 10-day road trip covering Yellowstone, Grand Teton, Glacier National Park, and Rocky Mountain National Park. The trip includes paved highways, gravel roads, mountain passes, wildlife areas, and occasional rough terrain. I need a vehicle that offers good ground clearance, AWD capability, cargo space for camping equipment, reliability, and excellent safety. Recommend the best vehicle for this adventure.",
-    destination: "",
-    routeMiles: "",
-    rentalDays: 10,
-  },
-  urban_commuter: {
-    scenario_text: "I drive approximately 18,000 miles per year, primarily commuting through heavy urban traffic with occasional weekend highway trips. Fuel economy, reliability, parking convenience, low maintenance costs, and advanced safety features are my highest priorities. I also prefer modern infotainment and driver assistance technologies. Recommend the most suitable vehicle.",
-    destination: "",
-    routeMiles: "",
-    rentalDays: 3,
-  },
-  electric_vehicle: {
-    scenario_text: "I am considering purchasing my first electric vehicle. I drive approximately 50 miles per day, have access to home charging, and occasionally take 300-mile weekend trips. My priorities include long driving range, fast charging capability, battery reliability, safety, low maintenance, advanced technology, and overall ownership cost. Recommend the most suitable electric vehicle.",
-    destination: "",
-    routeMiles: 300,
-    rentalDays: 3,
-  },
-  luxury_winter_suv: {
-    scenario_text: "I live in Colorado and frequently drive through mountainous regions during winter. My budget allows me to purchase a luxury SUV. I value exceptional safety, AWD performance, premium comfort, advanced driver assistance systems, heated features, and long-distance driving comfort. Winter capability is more important than fuel economy. Recommend the ideal luxury SUV.",
-    destination: "Colorado",
-    routeMiles: "",
-    rentalDays: 5,
-  },
-  first_time_driver: {
-    scenario_text: "I recently received my driver's license and will primarily drive within suburban neighborhoods and nearby highways. I have limited driving experience and want a vehicle that is easy to drive, highly reliable, affordable to maintain, fuel-efficient, and equipped with comprehensive safety technologies. Please recommend the best vehicle for a new driver.",
-    destination: "",
-    routeMiles: "",
-    rentalDays: 3,
-  },
-  seattle_rental: {
-    scenario_text: "I am flying to Seattle and renting a vehicle for a 7-day vacation. My itinerary includes city driving, scenic coastal highways, Mount Rainier, Olympic National Park, and occasional mountain roads. Rental cost is important, but safety, reliability, fuel efficiency, cargo space, and driving comfort are more important. Recommend the best rental vehicle category and specific models if available.",
-    destination: "Seattle, WA",
-    routeMiles: "",
-    rentalDays: 7,
-  },
-  hurricane_travel: {
-    scenario_text: "I am planning a 700-mile road trip across the southeastern United States during hurricane season. The journey may involve heavy rain, flooded roads, strong crosswinds, poor visibility, and long highway drives. I prioritize hydroplaning resistance, braking performance, stability control, driver assistance technologies, visibility, and overall safety. Recommend the most suitable vehicle for these conditions.",
-    destination: "",
-    routeMiles: 700,
-    rentalDays: 5,
-  },
-};
 let lastScenarioData = null;
 let lastParsedScenarioText = "";
 let activeMode = "recommend";
@@ -93,11 +13,7 @@ const payloadPreview = document.getElementById("scenarioPayloadPreview");
 const responsePreview = document.getElementById("scenarioResponsePreview");
 const scenarioArchitecturePanels = document.getElementById("scenarioArchitecturePanels");
 const scenarioModeTabs = document.querySelectorAll(".scenario-mode-tab");
-const empathyControls = document.getElementById("empathyControls");
 const empathyResultsSection = document.getElementById("empathyResultsSection");
-const empathyDestination = document.getElementById("empathyDestination");
-const empathyRouteMiles = document.getElementById("empathyRouteMiles");
-const empathyRentalDays = document.getElementById("empathyRentalDays");
 const scenarioEmpathyHiddenNeeds = document.getElementById("scenarioEmpathyHiddenNeeds");
 const scenarioEmpathyEnrichment = document.getElementById("scenarioEmpathyEnrichment");
 const scenarioEmpathyTco = document.getElementById("scenarioEmpathyTco");
@@ -110,23 +26,14 @@ function num(value) {
 }
 
 function buildPayload() {
-  const payload = {
+  return {
     scenario_text: scenarioText.value.trim(),
     limit: 3,
     use_ai_models: true,
     use_llm: false,
     use_llm_explanation: false,
-    rental_days: Number(empathyRentalDays.value || 3),
+    rental_days: 3,
   };
-  const destination = empathyDestination.value.trim();
-  const routeMiles = empathyRouteMiles.value.trim();
-  if (destination) {
-    payload.destination = destination;
-  }
-  if (routeMiles) {
-    payload.route_miles = Number(routeMiles);
-  }
-  return payload;
 }
 
 function updatePayloadPreview() {
@@ -194,18 +101,6 @@ function renderEmpathyVehicleCard(summary) {
       ${tcoLine}
     </article>
   `;
-}
-
-function applyEmpathyPreset(name) {
-  const preset = EMPATHY_PRESETS[name];
-  if (!preset) {
-    return;
-  }
-  scenarioText.value = preset.scenario_text;
-  empathyDestination.value = preset.destination || "";
-  empathyRouteMiles.value = preset.routeMiles === "" ? "" : String(preset.routeMiles);
-  empathyRentalDays.value = String(preset.rentalDays);
-  updatePayloadPreview();
 }
 
 function renderEmpathyPanels(summary, topRec) {
@@ -300,12 +195,6 @@ function renderEmpathyPanels(summary, topRec) {
     ${(topRec?.enrichment_notes || []).length ? `<p><strong>Enrichment:</strong> ${escapeHtml(topRec.enrichment_notes.join(" "))}</p>` : ""}
     <p>${escapeHtml(pitch)}</p>
   `;
-}
-
-function clearEmpathyTripFields() {
-  empathyDestination.value = "";
-  empathyRouteMiles.value = "";
-  empathyRentalDays.value = "3";
 }
 
 async function parseScenarioContext() {
@@ -677,15 +566,6 @@ async function runExperienceMemory() {
 }
 
 scenarioText.addEventListener("input", updatePayloadPreview);
-[empathyDestination, empathyRouteMiles, empathyRentalDays].forEach(input => {
-  input.addEventListener("input", updatePayloadPreview);
-});
-document.querySelectorAll(".empathy-preset").forEach(button => {
-  button.addEventListener("click", () => {
-    applyEmpathyPreset(button.dataset.preset);
-    runScenario();
-  });
-});
 if (scenarioRunBtn) {
   scenarioRunBtn.addEventListener("click", runScenario);
 }
@@ -696,10 +576,6 @@ scenarioModeTabs.forEach(tab => {
   });
 });
 
-const initialMode = new URLSearchParams(window.location.search).get("mode");
-if (initialMode === "empathy") {
-  applyEmpathyPreset("denver");
-}
 setActiveMode("recommend");
 updatePayloadPreview();
 if (scenarioText?.value.trim()) {
