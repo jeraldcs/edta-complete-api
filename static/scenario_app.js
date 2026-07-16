@@ -1,45 +1,3 @@
-const fallbackExamples = [
-  {
-    scenario_text: "Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.",
-    domain: "car_rental",
-    channel: "web",
-    intent: "purchase",
-    journey_stage: "purchase",
-    tapl_action: "show",
-    expected_candidate_id: "vehicle_upgrade_suv",
-    purpose: "Identify an anonymous family airport-rental shopper comparing SUV options and recommend a relevant SUV upgrade before booking."
-  },
-  {
-    scenario_text: "guest looking for hotel room availability this weekend",
-    domain: "hotel",
-    channel: "web",
-    intent: "research",
-    journey_stage: "consideration",
-    tapl_action: "show",
-    expected_candidate_id: "hotel_reservation_assist",
-    purpose: "Help a hotel shopper move from availability research to reservation completion."
-  },
-  {
-    scenario_text: "person sitting in restaurant viewing menu from website",
-    domain: "restaurant",
-    channel: "web",
-    intent: "purchase",
-    journey_stage: "purchase",
-    tapl_action: "show",
-    expected_candidate_id: "restaurant_menu_recommendation",
-    purpose: "Personalize menu or cuisine content for a restaurant visitor preparing to order."
-  },
-  {
-    scenario_text: "doctor reading obesity product information on healthcare website",
-    domain: "healthcare",
-    channel: "web",
-    intent: "research",
-    journey_stage: "research",
-    tapl_action: "show",
-    expected_candidate_id: "obesity_product_hcp_education",
-    purpose: "Recommend approved obesity product education for a healthcare professional."
-  }
-];
 const EMPATHY_PRESETS = {
   family: {
     scenario_text: "Traveling with my 80-year-old grandmother and toddler. Need a rental car for a week-long family trip.",
@@ -66,7 +24,6 @@ const EMPATHY_PRESETS = {
     rentalDays: 4,
   },
 };
-let scenarioExamples = fallbackExamples;
 let lastScenarioData = null;
 let lastParsedScenarioText = "";
 let activeMode = "recommend";
@@ -75,9 +32,6 @@ const scenarioText = document.getElementById("scenarioText");
 const scenarioUseLlm = document.getElementById("scenarioUseLlm");
 const scenarioUseLlmExplanation = document.getElementById("scenarioUseLlmExplanation");
 const scenarioRunBtn = document.getElementById("scenarioRunBtn");
-const scenarioExampleSelect = document.getElementById("scenarioExampleSelect");
-const scenarioExampleMeta = document.getElementById("scenarioExampleMeta");
-const scenarioLoadExampleBtn = document.getElementById("scenarioLoadExampleBtn");
 const scenarioStatus = document.getElementById("scenarioStatus");
 const scenarioLoading = document.getElementById("scenarioLoading");
 const scenarioRecommendation = document.getElementById("scenarioRecommendation");
@@ -101,87 +55,6 @@ const { escapeHtml, pct, pretty, renderArchitecturePanels } = window.DemoShared;
 
 function num(value) {
   return Number(value || 0).toFixed(2);
-}
-
-function truncate(value, maxLength = 82) {
-  const text = String(value || "");
-  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
-}
-
-function compactScenarioLabel(example) {
-  return truncate(example.scenario_text, 58);
-}
-
-function selectedExample() {
-  const index = Number(scenarioExampleSelect.value || 0);
-  return scenarioExamples[index] || scenarioExamples[0];
-}
-
-function renderExampleMeta(example) {
-  if (!example) {
-    scenarioExampleMeta.textContent = "No scenario selected.";
-    return;
-  }
-  scenarioExampleMeta.innerHTML = `
-    <div class="scenario-summary-card">
-      <span>Purpose</span>
-      <strong>${escapeHtml(example.purpose || truncate(example.scenario_text, 92))}</strong>
-    </div>
-    <div class="scenario-chip-row">
-      <span>${escapeHtml(pretty(example.domain))}</span>
-      <span>${escapeHtml(pretty(example.channel))}</span>
-      <span>${escapeHtml(pretty(example.journey_stage))}</span>
-      <span>${escapeHtml(pretty(example.expected_candidate_id))}</span>
-    </div>
-  `;
-}
-
-function renderExampleOptions() {
-  scenarioExampleSelect.innerHTML = "";
-  const groups = new Map();
-  scenarioExamples.forEach((example, index) => {
-    const domain = example.domain || "general";
-    if (!groups.has(domain)) {
-      groups.set(domain, []);
-    }
-    groups.get(domain).push({ example, index });
-  });
-
-  groups.forEach((items, domain) => {
-    const group = document.createElement("optgroup");
-    group.label = pretty(domain);
-    items.forEach(({ example, index }) => {
-      const option = document.createElement("option");
-      option.value = String(index);
-      option.textContent = compactScenarioLabel(example);
-      group.appendChild(option);
-    });
-    scenarioExampleSelect.appendChild(group);
-  });
-  renderExampleMeta(selectedExample());
-}
-
-async function loadScenarioExamples() {
-  try {
-    const response = await fetch("/scenario-examples");
-    if (!response.ok) {
-      throw new Error(`GET /scenario-examples returned ${response.status}`);
-    }
-    const data = await response.json();
-    if (Array.isArray(data.records) && data.records.length) {
-      scenarioExamples = data.records;
-      scenarioStatus.textContent = `Loaded ${data.records.length} training scenarios.`;
-    }
-  } catch (error) {
-    scenarioExamples = fallbackExamples;
-    scenarioStatus.textContent = "Loaded fallback scenarios.";
-  }
-  renderExampleOptions();
-  const preserveText = scenarioText.value.trim();
-  if (!preserveText && selectedExample()) {
-    scenarioText.value = selectedExample().scenario_text;
-  }
-  updatePayloadPreview();
 }
 
 function buildPayload() {
@@ -417,7 +290,6 @@ function renderParsedContext(summary) {
   const context = parsedContextFromSummary(summary);
   const nlp = summary.nlp || {};
   const llmStatus = nlp.llm_status || {};
-  const training = nlp.training_reference || {};
   parsedContext.innerHTML = `
     <div><span>Parser</span><strong>${escapeHtml(pretty(nlp.parser || "unknown"))}</strong></div>
     <div><span>LLM status</span><strong>${escapeHtml(pretty(llmStatus.last_status || (summary.llm_enabled ? "ready" : "not_configured")))}</strong></div>
@@ -425,7 +297,6 @@ function renderParsedContext(summary) {
     <div><span>Intent</span><strong>${escapeHtml(pretty(context.current_intent))}</strong></div>
     <div><span>Journey</span><strong>${escapeHtml(pretty(context.journey_stage))}</strong></div>
     <div><span>Customer</span><strong>${escapeHtml(context.customer_id || "anonymous")}</strong></div>
-    <div><span>Training reference</span><strong>${training.matched ? `Matched (${training.expected_candidate_id || "unknown"})` : "None"}</strong></div>
     <div><span>Channel fallback</span><strong>${escapeHtml(nlp.demo_channel_fallback ? `${nlp.demo_channel_fallback.from} → ${nlp.demo_channel_fallback.to}` : (nlp.empathy_channel_override ? `${nlp.empathy_channel_override.from} → ${nlp.empathy_channel_override.to}` : "None"))}</strong></div>
     <div><span>LLM fallback</span><strong>${escapeHtml(nlp.llm_fallback ? (nlp.llm_fallback_reason || "Yes") : "No")}</strong></div>
     <div><span>Profile lookup</span><strong>${escapeHtml(pretty((summary.profile || {}).profile_lookup || "not used"))}</strong></div>
@@ -563,10 +434,6 @@ function renderTechnicalExplanation(data) {
   const ai = rec.ai_score;
   const tapl = ai.tapl;
   const outcome = ai.outcome_simulation;
-  const example = selectedExample();
-  const training = summary.training_alignment || {};
-  const expected = training.expected_candidate_id || example?.expected_candidate_id || "not provided";
-  const matchedExpected = expected === candidate.id;
   const empathy = summary.empathy || {};
   const empathyVehicle = empathyVehicleRecommendation(summary);
   const empathyInsights = hasEmpathyInsights(summary);
@@ -606,10 +473,6 @@ function renderTechnicalExplanation(data) {
         <dl>
           <div><dt>Candidate selected</dt><dd>${escapeHtml(candidate.id)}</dd></div>
           <div><dt>Candidate count</dt><dd>${escapeHtml(summary.candidate_preselection?.candidate_count ?? "n/a")}</dd></div>
-          <div><dt>Expected from training row</dt><dd>${escapeHtml(expected)}</dd></div>
-          <div><dt>Training alignment</dt><dd>${matchedExpected ? "Top rank matches training label" : "Exploratory / NLP-driven ranking"}</dd></div>
-          <div><dt>Override mode</dt><dd>${escapeHtml(training.matched ? "Metadata only (no CSV override)" : "NLP-only parse")}</dd></div>
-          <div><dt>Purpose</dt><dd>${escapeHtml(training.purpose || example?.purpose || "not provided")}</dd></div>
         </dl>
       </article>
       <article>
@@ -793,23 +656,6 @@ async function runExperienceMemory() {
   }
 }
 
-scenarioExampleSelect.addEventListener("change", () => {
-  const example = selectedExample();
-  renderExampleMeta(example);
-  scenarioText.value = example.scenario_text;
-  lastParsedScenarioText = "";
-  updatePayloadPreview();
-});
-
-scenarioLoadExampleBtn.addEventListener("click", () => {
-  const example = selectedExample();
-  scenarioText.value = example.scenario_text;
-  lastParsedScenarioText = "";
-  clearEmpathyTripFields();
-  updatePayloadPreview();
-  runScenario();
-});
-
 scenarioText.addEventListener("input", updatePayloadPreview);
 scenarioUseLlm.addEventListener("change", updatePayloadPreview);
 scenarioUseLlmExplanation.addEventListener("change", updatePayloadPreview);
@@ -836,4 +682,4 @@ if (initialMode === "empathy") {
 }
 setActiveMode("recommend");
 updatePayloadPreview();
-loadScenarioExamples().then(() => runScenario());
+runScenario();
