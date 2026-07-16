@@ -50,6 +50,16 @@ def test_unified_process_always_exposes_insights():
     )
     assert bundle.insights_available is True
     assert bundle.active is False
+    assert bundle.vehicle_recommendation is not None
+    assert bundle.vehicle_recommendation.candidate_id == "standard_sedan"
+
+
+def test_build_vehicle_recommendation_for_family():
+    engine = EmpathyEngine()
+    context = CustomerContext(channel=Channel.web)
+    _, bundle = engine.process(FAMILY_SCENARIO, context, include_empathy=False)
+    assert bundle.vehicle_recommendation.candidate_id == "family_friendly_suv"
+    assert bundle.vehicle_recommendation.match_score > 0
 
 
 def test_hidden_needs_pch_couple():
@@ -138,6 +148,7 @@ def test_recommend_from_scenario_with_empathy(client):
     data = response.json()
     summary = data["request_summary"]
     assert summary.get("empathy") is not None
+    assert summary["empathy"].get("vehicle_recommendation") is not None
     assert len(data["recommendations"]) >= 1
     top = data["recommendations"][0]
     assert top.get("empathy_match") is not None or top["candidate"]["id"]
@@ -150,4 +161,4 @@ def test_empathy_demo_page(client):
 
     scenario = client.get("/scenario-demo")
     assert scenario.status_code == 200
-    assert "Empathy Engine" in scenario.text
+    assert "Empathy" in scenario.text

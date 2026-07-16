@@ -334,6 +334,11 @@ class RecommendationHandlers:
             nlp_summary["empathy"] = {
                 "active": False,
                 "insights_available": True,
+                "vehicle_recommendation_id": (
+                    empathy_bundle.vehicle_recommendation.candidate_id
+                    if empathy_bundle.vehicle_recommendation
+                    else None
+                ),
             }
 
         enriched_context, candidates = self._resolve_scenario_candidates(

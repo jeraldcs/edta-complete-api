@@ -1403,6 +1403,17 @@ textarea:focus,
   }
 }
 
+.empathy-vehicle-rec {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.empathy-vehicle-rec h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
 .empathy-controls {
   margin-top: 12px;
 }

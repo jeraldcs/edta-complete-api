@@ -228,11 +228,47 @@ function hasEmpathyInsights(summary) {
   if (!empathy) {
     return false;
   }
-  if (empathy.active || empathy.insights_available) {
+  if (empathy.vehicle_recommendation || empathy.active || empathy.insights_available) {
     return true;
   }
   const profile = empathy.hidden_needs || {};
   return Boolean((profile.persona_tags || []).length || (profile.implicit_constraints || []).length);
+}
+
+function empathyVehicleRecommendation(summary) {
+  return summary?.empathy?.vehicle_recommendation || null;
+}
+
+function renderEmpathyVehicleCard(summary) {
+  const vehicle = empathyVehicleRecommendation(summary);
+  if (!vehicle) {
+    return "";
+  }
+  const tco = vehicle.tco || {};
+  const tcoLine = tco.total_trip_cost != null
+    ? `<p class="explanation empathy-inline-tco"><strong>TCO:</strong> $${Number(tco.total_trip_cost).toFixed(0)} total`
+      + (tco.estimated_fuel_cost ? ` ($${Number(tco.daily_rate_total || 0).toFixed(0)} rental + $${Number(tco.estimated_fuel_cost).toFixed(0)} fuel)` : "")
+      + `</p>`
+    : "";
+  const constraints = (vehicle.satisfied || []).slice(0, 4).map(item => item.replaceAll("_", " ")).join(", ");
+  return `
+    <article class="empathy-vehicle-rec">
+      <p class="eyebrow">Empathy Engine vehicle recommendation</p>
+      <div class="offer-header">
+        <div>
+          <h3>${escapeHtml(vehicle.title || vehicle.candidate_id)}</h3>
+          <p>${escapeHtml(vehicle.description || "")}</p>
+        </div>
+        <strong class="score-badge">${pct(vehicle.match_score || 0)}</strong>
+      </div>
+      <div class="offer-metrics">
+        <div><span>Vehicle ID</span><strong>${escapeHtml(vehicle.candidate_id)}</strong></div>
+        <div><span>Empathy match</span><strong>${pct(vehicle.match_score || 0)}</strong>${constraints ? `<small>${escapeHtml(constraints)}</small>` : ""}</div>
+      </div>
+      <p class="explanation">${escapeHtml(vehicle.pitch || "")}</p>
+      ${tcoLine}
+    </article>
+  `;
 }
 
 function applyEmpathyPreset(name) {
@@ -326,10 +362,11 @@ function renderEmpathyPanels(summary, topRec) {
   }
 
   const match = topRec?.empathy_match || {};
-  const pitch = tco.top_pitch || empathy.empathy_pitch || topRec?.explanation || "";
+  const vehicle = empathyVehicleRecommendation(summary) || {};
+  const pitch = tco.top_pitch || empathy.empathy_pitch || vehicle.pitch || topRec?.explanation || "";
   scenarioEmpathyPitch.innerHTML = `
-    <p class="empathy-top-vehicle"><strong>Top vehicle:</strong> ${escapeHtml((topRec?.candidate?.title || "").replaceAll("_", " "))}</p>
-    ${match.satisfied?.length ? `<p><strong>Constraints met:</strong> ${escapeHtml(match.satisfied.map(item => item.replaceAll("_", " ")).join(", "))}</p>` : ""}
+    <p class="empathy-top-vehicle"><strong>Empathy vehicle:</strong> ${escapeHtml((vehicle.title || topRec?.candidate?.title || "").replaceAll("_", " "))}</p>
+    ${(vehicle.satisfied || match.satisfied || []).length ? `<p><strong>Constraints met:</strong> ${escapeHtml((vehicle.satisfied || match.satisfied || []).map(item => item.replaceAll("_", " ")).join(", "))}</p>` : ""}
     ${(topRec?.enrichment_notes || []).length ? `<p><strong>Enrichment:</strong> ${escapeHtml(topRec.enrichment_notes.join(" "))}</p>` : ""}
     <p>${escapeHtml(pitch)}</p>
   `;
@@ -424,6 +461,7 @@ function renderRecommendation(data) {
     <p class="explanation">${escapeHtml(rec.explanation)}</p>
     ${tcoLine}
     <div class="pill-row">${rec.reason_codes.map(reason => `<span>${escapeHtml(reason.replaceAll("_", " "))}</span>`).join("")}</div>
+    ${renderEmpathyVehicleCard(summary)}
     <div class="feedback-row">
       <span class="feedback-label">Capture feedback to EML + TKGE timeline</span>
       <div class="feedback-actions">
@@ -525,18 +563,20 @@ function renderTechnicalExplanation(data) {
   const expected = training.expected_candidate_id || example?.expected_candidate_id || "not provided";
   const matchedExpected = expected === candidate.id;
   const empathy = summary.empathy || {};
+  const empathyVehicle = empathyVehicleRecommendation(summary);
   const empathyInsights = hasEmpathyInsights(summary);
   const empathyArticle = empathyInsights ? `
       <article>
         <span>5. Empathy Engine</span>
-        <p>Hidden needs, route enrichment, and TCO adjusted the vehicle ranking beyond standard filters.</p>
+        <p>Every scenario includes an empathy vehicle recommendation with hidden needs, enrichment, and optional TCO.</p>
         <dl>
           <div><dt>Persona</dt><dd>${escapeHtml((empathy.hidden_needs?.persona_tags || []).join(", ") || "none")}</dd></div>
           <div><dt>Standard filter</dt><dd>${escapeHtml(empathy.hidden_needs?.standard_filter_match || "n/a")}</dd></div>
-          <div><dt>Empathy match</dt><dd>${num(rec.empathy_match?.match_score || 0)}</dd></div>
-          <div><dt>Constraints met</dt><dd>${escapeHtml((rec.empathy_match?.satisfied || []).join(", ") || "none")}</dd></div>
+          <div><dt>Empathy vehicle</dt><dd>${escapeHtml(empathyVehicle?.candidate_id || rec.candidate.id)}</dd></div>
+          <div><dt>Empathy match</dt><dd>${num(empathyVehicle?.match_score ?? rec.empathy_match?.match_score ?? 0)}</dd></div>
+          <div><dt>Constraints met</dt><dd>${escapeHtml((empathyVehicle?.satisfied || rec.empathy_match?.satisfied || []).join(", ") || "none")}</dd></div>
           <div><dt>Weather</dt><dd>${escapeHtml(summary.enrichment?.weather?.forecast || "clear")}</dd></div>
-          <div><dt>TCO total</dt><dd>${rec.tco?.total_trip_cost != null ? `$${Number(rec.tco.total_trip_cost).toFixed(0)}` : "n/a"}</dd></div>
+          <div><dt>TCO total</dt><dd>${(empathyVehicle?.tco?.total_trip_cost ?? rec.tco?.total_trip_cost) != null ? `$${Number(empathyVehicle?.tco?.total_trip_cost ?? rec.tco?.total_trip_cost).toFixed(0)}` : "n/a"}</dd></div>
         </dl>
       </article>
   ` : "";
@@ -642,7 +682,7 @@ async function runScenario() {
     renderArchitecturePanels(scenarioArchitecturePanels, data.request_summary, data.recommendations[0]);
     const parser = pretty((data.request_summary.nlp || {}).parser || "unknown");
     if (hasEmpathyInsights(data.request_summary)) {
-      scenarioStatus.textContent = `Unified recommendation ready (${parser} + empathy insights).`;
+      scenarioStatus.textContent = `Unified recommendation ready (${parser} + empathy vehicle).`;
     } else {
       scenarioStatus.textContent = `Done. Parsed with ${parser}.`;
     }
