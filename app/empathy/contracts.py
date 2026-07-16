@@ -65,6 +65,17 @@ class ConstraintMatch(BaseModel):
     gaps: list[str] = Field(default_factory=list)
 
 
+class EmpathyVehicleRecommendation(BaseModel):
+    candidate_id: str
+    title: str
+    description: str = ""
+    match_score: float = 0.0
+    satisfied: list[str] = Field(default_factory=list)
+    gaps: list[str] = Field(default_factory=list)
+    pitch: str = ""
+    tco: TCOBreakdown | None = None
+
+
 class EmpathyBundle(BaseModel):
     hidden_needs: HiddenNeedsProfile
     trip: TripModel
@@ -72,11 +83,12 @@ class EmpathyBundle(BaseModel):
     constraint_matches: dict[str, ConstraintMatch] = Field(default_factory=dict)
     tco_comparisons: list[TCOBreakdown] = Field(default_factory=list)
     empathy_pitch: str = ""
+    vehicle_recommendation: EmpathyVehicleRecommendation | None = None
     active: bool = False
     insights_available: bool = False
 
     def model_dump_public(self) -> dict[str, Any]:
-        return {
+        payload = {
             "active": self.active,
             "insights_available": self.insights_available,
             "hidden_needs": self.hidden_needs.model_dump(),
@@ -88,3 +100,6 @@ class EmpathyBundle(BaseModel):
             "tco_comparisons": [item.model_dump() for item in self.tco_comparisons],
             "empathy_pitch": self.empathy_pitch,
         }
+        if self.vehicle_recommendation:
+            payload["vehicle_recommendation"] = self.vehicle_recommendation.model_dump()
+        return payload

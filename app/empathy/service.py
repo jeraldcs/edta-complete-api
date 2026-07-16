@@ -2,7 +2,13 @@ from typing import Any
 
 from app.catalog import vehicle_candidates, vehicle_specs_by_id
 from app.empathy.constraint_matcher import ConstraintMatcher
-from app.empathy.contracts import EmpathyBundle, HiddenNeedsProfile, ImplicitConstraint, TripModel
+from app.empathy.contracts import (
+    EmpathyBundle,
+    EmpathyVehicleRecommendation,
+    HiddenNeedsProfile,
+    ImplicitConstraint,
+    TripModel,
+)
 from app.empathy.hidden_needs import HiddenNeedsExtractor, TripExtractor
 from app.empathy.tco_calculator import TCOCalculator
 from app.enrichment.enrichment_service import EnrichmentService
@@ -100,6 +106,10 @@ class EmpathyEngine:
             insights_available=True,
         )
         bundle.empathy_pitch = self._build_pitch(profile, enrichment)
+        bundle.vehicle_recommendation = self.build_vehicle_recommendation(
+            bundle,
+            scenario_text,
+        )
         return updated_context, bundle
 
     @staticmethod
@@ -109,6 +119,85 @@ class EmpathyEngine:
             for candidate in pool or []:
                 merged.setdefault(candidate.id, candidate)
         return list(merged.values())
+
+    def resolve_top_vehicle_id(self, bundle: EmpathyBundle, scenario_text: str = "") -> str:
+        specs = vehicle_specs_by_id()
+        if not specs:
+            return "economy_compact"
+
+        if bundle.constraint_matches:
+            ranked = sorted(
+                bundle.constraint_matches.items(),
+                key=lambda item: (item[1].match_score, item[0]),
+                reverse=True,
+            )
+            top_id, top_match = ranked[0]
+            if top_match.match_score > 0:
+                return top_id
+
+        text = (scenario_text or "").lower()
+        keyword_defaults = (
+            (("grandmother", "toddler", "family", "child", "elderly"), "family_friendly_suv"),
+            (("dorm", "move", "cargo", "boxes", "furniture"), "cargo_suv"),
+            (("denver", "mountain", "winter", "snow", "awd"), "awd_suv"),
+            (("coast", "scenic", "convertible", "partner", "pch"), "convertible_premium"),
+            (("suv", "airport", "rental", "vehicle", "car"), "standard_sedan"),
+        )
+        for keywords, candidate_id in keyword_defaults:
+            if any(keyword in text for keyword in keywords) and candidate_id in specs:
+                return candidate_id
+        return "economy_compact"
+
+    def build_vehicle_recommendation(
+        self,
+        bundle: EmpathyBundle,
+        scenario_text: str = "",
+    ) -> EmpathyVehicleRecommendation:
+        specs = vehicle_specs_by_id()
+        candidate_id = self.resolve_top_vehicle_id(bundle, scenario_text)
+        spec = specs.get(candidate_id) or next(iter(specs.values()), {})
+        match = bundle.constraint_matches.get(candidate_id)
+        if match is None and spec:
+            match = self.constraint_matcher.score_candidate(
+                candidate_id,
+                spec,
+                list(bundle.hidden_needs.implicit_constraints),
+            )
+
+        tco = None
+        if spec and bundle.trip.distance_miles:
+            baseline = specs.get("economy_compact")
+            tco = self.tco_calculator.breakdown(
+                candidate_id,
+                spec,
+                bundle.trip,
+                bundle.enrichment.gas_price_usd,
+                baseline_spec=baseline,
+                baseline_id="economy_compact",
+            )
+
+        pitch = bundle.empathy_pitch
+        if not pitch and match and match.satisfied:
+            labels = ", ".join(item.replace("_", " ") for item in match.satisfied[:4])
+            pitch = f"Empathy Engine prioritizes {labels} for this scenario."
+        elif not pitch:
+            pitch = (
+                f"{spec.get('title', candidate_id)} is the baseline empathy vehicle pick "
+                "when no special hidden needs were detected."
+            )
+        if tco and tco.recommendation_pitch and tco.recommendation_pitch not in pitch:
+            pitch = f"{pitch} {tco.recommendation_pitch}".strip()
+
+        return EmpathyVehicleRecommendation(
+            candidate_id=candidate_id,
+            title=spec.get("title", candidate_id),
+            description=spec.get("description", ""),
+            match_score=match.match_score if match else 0.0,
+            satisfied=list(match.satisfied) if match else [],
+            gaps=list(match.gaps) if match else [],
+            pitch=pitch.strip(),
+            tco=tco,
+        )
 
     def attach_results(
         self,
@@ -121,6 +210,8 @@ class EmpathyEngine:
         specs = vehicle_specs_by_id()
         ranked_ids = [item.candidate.id for item in recommendations]
         vehicle_ids = [candidate_id for candidate_id in ranked_ids if candidate_id in specs]
+        if bundle.vehicle_recommendation and bundle.vehicle_recommendation.candidate_id not in vehicle_ids:
+            vehicle_ids.append(bundle.vehicle_recommendation.candidate_id)
         if vehicle_ids and bundle.trip.distance_miles:
             bundle.tco_comparisons = self.tco_calculator.compare_candidates(
                 specs,
@@ -164,6 +255,20 @@ class EmpathyEngine:
             top_tco = tco_by_id.get(updated[0].candidate.id)
             if top_tco and top_tco.net_savings and top_tco.net_savings > 0:
                 bundle.empathy_pitch = top_tco.recommendation_pitch
+
+        if bundle.vehicle_recommendation and bundle.tco_comparisons:
+            vehicle_tco = next(
+                (
+                    item
+                    for item in bundle.tco_comparisons
+                    if item.candidate_id == bundle.vehicle_recommendation.candidate_id
+                ),
+                None,
+            )
+            if vehicle_tco:
+                bundle.vehicle_recommendation = bundle.vehicle_recommendation.model_copy(
+                    update={"tco": vehicle_tco}
+                )
         return updated, bundle
 
     def _build_unified_explanation(
