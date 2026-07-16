@@ -19,6 +19,17 @@ class ConstraintMatcher:
         "cargo_volume": lambda spec: spec.get("cargo_volume_cu_ft", 0) >= 50,
         "awd_preferred": lambda spec: bool(spec.get("awd")),
         "strong_engine": lambda spec: spec.get("engine_power_score", 0) >= 0.70,
+        "fuel_efficiency": lambda spec: (spec.get("fuel_type") or "").lower() in {"hybrid", "ev"}
+        or float(spec.get("mpg_highway") or 0) >= 38,
+        "ev_powertrain": lambda spec: (spec.get("fuel_type") or "").lower() == "ev",
+        "luxury_comfort": lambda spec: bool(spec.get("premium_audio"))
+        and float(spec.get("rear_legroom_score") or 0) >= 0.60,
+        "beginner_easy": lambda spec: float(spec.get("step_in_height_cm") or 999) <= 45
+        and float(spec.get("handling_score") or 1) <= 0.55,
+        "wet_weather_grip": lambda spec: bool(spec.get("awd"))
+        and float(spec.get("handling_score") or 0) >= 0.55,
+        "high_cargo_family": lambda spec: float(spec.get("cargo_volume_cu_ft") or 0) >= 45
+        and int(spec.get("isofix_count") or 0) >= 2,
     }
 
     def score_candidate(

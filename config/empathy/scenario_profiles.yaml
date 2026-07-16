@@ -1,0 +1,222 @@
+# Trained travel recommendation scenarios — keyword match + empathy vehicle mapping
+profiles:
+  winter_mountain_denver:
+    objective: "Safe vehicle recommendation for winter mountain driving."
+    required_keywords:
+      - denver
+      - winter
+    optional_keywords:
+      - snow
+      - icy
+      - mountain
+      - colorado
+      - 500-mile
+      - traction
+      - safety
+    persona: mountain_travel
+    preferred_vehicle: awd_suv
+    default_miles: 500
+    default_rental_days: 4
+    route_hint: denver
+    pitch: "AWD SUV with strong engine power for winter mountain traction, icy pavement, and driver confidence on the Denver route."
+    constraints:
+      - awd_preferred
+      - strong_engine
+
+  long_family_vacation:
+    objective: "Family SUV recommendation."
+    required_keywords:
+      - three children
+    optional_keywords:
+      - orlando
+      - new jersey
+      - family of five
+      - stroller
+      - suitcases
+      - 1,200-mile
+      - vacation
+      - cargo
+      - sports equipment
+    persona: large_family
+    preferred_vehicle: large_family_suv
+    default_miles: 1200
+    default_rental_days: 7
+    pitch: "Large family SUV with ISOFIX anchors, rear legroom, and cargo volume for five travelers, luggage, stroller, and sports gear."
+    constraints:
+      - isofix_anchors
+      - rear_legroom
+      - high_cargo_family
+
+  business_executive:
+    objective: "Luxury sedan recommendation."
+    required_keywords:
+      - business
+    optional_keywords:
+      - executive
+      - premium
+      - luxury
+      - airport
+      - client
+      - professional
+      - comfort
+      - quiet
+    persona: business_executive
+    preferred_vehicle: luxury_sedan
+    default_miles: 35000
+    default_rental_days: 3
+    pitch: "Luxury sedan with premium comfort, advanced technology, and a quiet cabin suited to frequent executive highway and airport travel."
+    constraints:
+      - luxury_comfort
+      - premium_audio
+      - fuel_efficiency
+
+  national_park_adventure:
+    objective: "Adventure SUV recommendation."
+    required_keywords:
+      - national park
+    optional_keywords:
+      - yellowstone
+      - glacier
+      - rocky mountain
+      - gravel
+      - camping
+      - adventure
+      - ground clearance
+      - wildlife
+    persona: adventure_travel
+    preferred_vehicle: awd_suv
+    default_miles: 1800
+    default_rental_days: 10
+    route_hint: national_parks_loop
+    pitch: "AWD SUV with ground clearance and cargo space for multi-park adventure routes, gravel roads, and camping equipment."
+    constraints:
+      - awd_preferred
+      - cargo_volume
+      - strong_engine
+
+  urban_commuter:
+    objective: "City commuting recommendation."
+    required_keywords:
+      - commut
+    optional_keywords:
+      - urban
+      - city
+      - traffic
+      - fuel economy
+      - parking
+      - maintenance
+      - 18,000
+    persona: urban_commuter
+    preferred_vehicle: hybrid_midsize
+    default_miles: 18000
+    default_rental_days: 3
+    pitch: "Hybrid midsize for strong fuel economy, reliability, and safety tech on daily urban commutes and weekend highway trips."
+    constraints:
+      - fuel_efficiency
+
+  electric_vehicle:
+    objective: "EV recommendation."
+    required_keywords:
+      - electric vehicle
+    optional_keywords:
+      - ev
+      - charging
+      - battery
+      - range
+      - home charging
+      - 300-mile
+    persona: ev_buyer
+    preferred_vehicle: electric_midsize
+    default_miles: 300
+    default_rental_days: 3
+    pitch: "Electric midsize with long range, fast-charging readiness, and low maintenance for daily driving plus weekend trips."
+    constraints:
+      - ev_powertrain
+      - fuel_efficiency
+
+  luxury_winter_suv:
+    objective: "Premium AWD recommendation."
+    required_keywords:
+      - luxury
+      - colorado
+    optional_keywords:
+      - winter
+      - heated
+      - awd
+      - premium
+      - mountain
+      - driver assistance
+    persona: luxury_winter
+    preferred_vehicle: premium_suv
+    default_miles: 400
+    default_rental_days: 5
+    pitch: "Premium AWD SUV with luxury comfort, heated features, and winter-capable traction for Colorado mountain driving."
+    constraints:
+      - awd_preferred
+      - luxury_comfort
+      - strong_engine
+
+  first_time_driver:
+    objective: "Beginner-friendly recommendation."
+    required_keywords:
+      - driver's license
+    optional_keywords:
+      - first-time
+      - recently received
+      - beginner
+      - new driver
+      - suburban
+      - affordable
+      - easy to drive
+      - limited driving experience
+    persona: first_time_driver
+    preferred_vehicle: economy_compact
+    default_miles: 120
+    default_rental_days: 3
+    pitch: "Economy compact that is easy to drive, fuel-efficient, and equipped with core safety tech for a new driver."
+    constraints:
+      - beginner_easy
+
+  rental_seattle_vacation:
+    objective: "Rental vehicle selection."
+    required_keywords:
+      - renting
+    optional_keywords:
+      - seattle
+      - rental
+      - vacation
+      - mount rainier
+      - olympic national park
+      - coastal
+      - 7-day
+    persona: rental_travel
+    preferred_vehicle: awd_suv
+    default_miles: 650
+    default_rental_days: 7
+    route_hint: seattle_vacation
+    pitch: "AWD SUV rental class for Seattle city driving, coastal highways, national parks, and mountain roads with cargo space for a week-long trip."
+    constraints:
+      - awd_preferred
+      - cargo_volume
+
+  wet_weather_hurricane:
+    objective: "Wet-weather safety recommendation."
+    required_keywords:
+      - hurricane
+    optional_keywords:
+      - heavy rain
+      - flooded
+      - crosswind
+      - southeastern
+      - 700-mile
+      - hydroplaning
+      - visibility
+      - wet-weather
+    persona: wet_weather_travel
+    preferred_vehicle: awd_suv
+    default_miles: 700
+    default_rental_days: 5
+    pitch: "AWD SUV with stability, braking confidence, and wet-weather grip for hurricane-season highway travel in the Southeast."
+    constraints:
+      - wet_weather_grip
+      - awd_preferred

@@ -76,7 +76,10 @@ class HiddenNeedsExtractor:
 class TripExtractor:
     """Extract trip hints from scenario text and optional overrides."""
 
-    MILE_PATTERN = re.compile(r"(\d{2,4})\s*(?:-?\s*)?(?:mile|mi)\b", re.I)
+    MILE_PATTERN = re.compile(
+        r"(\d{1,3}(?:,\d{3})+|\d{2,4})\s*(?:-?\s*)?(?:mile|mi)\b",
+        re.I,
+    )
     HOUR_PATTERN = re.compile(r"(\d{1,2})\s*(?:-?\s*)?(?:hour|hr)\b", re.I)
     DAY_PATTERN = re.compile(r"(\d{1,2})\s*(?:-?\s*)?(?:day|days)\b", re.I)
     DESTINATION_HINTS = {
@@ -112,9 +115,9 @@ class TripExtractor:
 
         distance = route_miles
         if distance is None:
-            mile_match = self.MILE_PATTERN.search(scenario_text or "")
-            if mile_match:
-                distance = float(mile_match.group(1))
+            mile_matches = self.MILE_PATTERN.findall(scenario_text or "")
+            if mile_matches:
+                distance = max(float(value.replace(",", "")) for value in mile_matches)
             else:
                 hour_match = self.HOUR_PATTERN.search(scenario_text or "")
                 if hour_match:
@@ -132,6 +135,10 @@ class TripExtractor:
             route_hint = "california_sierra_loop"
         elif "denver" in text or "colorado" in text:
             route_hint = "denver"
+        elif any(word in text for word in ("yellowstone", "grand teton", "glacier")):
+            route_hint = "national_parks_loop"
+        elif "seattle" in text and "rent" in text:
+            route_hint = "seattle_vacation"
 
         trip = TripModel(
             destination=resolved_destination,
