@@ -10,6 +10,7 @@ from app.empathy.contracts import (
     TripModel,
 )
 from app.empathy.hidden_needs import HiddenNeedsExtractor, TripExtractor
+from app.empathy.scenario_profiles import ScenarioProfileMatcher
 from app.empathy.tco_calculator import TCOCalculator
 from app.enrichment.enrichment_service import EnrichmentService
 from app.models import CustomerContext, RankedRecommendation, Channel
@@ -45,6 +46,7 @@ class EmpathyEngine:
     def __init__(self):
         self.hidden_needs = HiddenNeedsExtractor()
         self.trip_extractor = TripExtractor()
+        self.scenario_profiles = ScenarioProfileMatcher()
         self.enrichment_service = EnrichmentService()
         self.constraint_matcher = ConstraintMatcher()
         self.tco_calculator = TCOCalculator()
@@ -73,22 +75,28 @@ class EmpathyEngine:
         rental_days: int = 3,
     ) -> tuple[CustomerContext, EmpathyBundle]:
         profile = self.hidden_needs.extract(scenario_text)
+        profile = self.scenario_profiles.enhance_hidden_needs(scenario_text, profile)
         trip = self.trip_extractor.extract(scenario_text, destination, route_miles, rental_days)
+        trip = self.scenario_profiles.apply_trip_defaults(
+            scenario_text,
+            trip,
+            route_miles=route_miles,
+        )
         enrichment = self.enrichment_service.enrich(trip, scenario_text)
 
         if enrichment.route.distance_miles and not trip.distance_miles:
             trip = trip.model_copy(update={"distance_miles": enrichment.route.distance_miles})
-        if not trip.distance_miles and "500" in (scenario_text or ""):
-            trip = trip.model_copy(update={"distance_miles": 500.0})
 
         ranking_active = self.should_rank_with_empathy(profile, include_empathy=include_empathy)
 
-        if enrichment.route.distance_miles and not trip.distance_miles:
-            trip = trip.model_copy(update={"distance_miles": enrichment.route.distance_miles})
-        if not trip.distance_miles and "500" in (scenario_text or ""):
-            trip = trip.model_copy(update={"distance_miles": 500.0})
-
-        preferred_vehicle = self.preferred_vehicle_for_personas(profile.persona_tags)
+        specs = vehicle_specs_by_id()
+        profile_vehicle = self.scenario_profiles.preferred_vehicle(scenario_text)
+        preferred_vehicle = (
+            profile_vehicle
+            if profile_vehicle in specs
+            else self.preferred_vehicle_for_personas(profile.persona_tags)
+        )
+        scenario_profile_meta = self.scenario_profiles.profile_public(scenario_text)
 
         all_constraints = list(profile.implicit_constraints)
         for constraint_id in enrichment.derived_constraints:
@@ -111,6 +119,7 @@ class EmpathyEngine:
             "empathy_constraints": [item.model_dump() for item in all_constraints],
             "empathy_persona_tags": profile.persona_tags,
             "empathy_preferred_vehicle": preferred_vehicle,
+            "scenario_profile": scenario_profile_meta,
             "trip": trip.model_dump(),
             "enrichment": enrichment.model_dump(),
             "vehicle_specs": specs,
@@ -129,7 +138,7 @@ class EmpathyEngine:
             active=ranking_active,
             insights_available=True,
         )
-        bundle.empathy_pitch = self._build_pitch(profile, enrichment)
+        bundle.empathy_pitch = self._build_pitch(profile, enrichment, scenario_text)
         bundle.vehicle_recommendation = self.build_vehicle_recommendation(
             bundle,
             scenario_text,
@@ -158,6 +167,10 @@ class EmpathyEngine:
         specs = vehicle_specs_by_id()
         if not specs:
             return "economy_compact"
+
+        profile_vehicle = self.scenario_profiles.preferred_vehicle(scenario_text)
+        if profile_vehicle and profile_vehicle in specs:
+            return profile_vehicle
 
         preferred = self.preferred_vehicle_for_personas(bundle.hidden_needs.persona_tags)
         if preferred:
@@ -329,8 +342,11 @@ class EmpathyEngine:
             parts.append(tco.recommendation_pitch)
         return " ".join(part for part in parts if part).strip()
 
-    def _build_pitch(self, profile: HiddenNeedsProfile, enrichment) -> str:
+    def _build_pitch(self, profile: HiddenNeedsProfile, enrichment, scenario_text: str = "") -> str:
         parts: list[str] = []
+        profile_pitch = self.scenario_profiles.profile_pitch(scenario_text)
+        if profile_pitch:
+            parts.append(profile_pitch)
         ordered_personas = [
             persona
             for persona in self.PERSONA_VEHICLE_PRIORITY

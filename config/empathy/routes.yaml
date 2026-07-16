@@ -52,3 +52,46 @@ multi_stop_routes:
     route_hint: pacific_coast
     max_elevation_ft: 1200
     steep_grade: false
+
+  national_parks_loop:
+    label: "Yellowstone → Grand Teton → Glacier → Rocky Mountain"
+    required_keywords:
+      - yellowstone
+    optional_keywords:
+      - grand teton
+      - glacier
+      - rocky mountain
+      - national park
+      - camping
+    origin: "Denver, CO"
+    stops:
+      - "Denver, CO"
+      - "Yellowstone National Park, WY"
+      - "Grand Teton National Park, WY"
+      - "Glacier National Park, MT"
+      - "Rocky Mountain National Park, CO"
+    segment_miles: [420, 120, 520, 740]
+    route_hint: national_parks_loop
+    max_elevation_ft: 8500
+    steep_grade: true
+
+  seattle_vacation:
+    label: "Seattle → Mount Rainier → Olympic NP → Coastal highways"
+    required_keywords:
+      - seattle
+    optional_keywords:
+      - renting
+      - mount rainier
+      - olympic
+      - vacation
+      - coastal
+    origin: "Seattle, WA"
+    stops:
+      - "Seattle, WA"
+      - "Mount Rainier National Park, WA"
+      - "Olympic National Park, WA"
+      - "Pacific Coast Highway, WA"
+    segment_miles: [130, 180, 210, 130]
+    route_hint: seattle_vacation
+    max_elevation_ft: 5400
+    steep_grade: true

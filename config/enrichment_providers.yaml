@@ -13,6 +13,22 @@ weather:
       forecast: heavy_rain
       wind_mph: 18
       note: Heavy rain is forecast during your rental window.
+    orlando:
+      forecast: thunderstorms
+      wind_mph: 20
+      note: Summer thunderstorms are common along the I-95 corridor.
+    "southeastern united states":
+      forecast: heavy_rain
+      wind_mph: 32
+      note: Hurricane-season rain, crosswinds, and reduced visibility are likely.
+    national_parks_loop:
+      max_elevation_ft: 8500
+      steep_grade: true
+      distance_miles: 1800
+    seattle_vacation:
+      max_elevation_ft: 5400
+      steep_grade: true
+      distance_miles: 650
 
 route:
   elevation_threshold_ft: 5000
