@@ -38,20 +38,6 @@
         <textarea id="scenarioText" rows="9">Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.</textarea>
 
         <div class="scenario-actions">
-          <label class="toggle-row compact-toggle">
-            <input id="scenarioUseLlm" type="checkbox"/>
-            <span>
-              <strong>Use LLM parsing</strong>
-              <small>Uses OpenAI when configured, otherwise falls back to local keyword NLP.</small>
-            </span>
-          </label>
-          <label class="toggle-row compact-toggle">
-            <input id="scenarioUseLlmExplanation" type="checkbox"/>
-            <span>
-              <strong>Use LLM explanation</strong>
-              <small>Optional customer-facing explanation from OpenAI.</small>
-            </span>
-          </label>
           <div class="scenario-mode-tabs" role="tablist" aria-label="Scenario demo mode">
             <button type="button" class="scenario-mode-tab is-active" data-mode="recommend" role="tab" aria-selected="true">Recommend</button>
             <button type="button" class="scenario-mode-tab" data-mode="simulate" role="tab" aria-selected="false">Simulate</button>
@@ -80,7 +66,7 @@
               </label>
             </div>
           </div>
-          <button id="scenarioRunBtn" type="button">Run recommendation</button>
+          <button id="scenarioRunBtn" type="button">Recommend</button>
         </div>
         <div id="scenarioStatus" class="scenario-status">Ready</div>
       </article>

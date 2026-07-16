@@ -29,8 +29,6 @@ let lastParsedScenarioText = "";
 let activeMode = "recommend";
 
 const scenarioText = document.getElementById("scenarioText");
-const scenarioUseLlm = document.getElementById("scenarioUseLlm");
-const scenarioUseLlmExplanation = document.getElementById("scenarioUseLlmExplanation");
 const scenarioRunBtn = document.getElementById("scenarioRunBtn");
 const scenarioStatus = document.getElementById("scenarioStatus");
 const scenarioLoading = document.getElementById("scenarioLoading");
@@ -62,8 +60,8 @@ function buildPayload() {
     scenario_text: scenarioText.value.trim(),
     limit: 3,
     use_ai_models: true,
-    use_llm: scenarioUseLlm.checked,
-    use_llm_explanation: scenarioUseLlmExplanation.checked,
+    use_llm: false,
+    use_llm_explanation: false,
     rental_days: Number(empathyRentalDays.value || 3),
   };
   const destination = empathyDestination.value.trim();
@@ -89,7 +87,7 @@ function setActiveMode(mode) {
     tab.setAttribute("aria-selected", selected ? "true" : "false");
   });
   const labels = {
-    recommend: "Run recommendation",
+    recommend: "Recommend",
     simulate: "Simulate all outcomes",
     memory: "Load experience memory",
   };
@@ -657,8 +655,6 @@ async function runExperienceMemory() {
 }
 
 scenarioText.addEventListener("input", updatePayloadPreview);
-scenarioUseLlm.addEventListener("change", updatePayloadPreview);
-scenarioUseLlmExplanation.addEventListener("change", updatePayloadPreview);
 [empathyDestination, empathyRouteMiles, empathyRentalDays].forEach(input => {
   input.addEventListener("input", updatePayloadPreview);
 });
@@ -668,7 +664,9 @@ document.querySelectorAll(".empathy-preset").forEach(button => {
     runScenario();
   });
 });
-scenarioRunBtn.addEventListener("click", runScenario);
+if (scenarioRunBtn) {
+  scenarioRunBtn.addEventListener("click", runScenario);
+}
 scenarioModeTabs.forEach(tab => {
   tab.addEventListener("click", () => {
     setActiveMode(tab.dataset.mode);
@@ -682,4 +680,6 @@ if (initialMode === "empathy") {
 }
 setActiveMode("recommend");
 updatePayloadPreview();
-runScenario();
+if (scenarioText?.value.trim()) {
+  runScenario();
+}
