@@ -302,23 +302,24 @@ function renderEmpathyPanels(summary, topRec) {
   `).join("");
 
   scenarioEmpathyHiddenNeeds.innerHTML = `
-    <dl>
+    <dl class="empathy-facts">
       <div><dt>Persona</dt><dd>${escapeHtml((profile.persona_tags || []).join(", ") || "None")}</dd></div>
       <div><dt>Standard filter would match</dt><dd>${escapeHtml(profile.standard_filter_match || "Generic category")}</dd></div>
       <div><dt>Confidence</dt><dd>${Math.round(Number(profile.confidence || 0) * 100)}%</dd></div>
       <div><dt>Evidence</dt><dd>${escapeHtml((profile.evidence_phrases || []).join(", ") || "—")}</dd></div>
     </dl>
-    <h3>Implicit constraints</h3>
+    <h3 class="empathy-subtitle">Implicit constraints</h3>
     <ul class="empathy-constraint-list">${constraintRows || "<li>No constraints extracted.</li>"}</ul>
   `;
 
   const enrichment = summary.enrichment || empathy.enrichment || {};
   const weather = enrichment.weather || {};
   const route = enrichment.route || {};
+  const stops = (empathy.trip?.stops || []).join(" -> ");
   scenarioEmpathyEnrichment.innerHTML = `
-    <dl>
+    <dl class="empathy-facts">
       <div><dt>Route</dt><dd>${escapeHtml(empathy.trip?.route_label || route.source || "—")}</dd></div>
-      <div><dt>Stops</dt><dd>${escapeHtml((empathy.trip?.stops || []).join(" → ") || "—")}</dd></div>
+      <div><dt>Stops</dt><dd class="empathy-stops">${escapeHtml(stops || "—")}</dd></div>
       <div><dt>Weather forecast</dt><dd>${escapeHtml(weather.forecast || "clear")} (${escapeHtml(weather.source || "stub")})</dd></div>
       <div><dt>Wind</dt><dd>${escapeHtml(weather.wind_mph ?? 0)} mph</dd></div>
       <div><dt>Weather note</dt><dd>${escapeHtml(weather.note || "—")}</dd></div>
@@ -348,18 +349,20 @@ function renderEmpathyPanels(summary, topRec) {
       </tr>
     `).join("");
     scenarioEmpathyTco.innerHTML = `
-      <table class="empathy-tco-table">
-        <thead>
-          <tr>
-            <th>Vehicle</th>
-            <th>Rental</th>
-            <th>Fuel</th>
-            <th>Total</th>
-            <th>Net vs compact</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="empathy-tco-scroll" tabindex="0" aria-label="Trip cost comparison table">
+        <table class="empathy-tco-table">
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Rental</th>
+              <th>Fuel</th>
+              <th>Total</th>
+              <th>Net vs compact</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     `;
   }
 

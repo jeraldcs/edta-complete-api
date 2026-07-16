@@ -118,26 +118,39 @@
       </aside>
     </section>
 
-    <section id="empathyResultsSection" class="site-section scenario-results empathy-results-section hidden" aria-hidden="true">
-      <div class="section-heading">
+    <section id="empathyResultsSection" class="site-section empathy-results-section hidden" aria-hidden="true">
+      <header class="empathy-section-header">
         <p class="eyebrow">Empathy insights</p>
-        <h2>Hidden needs, enrichment, and cost-to-drive (included with every recommendation)</h2>
-      </div>
+        <h2>Hidden needs, enrichment, and cost-to-drive</h2>
+        <p class="empathy-section-lead">Included with every recommendation — extracted from your scenario text and trip context.</p>
+      </header>
       <div class="empathy-results-grid">
-        <article class="offer-card empathy-panel">
-          <h2>Hidden needs</h2>
+        <article class="empathy-panel empathy-panel-needs">
+          <div class="empathy-panel-head">
+            <span class="empathy-panel-icon" aria-hidden="true">01</span>
+            <h2>Hidden needs</h2>
+          </div>
           <div id="scenarioEmpathyHiddenNeeds" class="empathy-panel-body">Run Recommend to see implicit constraints extracted from your scenario.</div>
         </article>
-        <article class="offer-card empathy-panel">
-          <h2>Weather &amp; terrain</h2>
+        <article class="empathy-panel empathy-panel-enrichment">
+          <div class="empathy-panel-head">
+            <span class="empathy-panel-icon" aria-hidden="true">02</span>
+            <h2>Weather &amp; terrain</h2>
+          </div>
           <div id="scenarioEmpathyEnrichment" class="empathy-panel-body">Route and weather enrichment appears here.</div>
         </article>
-        <article class="offer-card empathy-panel">
-          <h2>Cost-to-drive (TCO)</h2>
+        <article class="empathy-panel empathy-panel-tco">
+          <div class="empathy-panel-head">
+            <span class="empathy-panel-icon" aria-hidden="true">03</span>
+            <h2>Cost-to-drive (TCO)</h2>
+          </div>
           <div id="scenarioEmpathyTco" class="empathy-panel-body">Fuel and total trip cost comparisons.</div>
         </article>
-        <article class="offer-card empathy-panel empathy-panel-wide">
-          <h2>Empathy recommendation pitch</h2>
+        <article class="empathy-panel empathy-panel-pitch">
+          <div class="empathy-panel-head">
+            <span class="empathy-panel-icon" aria-hidden="true">04</span>
+            <h2>Empathy recommendation pitch</h2>
+          </div>
           <div id="scenarioEmpathyPitch" class="empathy-panel-body empathy-pitch">Tailored pitch based on hidden needs and trip economics.</div>
         </article>
       </div>
