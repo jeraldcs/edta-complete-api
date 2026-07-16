@@ -24,6 +24,8 @@ class TripModel(BaseModel):
     distance_miles: float | None = None
     rental_days: int = 3
     route_hint: str | None = None
+    route_label: str | None = None
+    stops: list[str] = Field(default_factory=list)
 
 
 class WeatherSnapshot(BaseModel):

@@ -5,6 +5,7 @@ from typing import Any
 import yaml
 
 from app.empathy.contracts import HiddenNeedsProfile, ImplicitConstraint, TripModel
+from app.empathy.route_planner import RoutePlanner
 
 
 class HiddenNeedsExtractor:
@@ -77,14 +78,23 @@ class TripExtractor:
 
     MILE_PATTERN = re.compile(r"(\d{2,4})\s*(?:-?\s*)?(?:mile|mi)\b", re.I)
     HOUR_PATTERN = re.compile(r"(\d{1,2})\s*(?:-?\s*)?(?:hour|hr)\b", re.I)
+    DAY_PATTERN = re.compile(r"(\d{1,2})\s*(?:-?\s*)?(?:day|days)\b", re.I)
     DESTINATION_HINTS = {
         "denver": "Denver, CO",
         "colorado": "Colorado",
         "pacific coast": "Pacific Coast Highway",
         "pch": "Pacific Coast Highway",
+        "yosemite": "Yosemite National Park, CA",
+        "lake tahoe": "Lake Tahoe, CA",
+        "tahoe": "Lake Tahoe, CA",
+        "napa": "Napa Valley, CA",
         "sfo": "San Francisco, CA",
+        "san francisco": "San Francisco, CA",
         "seattle": "Seattle, WA",
     }
+
+    def __init__(self):
+        self.route_planner = RoutePlanner()
 
     def extract(
         self,
@@ -99,7 +109,6 @@ class TripExtractor:
             for hint, label in self.DESTINATION_HINTS.items():
                 if hint in text:
                     resolved_destination = label
-                    break
 
         distance = route_miles
         if distance is None:
@@ -111,15 +120,23 @@ class TripExtractor:
                 if hour_match:
                     distance = float(hour_match.group(1)) * 55
 
+        inferred_days = rental_days
+        day_match = self.DAY_PATTERN.search(scenario_text or "")
+        if day_match:
+            inferred_days = max(inferred_days, int(day_match.group(1)))
+
         route_hint = None
         if "pacific coast" in text or "pch" in text:
             route_hint = "pacific_coast"
+        elif any(word in text for word in ("yosemite", "tahoe", "sierra")):
+            route_hint = "california_sierra_loop"
         elif "denver" in text or "colorado" in text:
             route_hint = "denver"
 
-        return TripModel(
+        trip = TripModel(
             destination=resolved_destination,
             distance_miles=distance,
-            rental_days=max(1, rental_days),
+            rental_days=max(1, inferred_days),
             route_hint=route_hint,
         )
+        return self.route_planner.apply_to_trip(trip, scenario_text, route_miles=route_miles)

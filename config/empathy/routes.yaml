@@ -1,0 +1,54 @@
+multi_stop_routes:
+  sf_yosemite_tahoe_napa:
+    label: "San Francisco → Yosemite → Lake Tahoe → Napa → SFO"
+    required_keywords:
+      - yosemite
+      - tahoe
+    optional_keywords:
+      - napa
+      - san francisco
+      - sfo
+    origin: "San Francisco, CA"
+    stops:
+      - "San Francisco, CA"
+      - "Yosemite National Park, CA"
+      - "Lake Tahoe, CA"
+      - "Napa Valley, CA"
+      - "SFO Airport, CA"
+    segment_miles: [170, 180, 120, 55]
+    route_hint: california_sierra_loop
+    max_elevation_ft: 7200
+    steep_grade: true
+
+  sf_yosemite:
+    label: "San Francisco → Yosemite"
+    required_keywords:
+      - yosemite
+    optional_keywords:
+      - san francisco
+      - sfo
+    origin: "San Francisco, CA"
+    stops:
+      - "San Francisco, CA"
+      - "Yosemite National Park, CA"
+    segment_miles: [170]
+    route_hint: california_sierra_loop
+    max_elevation_ft: 7200
+    steep_grade: true
+
+  pch_coastal:
+    label: "Pacific Coast Highway"
+    required_keywords:
+      - pacific coast
+    optional_keywords:
+      - pch
+      - scenic
+    origin: "San Francisco, CA"
+    stops:
+      - "San Francisco, CA"
+      - "Pacific Coast Highway, CA"
+      - "Los Angeles, CA"
+    segment_miles: [450]
+    route_hint: pacific_coast
+    max_elevation_ft: 1200
+    steep_grade: false
