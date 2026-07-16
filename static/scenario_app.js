@@ -317,6 +317,8 @@ function renderEmpathyPanels(summary, topRec) {
   const route = enrichment.route || {};
   scenarioEmpathyEnrichment.innerHTML = `
     <dl>
+      <div><dt>Route</dt><dd>${escapeHtml(empathy.trip?.route_label || route.source || "—")}</dd></div>
+      <div><dt>Stops</dt><dd>${escapeHtml((empathy.trip?.stops || []).join(" → ") || "—")}</dd></div>
       <div><dt>Weather forecast</dt><dd>${escapeHtml(weather.forecast || "clear")} (${escapeHtml(weather.source || "stub")})</dd></div>
       <div><dt>Wind</dt><dd>${escapeHtml(weather.wind_mph ?? 0)} mph</dd></div>
       <div><dt>Weather note</dt><dd>${escapeHtml(weather.note || "—")}</dd></div>

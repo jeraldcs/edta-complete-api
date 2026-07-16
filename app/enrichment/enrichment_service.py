@@ -5,6 +5,7 @@ from typing import Any
 import yaml
 
 from app.empathy.contracts import EnrichmentBundle, RouteProfile, TripModel, WeatherSnapshot
+from app.empathy.route_planner import RoutePlanner
 
 
 class EnrichmentService:
@@ -13,6 +14,7 @@ class EnrichmentService:
     def __init__(self, config_path: str | Path | None = None):
         path = Path(config_path or "config/enrichment_providers.yaml")
         self.config = self._load_config(path)
+        self.route_planner = RoutePlanner()
 
     @staticmethod
     def _load_config(path: Path) -> dict[str, Any]:
@@ -41,7 +43,19 @@ class EnrichmentService:
     @staticmethod
     def _destination_key(destination: str | None, text: str) -> str:
         combined = f"{destination or ''} {text}".lower()
-        for key in ("denver", "colorado", "pacific coast", "pch", "seattle"):
+        for key in (
+            "california_sierra_loop",
+            "yosemite",
+            "tahoe",
+            "napa",
+            "denver",
+            "colorado",
+            "pacific coast",
+            "pch",
+            "seattle",
+            "san francisco",
+            "sfo",
+        ):
             if key in combined:
                 return key
         return (destination or "").lower()
@@ -73,10 +87,28 @@ class EnrichmentService:
         return WeatherSnapshot(forecast="clear", wind_mph=5.0, source="default")
 
     def _route(self, destination_key: str, text: str, trip: TripModel) -> RouteProfile:
+        planned = self.route_planner.route_profile(text)
+        if planned and planned.get("distance_miles"):
+            return RouteProfile(
+                max_elevation_ft=float(planned.get("max_elevation_ft") or 0),
+                steep_grade=bool(planned.get("steep_grade")),
+                distance_miles=float(planned["distance_miles"]),
+                source="route_planner",
+            )
+
         stubs = (self.config.get("route") or {}).get("stub_routes") or {}
         threshold = float((self.config.get("route") or {}).get("elevation_threshold_ft", 5000))
+        lookup_keys = [
+            trip.route_hint or "",
+            destination_key,
+            text,
+        ]
         for key, payload in stubs.items():
-            if key in destination_key or key in text or trip.route_hint == key.replace(" ", "_"):
+            if any(
+                key in lookup
+                for lookup in lookup_keys
+                if lookup
+            ):
                 distance = trip.distance_miles or payload.get("distance_miles")
                 return RouteProfile(
                     max_elevation_ft=float(payload.get("max_elevation_ft", 0)),
@@ -106,7 +138,7 @@ class EnrichmentService:
         by_state = gas_config.get("by_state") or {}
         if "denver" in destination_key or "colorado" in destination_key:
             return float(by_state.get("CO", default))
-        if "pacific" in destination_key or "pch" in destination_key:
+        if any(key in destination_key for key in ("pacific", "pch", "yosemite", "tahoe", "napa", "san francisco", "sfo", "california")):
             return float(by_state.get("CA", default))
         if "seattle" in destination_key:
             return float(by_state.get("WA", default))
@@ -124,5 +156,9 @@ class EnrichmentService:
         if route and route.steep_grade:
             notes.append(
                 "Steep elevation along your route — prioritizing AWD and stronger engine options."
+            )
+        if route and route.distance_miles and route.source == "route_planner":
+            notes.append(
+                f"Estimated total driving distance for your multi-stop route: {route.distance_miles:.0f} miles."
             )
         return notes

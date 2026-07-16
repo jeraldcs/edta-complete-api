@@ -20,6 +20,13 @@ patterns:
       - car seat
       - isofix
       - child seat
+      - daughter
+      - son
+      - year-old
+      - year old
+      - 1-year
+      - baby
+      - kid
     constraints:
       - isofix_anchors
       - rear_legroom
@@ -29,10 +36,12 @@ patterns:
     triggers:
       - pacific coast
       - pch
-      - road trip
       - partner
       - scenic
       - convertible
+      - wife
+      - husband
+      - spouse
     constraints:
       - panoramic_roof
       - convertible_option
@@ -60,6 +69,10 @@ patterns:
       - mountains
       - elevation
       - steep
+      - yosemite
+      - tahoe
+      - sierra
+      - napa valley
     constraints:
       - awd_preferred
       - strong_engine

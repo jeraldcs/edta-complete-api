@@ -29,6 +29,22 @@ route:
       max_elevation_ft: 1200
       steep_grade: false
       distance_miles: 450
+    california_sierra_loop:
+      max_elevation_ft: 7200
+      steep_grade: true
+      distance_miles: 525
+    yosemite:
+      max_elevation_ft: 7200
+      steep_grade: true
+      distance_miles: 170
+    tahoe:
+      max_elevation_ft: 6800
+      steep_grade: true
+      distance_miles: 180
+    napa:
+      max_elevation_ft: 900
+      steep_grade: false
+      distance_miles: 55
 
 gas_price:
   default_usd_per_gallon: 3.85

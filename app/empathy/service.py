@@ -23,7 +23,23 @@ class EmpathyEngine:
         "toddler_family": "ISOFIX child-seat anchors and generous rear legroom for your toddler.",
         "couple_leisure": "Panoramic roof, premium sound, and sleek handling for your coastal road trip.",
         "college_move": "Fold-flat rear seats, wide tailgate, and cargo space for the dorm move.",
-        "mountain_travel": "AWD and engine power suited for mountain climbs and winter routes.",
+        "mountain_travel": "AWD and engine power suited for mountain climbs and Sierra Nevada routes.",
+    }
+
+    PERSONA_VEHICLE_PRIORITY = (
+        "toddler_family",
+        "elderly_passenger",
+        "mountain_travel",
+        "college_move",
+        "couple_leisure",
+    )
+
+    PERSONA_VEHICLE_MAP = {
+        "toddler_family": "family_friendly_suv",
+        "elderly_passenger": "family_friendly_suv",
+        "mountain_travel": "awd_suv",
+        "college_move": "cargo_suv",
+        "couple_leisure": "convertible_premium",
     }
 
     def __init__(self):
@@ -67,6 +83,13 @@ class EmpathyEngine:
 
         ranking_active = self.should_rank_with_empathy(profile, include_empathy=include_empathy)
 
+        if enrichment.route.distance_miles and not trip.distance_miles:
+            trip = trip.model_copy(update={"distance_miles": enrichment.route.distance_miles})
+        if not trip.distance_miles and "500" in (scenario_text or ""):
+            trip = trip.model_copy(update={"distance_miles": 500.0})
+
+        preferred_vehicle = self.preferred_vehicle_for_personas(profile.persona_tags)
+
         all_constraints = list(profile.implicit_constraints)
         for constraint_id in enrichment.derived_constraints:
             all_constraints.append(
@@ -87,6 +110,7 @@ class EmpathyEngine:
             "empathy_insights": True,
             "empathy_constraints": [item.model_dump() for item in all_constraints],
             "empathy_persona_tags": profile.persona_tags,
+            "empathy_preferred_vehicle": preferred_vehicle,
             "trip": trip.model_dump(),
             "enrichment": enrichment.model_dump(),
             "vehicle_specs": specs,
@@ -120,10 +144,24 @@ class EmpathyEngine:
                 merged.setdefault(candidate.id, candidate)
         return list(merged.values())
 
+    def preferred_vehicle_for_personas(self, persona_tags: list[str]) -> str | None:
+        specs = vehicle_specs_by_id()
+        for persona in self.PERSONA_VEHICLE_PRIORITY:
+            if persona not in persona_tags:
+                continue
+            candidate_id = self.PERSONA_VEHICLE_MAP.get(persona)
+            if candidate_id in specs:
+                return candidate_id
+        return None
+
     def resolve_top_vehicle_id(self, bundle: EmpathyBundle, scenario_text: str = "") -> str:
         specs = vehicle_specs_by_id()
         if not specs:
             return "economy_compact"
+
+        preferred = self.preferred_vehicle_for_personas(bundle.hidden_needs.persona_tags)
+        if preferred:
+            return preferred
 
         if bundle.constraint_matches:
             ranked = sorted(
@@ -293,7 +331,12 @@ class EmpathyEngine:
 
     def _build_pitch(self, profile: HiddenNeedsProfile, enrichment) -> str:
         parts: list[str] = []
-        for persona in profile.persona_tags:
+        ordered_personas = [
+            persona
+            for persona in self.PERSONA_VEHICLE_PRIORITY
+            if persona in profile.persona_tags
+        ]
+        for persona in ordered_personas:
             pitch = self.PERSONA_PITCHES.get(persona)
             if pitch:
                 parts.append(pitch)

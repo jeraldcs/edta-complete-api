@@ -381,6 +381,10 @@ class RecommendationEngine:
             empathy_score = float(empathy_entry.get("match_score") or 0.0)
             empathy_weight = 0.40 if business_context.get("empathy_active") else 0.18
             empathy_boost = round(empathy_score * empathy_weight, 4)
+            preferred_vehicle = business_context.get("empathy_preferred_vehicle")
+            if preferred_vehicle and candidate.id == preferred_vehicle:
+                empathy_boost = round(empathy_boost + 0.25, 4)
+                reasons.append(f"empathy_preferred_vehicle:{preferred_vehicle}")
             if empathy_boost:
                 ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + empathy_boost)), 4)
                 reasons.append(f"empathy_constraint_match:{empathy_score:.2f}")
@@ -483,6 +487,13 @@ class RecommendationEngine:
         ) or {}
 
         def empathy_tiebreak(candidate_id: str) -> float:
+            preferred_vehicle = (
+                context.business_context.get("empathy_preferred_vehicle")
+                if isinstance(context.business_context, dict)
+                else None
+            )
+            if preferred_vehicle and candidate_id == preferred_vehicle:
+                return 1.0
             entry = empathy_ranking.get(candidate_id) or {}
             try:
                 return float(entry.get("match_score") or 0.0)
