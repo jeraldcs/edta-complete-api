@@ -2,31 +2,40 @@
 
 ## Draft For InfoQ Submission
 
-**Working title:** Architecting Explainable, Trust-Aware Personalization with Local AI Models and Optional LLM Enrichment  
-**Alternative title:** Beyond Black-Box Personalization: A Modular Architecture for Explainable AI Recommendations  
+**Working title:** Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations  
+**Alternative title:** Beyond LLM-First Recommendations: Cost-Aware, Auditable Personalization with Rules, SLM, ML, and Optional LLM  
+**Previous title:** Architecting Explainable, Trust-Aware Personalization with Local AI Models and Optional LLM Enrichment  
 **Author:** Jerald Selvaraj  
 **Target publication:** InfoQ Architecture / AI, ML & Data Engineering  
-**Status:** Draft v1  
+**Status:** Draft v2 (positioning refresh)  
+**Live demo:** https://edta-api.onrender.com/scenario-demo  
+**Reference repo:** https://github.com/jeraldcs/edta-complete-api
 
 ---
 
 ## Abstract
 
+Enterprise teams are adopting LLMs for personalization faster than they are adopting **governance** for personalization. The result is relevant but risky recommendations: opaque scores, uncontrolled token cost, and weak answers to "why did we show this?"
+
 Enterprise personalization systems are often implemented as opaque ranking services: a customer context enters the model, a recommendation comes out, and the surrounding teams are left to infer why the system made the decision. That approach becomes fragile when personalization must operate across web, mobile, chatbot, IoT, wearable, connected vehicle, and partner API channels, especially when trust, consent, fatigue, compliance, and explainability matter.
 
-This article presents an implementation-oriented architecture for an explainable, trust-aware personalization engine. The design combines a runtime context graph, Experience DNA Score (EDS), local AI models, a Trust-Aware Personalization Layer (TAPL), outcome simulation, optional LLM-based intent enrichment, known-user profile lookup, and a FastAPI recommendation API. The goal is not to replace deterministic governance or local models with a large language model, but to use the LLM selectively where it adds value: intent enrichment, explanation generation, and synthetic training data support.
+This article presents **EDTA (Experience-Driven Targeting Architecture)** — an implementation-oriented reference for a **governed decision pipeline**, not a single model. The design combines a runtime context graph, Experience DNA Score (EDS), a **four-tier inference stack** (Rules → SLM → ML → optional LLM) under a Hybrid AI Orchestration Engine (HAOE), a Trust-Aware Personalization Layer (TAPL), outcome simulation, known-user profile lookup, and a FastAPI recommendation API. The goal is not to replace deterministic governance or local models with a large language model, but to use the LLM selectively where it adds value: intent enrichment, explanation generation, and synthetic training data support — while **SLM-first explanation routing** keeps token cost bounded.
 
-The result is a modular architecture where each decision responsibility is explicit: context interpretation, intent prediction, journey-stage prediction, candidate matching, channel suitability, trust governance, outcome estimation, final ranking, and explanation generation. This separation makes the system easier to reason about, test, govern, and adapt across channels.
+The result is a modular architecture where each decision responsibility is explicit: context interpretation, tier selection, intent prediction, journey-stage prediction, candidate matching, channel suitability, trust governance, outcome estimation, final ranking, and explanation generation. This separation makes the system easier to reason about, test, govern, and adapt across channels and industries (travel, hospitality, healthcare education).
 
 ---
 
 ## Key Takeaways
 
+- **Personalization is a governance problem**, not only a ranking problem.
+- **Four explicit inference tiers** (Rules, SLM, ML, LLM) beat a hidden routing layer for testability, cost control, and benchmarks.
 - Personalization architectures should separate recommendation scoring, trust governance, outcome prediction, and explanation rather than hiding all decisions inside one black-box model.
 - LLMs are useful for enrichment and explanation, but critical recommendation governance should remain auditable and deterministic.
+- **TAPL must affect ranking**, not only logs — consent, fatigue, compliance sensitivity, and channel constraints are first-class inputs.
+- **Distilled SLM memory** reduces LLM cost on repeat journeys; explanation routing prefers SLM before LLM escalation.
 - A runtime context graph can convert live behavioral, profile, device, and business signals into reusable features for both local models and LLM prompts.
 - Known-user personalization requires a profile lookup/enrichment layer before scoring, but live session behavior should still influence the final decision.
-- Trust-aware controls such as consent, fatigue, compliance sensitivity, and channel constraints should directly affect ranking, not only appear in logs.
+- **Explainability belongs in the API contract** — rules fired, inference tier, TAPL decision, outcome simulation, and explanation source.
 
 ---
 
@@ -84,6 +93,29 @@ Browser or channel client
 ```
 
 The key architectural decision is that the recommendation engine is not a single model. It is an orchestrator. Each module owns a specific decision responsibility.
+
+### 2.1 Four-tier inference and why it matters
+
+Most 2024–2026 personalization stacks converge on some mix of rules, ML, and LLM. EDTA makes tiers **first-class and benchmarkable**:
+
+```text
+Rules  -> deterministic, auditable (YAML packs + EDS + TKGE-boosted confidence)
+SLM    -> distilled pattern memory + optional small-model endpoint + rules fallback
+ML     -> sklearn intent / journey / TAPL / outcome / ranker
+LLM    -> optional teacher (intent enrichment, explanation, synthetic labels)
+```
+
+The **Hybrid AI Orchestration Engine (HAOE)** selects tier by confidence, cost budget, and policy YAML — not by ad hoc branching in application code. **Explanation routing** (SLM first, LLM escalation when enabled) treats explanation cost the same way teams treat API rate limits or connection pools.
+
+Each tier returns a unified **InferenceResult**: tier, confidence, rules fired, signals, fallback metadata. This contract is what makes four-tier personalization **testable** in CI and **comparable** in load benchmarks (`docs/BENCHMARKS.md`).
+
+### 2.2 Industry scenarios (travel lead, healthcare scope)
+
+**Travel / car rental (primary demo narrative):** A family traveler searching for an airport SUV rental moves from research to booking in one session. EDTA routes structured booking context through the **Rules** or **ML** tier, applies **TAPL** for fatigue, and explains via **SLM-first** routing. Example scenario: *"customer checked SUV availability and started booking airport rental"* → `vehicle_upgrade_suv` with full EDS/TAPL/outcome breakdown. Live demo: https://edta-api.onrender.com/scenario-demo
+
+**Healthcare HCP education (governance narrative):** An HCP browsing obesity product education needs **approved content routing**, not aggressive cross-sell. **TAPL** suppresses or softens on sensitive channels (SMS, push, wearable); **rules_fired** and audit logs support inspection. **Scope boundary:** this reference implementation supports **HCP education and approved commercial content routing**. It is **not** a clinical decision support system and does not recommend diagnosis, treatment, or off-label use.
+
+The engine is **vertical-agnostic at the core** and **vertical-specific at the policy layer** — YAML rule packs, TAPL policies, and catalog candidates swap per industry without rewriting the orchestrator.
 
 ---
 
@@ -532,13 +564,27 @@ Browser / Channel Client
 ```text
 Identity/Profile        -> Who is this user?
 Live Context            -> What is happening now?
+HAOE Tier Selection     -> Rules, SLM, ML, or LLM?
 Intent/Journey          -> What is the user trying to do?
 EDS                     -> How relevant and valuable is the candidate?
 TAPL                    -> Should we show, soften, delay, or suppress?
 Outcome Simulation      -> What impact do we expect?
 Ranker                  -> What should be ordered first?
-Explanation             -> How do we explain this decision?
+Explanation Router      -> SLM first, LLM escalation if needed
 ```
+
+### Table 1: Four-tier benchmark (structured travel scenario)
+
+*Caption: Forced `inference_mode` per tier on SUV rental payload. Latency targets from local Docker; quality probes from tier match and training-alignment top-1. Hosted demo adds platform/network overhead — report separately.*
+
+| Tier | p95 latency (Docker)* | Tier match | Alignment top-1 | Explainability |
+|------|------------------------:|-----------:|----------------:|----------------|
+| Rules | ~20–50 ms | 100% | 100% | rules_fired (avg ~2) |
+| SLM | ~50–150 ms | 100% | 100% | pattern + rules fallback |
+| ML | ~200–400 ms | 100% | 100% | feature-level scores |
+| LLM | ~3–8 s | varies | n/a (sparse payload) | natural language |
+
+*Reproduce with `scripts/load_test_tiers.py` and `docs/BENCHMARKS.md`.*
 
 ---
 
@@ -550,7 +596,7 @@ Jerald Selvaraj is an enterprise architecture and digital experience technology 
 
 ## Evidence Notes For EB-1A Positioning
 
-This section is not intended for publication in InfoQ. It is included to help prepare a stronger evidence package around the article.
+This section is not intended for publication in InfoQ. It is included to help prepare a stronger evidence package around the article. See also **`docs/EB1A_ORIGINAL_CONTRIBUTION.md`** and **`docs/INFOQ_POSITIONING.md`** in the repository.
 
 To make this article more useful for an EB-1A record, collect supporting evidence around:
 
