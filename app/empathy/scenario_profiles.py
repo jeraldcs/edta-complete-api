@@ -1,3 +1,5 @@
+import hashlib
+import re
 from pathlib import Path
 from typing import Any
 
@@ -164,3 +166,14 @@ class ScenarioProfileMatcher:
             "preferred_vehicle": config.get("preferred_vehicle"),
             "pitch": config.get("pitch"),
         }
+
+
+def scenario_anonymous_id(scenario_text: str) -> str:
+    """Isolate demo TKGE/EML subjects per trained travel profile or scenario hash."""
+    matcher = ScenarioProfileMatcher()
+    matched = matcher.match(scenario_text)
+    if matched:
+        return f"travel-{matched[0]}"
+    normalized = re.sub(r"\s+", " ", (scenario_text or "").strip().lower())
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:12]
+    return f"scenario-{digest}"

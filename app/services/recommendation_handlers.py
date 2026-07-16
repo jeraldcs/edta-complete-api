@@ -278,10 +278,15 @@ class RecommendationHandlers:
         )
 
     def recommend_from_scenario(self, request: ScenarioRecommendationRequest, request_id: str) -> RecommendationResponseV1:
+        from app.empathy.scenario_profiles import scenario_anonymous_id
+
         parsed_context, nlp_summary = self.services.scenario_parser.parse(
             request.scenario_text,
             use_llm=request.use_llm,
         )
+        anonymous_id = scenario_anonymous_id(request.scenario_text)
+        parsed_context = parsed_context.model_copy(update={"anonymous_id": anonymous_id})
+        nlp_summary["scenario_subject_id"] = f"anonymous:{anonymous_id}"
         enriched_context, profile_summary = self.services.profile_service.enrich_context(parsed_context)
         enriched_context, memory_before = self.services.experience_memory.enrich_context(enriched_context)
         training_match = _scenario_training_match(request.scenario_text)
@@ -378,6 +383,13 @@ class RecommendationHandlers:
                 recommendation_count=len(recommendations),
                 extra={"parser": nlp_summary.get("parser")},
             )
+        inference_summary = _inference_summary(self.services.engine)
+        if nlp_summary.get("detected_domain"):
+            inference_summary = {
+                **inference_summary,
+                "domain": nlp_summary["detected_domain"],
+            }
+        scenario_profile = enriched_context.business_context.get("scenario_profile")
         return RecommendationResponseV1(
             request_summary=RequestSummary(
                 request_id=request_id,
@@ -410,7 +422,7 @@ class RecommendationHandlers:
                 use_slm=request.use_slm,
                 use_llm_explanation=request.use_llm_explanation,
                 inference_mode=request.inference_mode,
-                inference=_inference_summary(self.services.engine),
+                inference=inference_summary,
                 ml_inference=self.services.engine.ml.status(),
                 provider_telemetry=self.services.provider_telemetry.summary(),
                 explanation_routing=self.services.engine.explanation_router.status(),
@@ -419,6 +431,7 @@ class RecommendationHandlers:
                 haoe=self.services.engine.orchestrator.status(),
                 ose_calibration=calibration,
                 context_graph=graph.summary(),
+                scenario_profile=scenario_profile,
             ),
             recommendations=recommendations,
         )

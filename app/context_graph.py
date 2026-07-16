@@ -23,6 +23,7 @@ class ContextGraph:
         self.journey_sequence: list[str] = []
         self.node_timestamps: dict[str, str] = {}
         self.timeline: list[dict[str, Any]] = []
+        self.live_journey_sequence: list[str] = []
         self._last_temporal_node: str | None = None
         self._merge_prior_snapshot(prior_snapshot)
         self._build()
@@ -166,6 +167,7 @@ class ContextGraph:
             "channel": channel,
         })
         self.journey_sequence.append(f"recommendation:{candidate_id}")
+        self.live_journey_sequence.append(f"recommendation:{candidate_id}")
         return node_key
 
     def record_feedback(
@@ -228,6 +230,7 @@ class ContextGraph:
                 self._connect_temporal(previous_event_key, key, at=now)
             previous_event_key = key
             self.journey_sequence.append(str(event))
+            self.live_journey_sequence.append(str(event))
 
         for idx, term in enumerate(c.search_terms):
             key = f"search:{idx}:{term.lower()}"
@@ -237,6 +240,7 @@ class ContextGraph:
                 self._connect_temporal(previous_event_key, key, at=now)
             previous_event_key = key
             self.journey_sequence.append(f"search:{term.lower()}")
+            self.live_journey_sequence.append(f"search:{term.lower()}")
 
         for group_name, group in [
             ("profile", c.profile_attributes),
@@ -413,13 +417,26 @@ class ContextGraph:
 
     def summary(self):
         inferred_intent, confidence = self.infer_intent()
+        business = self.context.business_context or {}
+        scenario_profile = business.get("scenario_profile") or {}
+        trip = business.get("trip") or {}
         return TemporalKnowledgeGraphSummary(
             node_count=len(self.nodes),
             edge_count=sum(len(v) for v in self.edges.values()),
             temporal_edge_count=len(self.temporal_edges),
             journey_sequence=self.journey_sequence[-20:],
+            live_journey_sequence=self.live_journey_sequence[-12:],
             inferred_intent=inferred_intent,
             inferred_intent_confidence=confidence,
+            parsed_intent=(
+                self.context.current_intent.value if self.context.current_intent else None
+            ),
+            parsed_journey_stage=(
+                self.context.journey_stage.value if self.context.journey_stage else None
+            ),
+            scenario_profile_id=scenario_profile.get("profile_id"),
+            trip_miles=trip.get("distance_miles"),
+            empathy_personas=list(business.get("empathy_persona_tags") or []),
             next_best_journey_stage=self.next_best_journey_stage(),
             keywords=sorted(list(self.keywords()))[:30],
             timeline_event_count=len(self.timeline),

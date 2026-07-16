@@ -151,3 +151,39 @@ def test_empathy_vehicle_recommendation(scenario_key):
     assert bundle.trip.distance_miles == pytest.approx(scenario["miles"], rel=0.05)
     profile_meta = updated_context.business_context.get("scenario_profile") or {}
     assert profile_meta.get("profile_id") == scenario["profile_id"]
+
+
+def test_travel_scenario_isolates_architecture_subjects(client):
+    denver = TRAINED_SCENARIOS["winter_mountain_denver"]["text"]
+    family = TRAINED_SCENARIOS["long_family_vacation"]["text"]
+
+    denver_response = client.post(
+        "/recommend-from-scenario",
+        json={"scenario_text": denver, "limit": 1, "use_ai_models": True, "use_llm": False},
+    )
+    family_response = client.post(
+        "/recommend-from-scenario",
+        json={"scenario_text": family, "limit": 1, "use_ai_models": True, "use_llm": False},
+    )
+    assert denver_response.status_code == 200
+    assert family_response.status_code == 200
+
+    denver_summary = denver_response.json()["request_summary"]
+    family_summary = family_response.json()["request_summary"]
+
+    assert denver_summary["nlp"]["scenario_subject_id"] == "anonymous:travel-winter_mountain_denver"
+    assert family_summary["nlp"]["scenario_subject_id"] == "anonymous:travel-long_family_vacation"
+    assert denver_summary["scenario_profile"]["profile_id"] == "winter_mountain_denver"
+    assert family_summary["scenario_profile"]["profile_id"] == "long_family_vacation"
+
+    denver_graph = denver_summary["context_graph"]
+    family_graph = family_summary["context_graph"]
+    assert denver_graph["scenario_profile_id"] == "winter_mountain_denver"
+    assert family_graph["scenario_profile_id"] == "long_family_vacation"
+    assert denver_graph["live_journey_sequence"]
+    assert family_graph["live_journey_sequence"]
+    assert "denver" in " ".join(denver_graph["live_journey_sequence"]).lower()
+    assert "recommendation:" in denver_graph["live_journey_sequence"][-1]
+
+    assert denver_summary["inference"]["domain"] == "travel"
+    assert denver_summary["experience_memory"]["before"]["subject_id"] == "anonymous:travel-winter_mountain_denver"
