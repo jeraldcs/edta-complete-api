@@ -901,19 +901,20 @@ textarea:focus,
 
 .scenario-actions {
   display: grid;
-  grid-template-columns: minmax(170px, 0.9fr) minmax(170px, 0.9fr) minmax(140px, auto);
-  gap: 9px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: stretch;
   margin-top: 9px;
+}
+
+.scenario-actions #scenarioRunBtn {
+  justify-self: start;
+  min-width: 160px;
 }
 
 .scenario-actions .scenario-mode-tabs,
 .scenario-actions .empathy-controls {
   grid-column: 1 / -1;
-}
-
-.scenario-actions #scenarioRunBtn {
-  justify-self: start;
 }
 
 .scenario-actions button,
