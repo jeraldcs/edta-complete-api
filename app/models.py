@@ -120,8 +120,14 @@ class TemporalKnowledgeGraphSummary(BaseModel):
     edge_count: int
     temporal_edge_count: int
     journey_sequence: List[str] = Field(default_factory=list)
+    live_journey_sequence: List[str] = Field(default_factory=list)
     inferred_intent: str = "unknown"
     inferred_intent_confidence: float = 0.0
+    parsed_intent: Optional[str] = None
+    parsed_journey_stage: Optional[str] = None
+    scenario_profile_id: Optional[str] = None
+    trip_miles: Optional[float] = None
+    empathy_personas: List[str] = Field(default_factory=list)
     next_best_journey_stage: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
     timeline_event_count: int = 0

@@ -657,10 +657,16 @@ async function runExperienceMemory() {
       updateRuntimeSectionHeadings(lastScenarioData.request_summary);
     }
     renderArchitecturePanels(scenarioArchitecturePanels, {
+      ...(lastScenarioData?.request_summary || {}),
+      scenario_text: lastScenarioData?.request_summary?.scenario_text || scenarioText.value.trim(),
       experience_memory: { before: memory, after: memory },
+      context_graph: lastScenarioData?.request_summary?.context_graph || {},
       haoe: lastScenarioData?.request_summary?.haoe || {},
       ose_calibration: lastScenarioData?.request_summary?.ose_calibration || {},
-      context_graph: lastScenarioData?.request_summary?.context_graph || {},
+      inference: lastScenarioData?.request_summary?.inference || {},
+      nlp: lastScenarioData?.request_summary?.nlp || {},
+      empathy: lastScenarioData?.request_summary?.empathy || {},
+      scenario_profile: lastScenarioData?.request_summary?.scenario_profile || {},
     }, lastScenarioData?.recommendations?.[0]);
     scenarioStatus.textContent = "Experience memory loaded.";
   } catch (error) {
