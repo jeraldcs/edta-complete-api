@@ -120,7 +120,10 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     response = client.get("/scenario-demo")
     assert response.status_code == 200
     assert "scenario_app.js" in response.text
-    assert 'id="scenarioChipRow"' in response.text
+    assert 'id="scenarioChipRowTravel"' in response.text
+    assert 'id="scenarioChipRowGovernance"' in response.text
+    assert "Try scenario" in response.text
+    assert "Try governance" in response.text
     assert "scenario-chip-btn" in response.text
     assert 'data-mode="empathy"' not in response.text
     assert 'id="travelBenchmarkTable"' in response.text

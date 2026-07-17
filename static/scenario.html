@@ -37,11 +37,23 @@
             <p>Try a sample or write your own</p>
           </div>
 
-          <div id="scenarioChipRow" class="scenario-chip-row scenario-chip-row-input" role="group" aria-label="Sample scenarios">
-            <button type="button" class="scenario-chip-btn is-active" data-scenario-key="loyalty">Family loyalty (cust-789)</button>
-            <button type="button" class="scenario-chip-btn" data-scenario-key="winter">Winter Denver AWD</button>
-            <button type="button" class="scenario-chip-btn" data-scenario-key="no_consent">No consent</button>
-            <button type="button" class="scenario-chip-btn" data-scenario-key="fatigue">High fatigue</button>
+          <div class="scenario-chip-groups">
+            <div class="scenario-chip-group">
+              <span class="scenario-chip-group-label">Try scenario →</span>
+              <div id="scenarioChipRowTravel" class="scenario-chip-row scenario-chip-row-input" role="group" aria-label="Travel sample scenarios">
+                <button type="button" class="scenario-chip-btn is-active" data-scenario-key="loyalty">Family loyalty (cust-789)</button>
+                <button type="button" class="scenario-chip-btn" data-scenario-key="winter">Winter Denver AWD</button>
+                <button type="button" class="scenario-chip-btn" data-scenario-key="family_vacation">Family vacation (Orlando)</button>
+                <button type="button" class="scenario-chip-btn" data-scenario-key="business">Business executive</button>
+              </div>
+            </div>
+            <div class="scenario-chip-group">
+              <span class="scenario-chip-group-label">Try governance →</span>
+              <div id="scenarioChipRowGovernance" class="scenario-chip-row scenario-chip-row-input scenario-chip-row-governance" role="group" aria-label="Governance sample scenarios">
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="no_consent">No consent</button>
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="fatigue">High fatigue</button>
+              </div>
+            </div>
           </div>
 
           <label class="scenario-text-label" for="scenarioText">

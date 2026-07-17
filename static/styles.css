@@ -1048,7 +1048,38 @@ textarea:focus,
 
 .scenario-chip-row-input {
   justify-content: flex-start;
-  margin: 0 0 10px;
+  margin: 0;
+}
+
+.scenario-chip-groups {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.scenario-chip-group {
+  display: grid;
+  gap: 6px;
+}
+
+.scenario-chip-group-label {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.scenario-chip-row-governance .scenario-chip-btn-governance {
+  border-color: #e6d4a8;
+  background: #fffbf3;
+}
+
+.scenario-chip-row-governance .scenario-chip-btn-governance.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, #b8860b, #7a4d00);
+  border-color: #7a4d00;
+  box-shadow: 0 8px 18px rgba(184, 134, 11, 0.2);
 }
 
 .scenario-chip-btn {
