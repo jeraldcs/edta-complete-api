@@ -30,6 +30,16 @@ class HiddenNeedsExtractor:
         with path.open(encoding="utf-8") as handle:
             return yaml.safe_load(handle) or {}
 
+    @staticmethod
+    def _trigger_matches(trigger: str, text: str) -> bool:
+        """Match whole words/phrases only — avoid false hits like 'son' in 'personalization'."""
+        normalized = trigger.strip().lower()
+        if not normalized:
+            return False
+        parts = [re.escape(part) for part in re.split(r"\s+", normalized) if part]
+        pattern = r"\b" + r"\s+".join(parts) + r"\b"
+        return re.search(pattern, text, re.I) is not None
+
     def extract(self, scenario_text: str) -> HiddenNeedsProfile:
         text = (scenario_text or "").lower()
         persona_tags: list[str] = []
@@ -39,7 +49,7 @@ class HiddenNeedsExtractor:
 
         for pattern_id, pattern in (self.config.get("patterns") or {}).items():
             triggers = pattern.get("triggers") or []
-            matched = [trigger for trigger in triggers if trigger in text]
+            matched = [trigger for trigger in triggers if self._trigger_matches(trigger, text)]
             if not matched:
                 continue
             persona = pattern.get("persona") or pattern_id
