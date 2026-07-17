@@ -1,15 +1,27 @@
 (function () {
   let apiKey = null;
+  let demoProxyEnabled = false;
   let initPromise = null;
   let serverAwake = false;
   let wakeInFlight = null;
+
+  function applyDemoConfig(config) {
+    if (!config || typeof config !== "object") {
+      return;
+    }
+    apiKey = config.api_key || null;
+    demoProxyEnabled = Boolean(config.demo_proxy_enabled);
+    if (config.auth_enabled && !apiKey && config.demo_proxy_enabled !== false) {
+      demoProxyEnabled = true;
+    }
+  }
 
   function applyInlineConfig() {
     const inline = window.__EDTA_DEMO_CONFIG__;
     if (!inline) {
       return false;
     }
-    apiKey = inline.api_key || null;
+    applyDemoConfig(inline);
     return true;
   }
 
@@ -19,6 +31,16 @@
 
   async function init() {
     if (applyInlineConfig()) {
+      if (window.__EDTA_DEMO_CONFIG__?.demo_proxy_enabled === undefined) {
+        try {
+          const response = await fetch("/demo-config");
+          if (response.ok) {
+            applyDemoConfig(await response.json());
+          }
+        } catch (_error) {
+          // Keep inline-derived proxy fallback.
+        }
+      }
       return;
     }
     if (!initPromise) {
@@ -28,10 +50,10 @@
           if (!response.ok) {
             return;
           }
-          const config = await response.json();
-          apiKey = config.api_key || null;
+          applyDemoConfig(await response.json());
         } catch (_error) {
           apiKey = null;
+          demoProxyEnabled = false;
         }
       })();
     }
@@ -97,9 +119,7 @@
   }
 
   function resolveApiPath(path) {
-    const inline = window.__EDTA_DEMO_CONFIG__;
-    const proxyEnabled = inline?.demo_proxy_enabled;
-    const needsProxy = proxyEnabled && !apiKey;
+    const needsProxy = demoProxyEnabled && !apiKey;
     if (needsProxy && typeof path === "string" && path.startsWith("/") && !path.startsWith("/demo-api")) {
       return `/demo-api${path}`;
     }
