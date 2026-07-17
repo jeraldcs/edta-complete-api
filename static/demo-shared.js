@@ -79,6 +79,62 @@
       .join(", ");
   }
 
+  function taplTone(action) {
+    const key = String(action || "show").toLowerCase();
+    if (key === "show") {
+      return "tapl-show";
+    }
+    if (key === "soften") {
+      return "tapl-soften";
+    }
+    if (key === "delay") {
+      return "tapl-delay";
+    }
+    if (key === "suppress" || key === "generic_fallback") {
+      return "tapl-suppress";
+    }
+    return "tapl-show";
+  }
+
+  function renderTaplBadge(action) {
+    const label = pretty(action || "show");
+    return `<span class="tapl-badge ${taplTone(action)}">${escapeHtml(label)}</span>`;
+  }
+
+  function scoreMeter(label, value, options = {}) {
+    const tone = options.tone || "default";
+    const num = Math.max(0, Math.min(1, Number(value || 0)));
+    const pctVal = Math.round(num * 100);
+    return `
+      <div class="score-meter score-meter--${tone}">
+        <div class="score-meter-head">
+          <span>${escapeHtml(label)}</span>
+          <strong title="${num.toFixed(3)}">${pctVal}%</strong>
+        </div>
+        <div class="score-meter-track" aria-hidden="true">
+          <div class="score-meter-fill" style="width:${pctVal}%"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function vehicleGlyph(candidateId) {
+    const id = String(candidateId || "").toLowerCase();
+    if (id.includes("electric") || id.includes("ev")) {
+      return "⚡";
+    }
+    if (id.includes("suv") || id.includes("awd") || id.includes("cargo")) {
+      return "🚙";
+    }
+    if (id.includes("hybrid")) {
+      return "🍃";
+    }
+    if (id.includes("compact") || id.includes("economy")) {
+      return "🚘";
+    }
+    return "🚗";
+  }
+
   function renderArchitecturePanels(container, summary, topRecommendation) {
     if (!container) {
       return;
@@ -196,9 +252,9 @@
       </article>
       <article class="architecture-card">
         <span class="architecture-label">TAPL</span>
-        <h3>Trust-Aware Policy Layer</h3>
+        <h3>Trust-Aware Policy Layer ${renderTaplBadge(tapl.action || "show")}</h3>
         <dl>
-          <div><dt>Action</dt><dd>${escapeHtml(pretty(tapl.action || "show"))}</dd></div>
+          <div><dt>Action</dt><dd>${renderTaplBadge(tapl.action || "show")}</dd></div>
           <div><dt>Trust</dt><dd>${pct(tapl.trust_score)}</dd></div>
           <div><dt>Fatigue</dt><dd>${pct(tapl.fatigue_score)}</dd></div>
           <div><dt>Compliance</dt><dd>${pct(tapl.compliance_score)}</dd></div>
@@ -212,6 +268,10 @@
     escapeHtml,
     pct,
     pretty,
+    taplTone,
+    renderTaplBadge,
+    scoreMeter,
+    vehicleGlyph,
     renderArchitecturePanels,
     memoryBlock,
   };
