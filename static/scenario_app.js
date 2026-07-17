@@ -1,9 +1,8 @@
 let lastScenarioData = null;
 let lastParsedScenarioText = "";
-let scenarioRunTimer = null;
 
 const scenarioText = document.getElementById("scenarioText");
-const scenarioStatus = document.getElementById("scenarioStatus");
+const scenarioRunBtn = document.getElementById("scenarioRunBtn");
 const scenarioLoading = document.getElementById("scenarioLoading");
 const scenarioRecommendation = document.getElementById("scenarioRecommendation");
 const parsedContext = document.getElementById("parsedContext");
@@ -36,15 +35,6 @@ function buildPayload() {
 
 function updatePayloadPreview() {
   payloadPreview.textContent = JSON.stringify(buildPayload(), null, 2);
-}
-
-function scheduleScenarioRun() {
-  clearTimeout(scenarioRunTimer);
-  scenarioRunTimer = setTimeout(() => {
-    if (scenarioText.value.trim()) {
-      runScenario();
-    }
-  }, 700);
 }
 
 function hasEmpathyInsights(summary) {
@@ -376,7 +366,6 @@ function showError(error) {
     <p class="explanation">${escapeHtml(error.message || String(error))}</p>
   `;
   responsePreview.textContent = String(error.stack || error.message || error);
-  scenarioStatus.textContent = "Error";
   empathyResultsSection.classList.add("hidden");
   empathyResultsSection.setAttribute("aria-hidden", "true");
 }
@@ -385,7 +374,6 @@ async function runScenario() {
   const payload = buildPayload();
   updatePayloadPreview();
   scenarioLoading.classList.remove("hidden");
-  scenarioStatus.textContent = "Parsing scenario and building unified recommendation...";
 
   try {
     const response = await DemoApi.fetch("/recommend-from-scenario", {
@@ -406,12 +394,6 @@ async function runScenario() {
     }
     renderRecommendation(data);
     renderRuntimeInsights(data);
-    const parser = pretty((data.request_summary.nlp || {}).parser || "unknown");
-    if (hasEmpathyInsights(data.request_summary)) {
-      scenarioStatus.textContent = `Unified recommendation ready (${parser} + empathy vehicle).`;
-    } else {
-      scenarioStatus.textContent = `Done. Parsed with ${parser}.`;
-    }
   } catch (error) {
     showError(error);
   } finally {
@@ -419,12 +401,9 @@ async function runScenario() {
   }
 }
 
-scenarioText.addEventListener("input", () => {
-  updatePayloadPreview();
-  scheduleScenarioRun();
-});
+scenarioText.addEventListener("input", updatePayloadPreview);
+if (scenarioRunBtn) {
+  scenarioRunBtn.addEventListener("click", runScenario);
+}
 
 updatePayloadPreview();
-if (scenarioText?.value.trim()) {
-  runScenario();
-}
