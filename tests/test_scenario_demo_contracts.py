@@ -126,6 +126,9 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert 'id="empathyDestination"' not in response.text
     assert "scenario-mode-tab" not in response.text
     assert 'id="scenarioRunBtn"' in response.text
+    assert 'id="scenarioForm"' in response.text
+    assert "__EDTA_DEMO_CONFIG__" in response.text
+    assert "scenario_app.js?v=" in response.text
     assert 'id="scenarioRunError"' in response.text
     assert 'id="scenarioStatus"' not in response.text
     assert "Experience memory" not in response.text

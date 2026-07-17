@@ -33,6 +33,7 @@ from app.observability.logging import configure_logging, get_logger
 from app.observability.metrics import metrics_enabled, render_metrics
 from app.observability.tracing import configure_tracing, shutdown_tracing
 from app.services import recommendation_handlers
+from app.demo_html import render_scenario_demo
 from app.security import require_api_key
 
 logger = get_logger(__name__)
@@ -159,7 +160,7 @@ def demo_redirect():
 
 @app.get("/scenario-demo")
 def scenario_demo():
-    return FileResponse(Path("static/scenario.html"))
+    return render_scenario_demo()
 
 
 @app.get("/empathy-demo")

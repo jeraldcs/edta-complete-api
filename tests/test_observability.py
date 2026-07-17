@@ -150,7 +150,8 @@ def test_scenario_demo_serves_html(client: TestClient):
     response = client.get("/scenario-demo")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "scenario_app.js" in response.text
+    assert "scenario_app.js?v=" in response.text
+    assert response.headers.get("cache-control") == "no-store"
 
 
 def test_recommend_burst(client: TestClient, sample_recommend_payload):

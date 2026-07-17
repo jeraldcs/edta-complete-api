@@ -27,20 +27,22 @@
 
     <section class="site-section scenario-workbench">
       <article class="scenario-input-panel">
-        <div class="panel-title-row">
-          <span class="step-badge">Scenario input</span>
-          <p>Describe and run</p>
-        </div>
-        <label class="scenario-text-label" for="scenarioText">
-          <span class="eyebrow">User scenario</span>
-          <strong>Describe what the visitor is doing</strong>
-        </label>
-        <textarea id="scenarioText" rows="9">Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.</textarea>
+        <form id="scenarioForm" novalidate>
+          <div class="panel-title-row">
+            <span class="step-badge">Scenario input</span>
+            <p>Describe and run</p>
+          </div>
+          <label class="scenario-text-label" for="scenarioText">
+            <span class="eyebrow">User scenario</span>
+            <strong>Describe what the visitor is doing</strong>
+          </label>
+          <textarea id="scenarioText" rows="9" required minlength="10">Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.</textarea>
 
-        <div class="scenario-actions">
-          <button id="scenarioRunBtn" type="button">Recommend</button>
-          <p id="scenarioRunError" class="scenario-run-error hidden" role="alert"></p>
-        </div>
+          <div class="scenario-actions">
+            <button id="scenarioRunBtn" type="submit">Recommend</button>
+            <p id="scenarioRunError" class="scenario-run-error hidden" role="alert"></p>
+          </div>
+        </form>
       </article>
     </section>
 
@@ -148,6 +150,7 @@
       </div>
     </section>
   </main>
+  <!--EDTA_DEMO_BOOT-->
   <script src="/static/demo-api.js"></script>
   <script src="/static/demo-shared.js"></script>
   <script src="/static/scenario_app.js"></script>

@@ -2,22 +2,23 @@ let lastScenarioData = null;
 let lastParsedScenarioText = "";
 let demoReady = false;
 
-const scenarioText = document.getElementById("scenarioText");
-const scenarioRunBtn = document.getElementById("scenarioRunBtn");
-const scenarioRunError = document.getElementById("scenarioRunError");
-const scenarioLoading = document.getElementById("scenarioLoading");
-const scenarioRecommendation = document.getElementById("scenarioRecommendation");
-const parsedContext = document.getElementById("parsedContext");
-const technicalExplanation = document.getElementById("technicalExplanation");
-const payloadPreview = document.getElementById("scenarioPayloadPreview");
-const responsePreview = document.getElementById("scenarioResponsePreview");
-const scenarioArchitecturePanels = document.getElementById("scenarioArchitecturePanels");
-const empathyResultsSection = document.getElementById("empathyResultsSection");
-const scenarioEmpathyHiddenNeeds = document.getElementById("scenarioEmpathyHiddenNeeds");
-const scenarioEmpathyEnrichment = document.getElementById("scenarioEmpathyEnrichment");
-const scenarioEmpathyTco = document.getElementById("scenarioEmpathyTco");
-const scenarioEmpathyPitch = document.getElementById("scenarioEmpathyPitch");
-const scenarioResultsSection = document.querySelector(".scenario-results");
+let scenarioText = null;
+let scenarioRunBtn = null;
+let scenarioForm = null;
+let scenarioRunError = null;
+let scenarioLoading = null;
+let scenarioRecommendation = null;
+let parsedContext = null;
+let technicalExplanation = null;
+let payloadPreview = null;
+let responsePreview = null;
+let scenarioArchitecturePanels = null;
+let empathyResultsSection = null;
+let scenarioEmpathyHiddenNeeds = null;
+let scenarioEmpathyEnrichment = null;
+let scenarioEmpathyTco = null;
+let scenarioEmpathyPitch = null;
+let scenarioResultsSection = null;
 
 const shared = window.DemoShared || {};
 const escapeHtml = shared.escapeHtml || ((value) => String(value ?? ""));
@@ -522,7 +523,26 @@ async function runScenario() {
 }
 
 function bindScenarioDemo() {
-  if (!scenarioText || !scenarioRunBtn) {
+  scenarioText = document.getElementById("scenarioText");
+  scenarioRunBtn = document.getElementById("scenarioRunBtn");
+  scenarioForm = document.getElementById("scenarioForm");
+  scenarioRunError = document.getElementById("scenarioRunError");
+  scenarioLoading = document.getElementById("scenarioLoading");
+  scenarioRecommendation = document.getElementById("scenarioRecommendation");
+  parsedContext = document.getElementById("parsedContext");
+  technicalExplanation = document.getElementById("technicalExplanation");
+  payloadPreview = document.getElementById("scenarioPayloadPreview");
+  responsePreview = document.getElementById("scenarioResponsePreview");
+  scenarioArchitecturePanels = document.getElementById("scenarioArchitecturePanels");
+  empathyResultsSection = document.getElementById("empathyResultsSection");
+  scenarioEmpathyHiddenNeeds = document.getElementById("scenarioEmpathyHiddenNeeds");
+  scenarioEmpathyEnrichment = document.getElementById("scenarioEmpathyEnrichment");
+  scenarioEmpathyTco = document.getElementById("scenarioEmpathyTco");
+  scenarioEmpathyPitch = document.getElementById("scenarioEmpathyPitch");
+  scenarioResultsSection = document.querySelector(".scenario-results");
+
+  if (!scenarioText || !scenarioRunBtn || !scenarioForm) {
+    console.error("Scenario demo: missing form, textarea, or Recommend button.");
     return;
   }
 
@@ -533,7 +553,8 @@ function bindScenarioDemo() {
     }
   });
 
-  scenarioRunBtn.addEventListener("click", () => {
+  scenarioForm.addEventListener("submit", (event) => {
+    event.preventDefault();
     runScenario();
   });
 
@@ -547,6 +568,10 @@ function bindScenarioDemo() {
   updatePayloadPreview();
   window.DemoApi?.init?.();
 }
+
+window.ScenarioDemo = {
+  run: () => runScenario(),
+};
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", bindScenarioDemo);
