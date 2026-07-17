@@ -50,6 +50,7 @@ def extract_scenario_scores(response_body: dict[str, Any], scenario_key: str, sc
         "final_hybrid_score": ai.get("final_hybrid_score"),
         "trip_miles": (empathy.get("trip") or {}).get("distance_miles"),
         "persona": profile.get("persona"),
+        "scenario_text": scenario_meta.get("text"),
     }
 
 
