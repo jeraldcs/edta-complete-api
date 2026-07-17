@@ -129,7 +129,13 @@ class EmpathyEngine:
             },
         })
 
-        updated_context = context.model_copy(update={"business_context": business_context})
+        updated_context = context.model_copy(update={
+            "business_context": business_context,
+            "profile_attributes": self.scenario_profiles.apply_scoring_attributes(
+                scenario_text,
+                dict(context.profile_attributes),
+            ),
+        })
         bundle = EmpathyBundle(
             hidden_needs=profile,
             trip=trip,

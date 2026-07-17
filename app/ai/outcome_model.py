@@ -21,6 +21,28 @@ class OutcomeSimulationModel:
         self.revenue_model = joblib.load("models/outcome_revenue_model.joblib") if Path("models/outcome_revenue_model.joblib").exists() else None
 
     @staticmethod
+    def _heuristic_conversion(
+        eds_score,
+        semantic_similarity: float,
+        channel_fit: float,
+        tapl,
+        candidate,
+    ) -> float:
+        return max(
+            0.0,
+            min(
+                1.0,
+                eds_score.final_eds_score * 0.40
+                + semantic_similarity * 0.20
+                + channel_fit * 0.15
+                + tapl.trust_score * 0.15
+                + candidate.business_value * 0.10
+                - tapl.fatigue_score * 0.08
+                - candidate.compliance_sensitivity * 0.04,
+            ),
+        )
+
+    @staticmethod
     def _apply_calibration(
         conversion_probability: float,
         revenue_impact: float,
@@ -52,20 +74,32 @@ class OutcomeSimulationModel:
             "fatigue_score": tapl.fatigue_score,
         }])
 
+        heuristic_conversion = self._heuristic_conversion(
+            eds_score,
+            semantic_similarity,
+            channel_fit,
+            tapl,
+            candidate,
+        )
+
         if self.conversion_model and hasattr(self.conversion_model, "predict_proba"):
-            conversion_probability = float(self.conversion_model.predict_proba(feature_frame)[0][1])
+            ml_conversion = float(self.conversion_model.predict_proba(feature_frame)[0][1])
+            if ml_conversion >= 0.98 or ml_conversion <= 0.02:
+                conversion_probability = heuristic_conversion
+            else:
+                conversion_probability = round(
+                    0.30 * ml_conversion + 0.70 * heuristic_conversion,
+                    4,
+                )
         else:
-            conversion_probability = (
-                eds_score.final_eds_score * 0.40
-                + semantic_similarity * 0.20
-                + channel_fit * 0.15
-                + tapl.trust_score * 0.15
-                + candidate.business_value * 0.10
-            )
+            conversion_probability = round(heuristic_conversion, 4)
 
         if self.revenue_model:
             revenue_impact = float(max(0.0, self.revenue_model.predict(feature_frame)[0]))
         else:
+            revenue_impact = 100.0 * conversion_probability * candidate.business_value
+
+        if revenue_impact <= 0.0:
             revenue_impact = 100.0 * conversion_probability * candidate.business_value
 
         conversion_probability, revenue_impact = self._apply_calibration(

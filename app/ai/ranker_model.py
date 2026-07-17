@@ -29,10 +29,7 @@ class FinalRankerModel:
             "compliance_sensitivity": candidate.compliance_sensitivity,
         }])
 
-        if self.model and hasattr(self.model, "predict_proba"):
-            return round(float(self.model.predict_proba(feature_frame)[0][1]), 4)
-
-        return round(max(0.0, min(1.0, (
+        heuristic = max(0.0, min(1.0, (
             eds_score.final_eds_score * 0.25
             + semantic_similarity * 0.15
             + channel_fit * 0.10
@@ -40,4 +37,13 @@ class FinalRankerModel:
             + outcome.expected_outcome_score * 0.25
             + candidate.business_value * 0.10
             - candidate.compliance_sensitivity * 0.05
-        ))), 4)
+            - tapl.fatigue_score * 0.05
+        )))
+
+        if self.model and hasattr(self.model, "predict_proba"):
+            ml_score = float(self.model.predict_proba(feature_frame)[0][1])
+            if ml_score >= 0.98 or ml_score <= 0.02:
+                return round(heuristic, 4)
+            return round(0.25 * ml_score + 0.75 * heuristic, 4)
+
+        return round(heuristic, 4)

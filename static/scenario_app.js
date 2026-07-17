@@ -399,6 +399,9 @@ function renderTechnicalExplanation(data) {
           <div><dt>Semantic similarity</dt><dd>${num(ai.semantic_similarity_score)}</dd></div>
           <div><dt>Channel fit</dt><dd>${num(ai.channel_fit_score)}</dd></div>
           <div><dt>Expected outcome</dt><dd>${num(outcome.expected_outcome_score)}</dd></div>
+          <div><dt>Conversion prob.</dt><dd>${num(outcome.conversion_probability)}</dd></div>
+          <div><dt>Revenue impact</dt><dd>$${Number(outcome.revenue_impact || 0).toFixed(0)}</dd></div>
+          <div><dt>Base rank score</dt><dd>${num(ai.ai_rank_score)}</dd></div>
           <div><dt>Final rank score</dt><dd>${num(ai.final_hybrid_score)}</dd></div>
           <div><dt>Explanation source</dt><dd>${escapeHtml(pretty(rec.explanation_source || "local"))}</dd></div>
         </dl>
@@ -411,7 +414,8 @@ function renderTechnicalExplanation(data) {
           <div><dt>Trust</dt><dd>${num(tapl.trust_score)}</dd></div>
           <div><dt>Fatigue</dt><dd>${num(tapl.fatigue_score)}</dd></div>
           <div><dt>Compliance</dt><dd>${num(tapl.compliance_score)}</dd></div>
-          <div><dt>TAPL reason</dt><dd>${escapeHtml((rec.reason_codes || []).slice(0, 4).join(", ") || "none")}</dd></div>
+          <div><dt>TAPL reason</dt><dd>${escapeHtml(tapl.reason || "none")}</dd></div>
+          <div><dt>Policy source</dt><dd>${escapeHtml(pretty((summary.inference || {}).provider || "rules"))}</dd></div>
         </dl>
       </article>
       ${empathyArticle}
