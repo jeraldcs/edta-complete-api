@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 
 from app.config import settings
 
-DEMO_ASSET_VERSION = "20260717i"
+DEMO_ASSET_VERSION = "20260717j"
 
 
 def render_scenario_demo() -> HTMLResponse:
