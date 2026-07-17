@@ -927,6 +927,22 @@ textarea:focus,
   box-shadow: 0 10px 20px rgba(47, 111, 159, 0.18);
 }
 
+.scenario-actions button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.scenario-run-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.scenario-run-error.hidden {
+  display: none;
+}
+
 .compact-toggle {
   border: 1px solid #e1e7ef;
   border-radius: 10px;
@@ -1060,6 +1076,7 @@ textarea:focus,
 }
 
 .scenario-offer {
+  position: relative;
   min-height: 235px;
   padding: 16px;
   overflow: hidden;
