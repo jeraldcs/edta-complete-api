@@ -9,7 +9,8 @@
 **Target publication:** InfoQ Architecture / AI, ML & Data Engineering  
 **Status:** Draft v2 (positioning refresh)  
 **Live demo:** https://edta-api.onrender.com/scenario-demo  
-**Reference repo:** https://github.com/jeraldcs/edta-complete-api
+**Reference repo:** https://github.com/jeraldcs/edta-complete-api  
+**Architecture document (diagrams, layers, demo, GitHub map):** `docs/INFOQ_ARCHITECTURE_DOCUMENT.md`
 
 ---
 
