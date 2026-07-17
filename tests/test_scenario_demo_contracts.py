@@ -122,6 +122,7 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert "scenario_app.js" in response.text
     assert 'id="scenarioChipRowTravel"' in response.text
     assert 'id="scenarioChipRowGovernance"' in response.text
+    assert "scenario-sampler" in response.text
     assert "Try scenario" in response.text
     assert "Try governance" in response.text
     assert "scenario-chip-btn" in response.text

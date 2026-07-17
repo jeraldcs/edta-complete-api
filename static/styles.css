@@ -1051,47 +1051,89 @@ textarea:focus,
   margin: 0;
 }
 
-.scenario-chip-groups {
+.scenario-sampler {
   display: grid;
-  gap: 10px;
-  margin: 0 0 12px;
+  gap: 0;
+  margin: 0 0 14px;
+  border: 1px solid #d7e3ef;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fcfdff 0%, #f4f8fb 100%);
+  overflow: hidden;
 }
 
-.scenario-chip-group {
+.scenario-sampler-row {
   display: grid;
-  gap: 6px;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
 }
 
-.scenario-chip-group-label {
-  color: #667085;
-  font-size: 11px;
+.scenario-sampler-row-travel {
+  border-bottom: 1px solid #e4ebf2;
+}
+
+.scenario-sampler-row-governance {
+  background: rgba(255, 251, 243, 0.72);
+}
+
+.scenario-sampler-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #344054;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
-.scenario-chip-row-governance .scenario-chip-btn-governance {
-  border-color: #e6d4a8;
-  background: #fffbf3;
+.scenario-sampler-row-governance .scenario-sampler-label {
+  color: #7a4d00;
 }
 
-.scenario-chip-row-governance .scenario-chip-btn-governance.is-active {
-  color: #fff;
-  background: linear-gradient(135deg, #b8860b, #7a4d00);
-  border-color: #7a4d00;
-  box-shadow: 0 8px 18px rgba(184, 134, 11, 0.2);
+.scenario-sampler-arrow {
+  color: #2f6f9f;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.scenario-sampler-row-governance .scenario-sampler-arrow {
+  color: #b8860b;
+}
+
+.scenario-sampler-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .scenario-chip-btn {
   border: 1px solid #c9d7e5;
   border-radius: 999px;
-  padding: 7px 12px;
+  min-height: 34px;
+  padding: 8px 14px;
   color: #17324d;
-  background: #f8fbfe;
+  background: #fff;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.scenario-chip-btn-governance {
+  border-color: #e6d4a8;
+  background: #fffdf8;
+}
+
+.scenario-chip-btn-governance.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, #c9922a, #7a4d00);
+  border-color: #7a4d00;
+  box-shadow: 0 8px 18px rgba(184, 134, 11, 0.22);
 }
 
 .scenario-chip-btn:hover {
@@ -2376,5 +2418,25 @@ textarea:focus,
 
   .hero-policy-row {
     align-items: flex-start;
+  }
+
+  .scenario-sampler-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .scenario-sampler-label {
+    white-space: normal;
+  }
+
+  .scenario-sampler-chips {
+    gap: 7px;
+  }
+
+  .scenario-chip-btn {
+    flex: 1 1 calc(50% - 7px);
+    min-width: 0;
+    text-align: center;
   }
 }
