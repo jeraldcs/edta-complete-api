@@ -60,7 +60,9 @@ Mutating endpoints require the key Render generated (or you set):
 X-API-Key: <EDTA_API_KEY>
 ```
 
-When `EDTA_EXPOSE_DEMO_API_KEY=true` (default in `render.yaml`), the web demo loads the key from `GET /demo-config` and attaches it automatically. Disable this for API-only deployments without a browser demo.
+When `EDTA_EXPOSE_DEMO_API_KEY=true` (local development default), the web demo loads the key from `GET /demo-config` and attaches it automatically.
+
+In production (`EDTA_ENVIRONMENT=production`), the API key is **not** exposed to browsers. The demo uses same-origin `/demo-api/*` proxy routes that inject the key server-side. No client configuration is required.
 
 ## Free tier limits
 

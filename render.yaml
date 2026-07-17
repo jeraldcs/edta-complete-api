@@ -24,8 +24,6 @@ services:
         value: 120
       - key: EDTA_API_KEY
         generateValue: true
-      - key: EDTA_EXPOSE_DEMO_API_KEY
-        value: true
       - key: EDTA_CORS_ORIGINS
         value: https://edta-api.onrender.com
       - key: OPENAI_API_KEY

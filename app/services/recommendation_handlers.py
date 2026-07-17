@@ -517,7 +517,7 @@ class RecommendationHandlers:
         self.services.feedback_store.append(event)
         memory_snapshot = self.services.experience_memory.record_feedback(event)
         graph = self._record_feedback_graph(event, memory_snapshot)
-        record_feedback(event_type=event.event_type, converted=bool(event.converted))
+        record_feedback(event_type=event.event_type.value, converted=bool(event.converted))
         return {
             "status": "saved",
             "message": "Feedback captured and experience memory updated.",

@@ -96,8 +96,19 @@
     }
   }
 
+  function resolveApiPath(path) {
+    const inline = window.__EDTA_DEMO_CONFIG__;
+    const proxyEnabled = inline?.demo_proxy_enabled;
+    const needsProxy = proxyEnabled && !apiKey;
+    if (needsProxy && typeof path === "string" && path.startsWith("/") && !path.startsWith("/demo-api")) {
+      return `/demo-api${path}`;
+    }
+    return path;
+  }
+
   async function apiFetch(url, options = {}) {
     await init();
+    const requestUrl = resolveApiPath(url);
     const timeoutMs = options.timeoutMs ?? 90000;
     const wakeUp = options.wakeUp !== false;
     const onProgress = options.onProgress;
@@ -122,7 +133,7 @@
       request.signal = controller.signal;
 
       try {
-        return await fetch(url, request);
+        return await fetch(requestUrl, request);
       } finally {
         clearTimeout(timer);
       }

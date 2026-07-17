@@ -3,19 +3,29 @@ from pathlib import Path
 
 from fastapi.responses import HTMLResponse
 
-from app.config import settings
+import app.config as edta_config
 
-DEMO_ASSET_VERSION = "20260717n"
+DEMO_ASSET_VERSION = "20260717p"
+_DEMO_CSP = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data:; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'"
+)
 
 
 def render_scenario_demo() -> HTMLResponse:
     """Serve scenario demo HTML with inline auth config and cache-busted assets."""
     html = Path("static/scenario.html").read_text(encoding="utf-8")
     config = {
-        "auth_enabled": settings.auth_enabled,
+        "auth_enabled": edta_config.settings.auth_enabled,
+        "demo_proxy_enabled": edta_config.settings.auth_enabled and not edta_config.settings.expose_demo_api_key,
         "api_key": (
-            settings.api_key
-            if settings.auth_enabled and settings.expose_demo_api_key
+            edta_config.settings.api_key
+            if edta_config.settings.auth_enabled and edta_config.settings.expose_demo_api_key
             else None
         ),
     }
@@ -29,4 +39,10 @@ def render_scenario_demo() -> HTMLResponse:
     html = html.replace("<!--EDTA_DEMO_BOOT-->", boot, 1)
     for asset in ("demo-api.js", "demo-shared.js", "scenario_app.js"):
         html = html.replace(f"/static/{asset}", f"/static/{asset}?v={DEMO_ASSET_VERSION}")
-    return HTMLResponse(content=html, headers={"Cache-Control": "no-store"})
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Security-Policy": _DEMO_CSP,
+        },
+    )

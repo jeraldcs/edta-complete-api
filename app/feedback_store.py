@@ -1,52 +1,71 @@
 import json
 import os
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
+from app.db import Database
 from app.models import FeedbackEvent
 
 
 class FeedbackStore:
-    """Append-only durable store for recommendation feedback events."""
+    """Durable store for recommendation feedback events (SQLite-backed)."""
 
-    def __init__(self, store_path: str | None = None):
-        self.store_path = Path(
-            store_path or os.getenv("FEEDBACK_STORE_FILE", "data/feedback_events.json")
-        )
+    def __init__(self, store_path: str | None = None, db: Database | None = None):
+        self.store_path = store_path or os.getenv("FEEDBACK_STORE_FILE", "data/feedback_events.json")
+        self.db = db or Database()
+        self.db.init_schema()
+        self._migrate_legacy_json_if_needed()
 
-    def _load(self) -> list[dict[str, Any]]:
-        if not self.store_path.exists():
-            return []
+    @staticmethod
+    def _now() -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def _migrate_legacy_json_if_needed(self) -> None:
+        from pathlib import Path
+
+        legacy_path = Path(self.store_path)
+        if not legacy_path.exists():
+            return
+        with self.db.transaction() as connection:
+            existing = connection.execute("SELECT COUNT(*) AS count FROM feedback_events").fetchone()
+            if existing and existing["count"] > 0:
+                return
         try:
-            data = json.loads(self.store_path.read_text(encoding="utf-8"))
-            return data if isinstance(data, list) else []
+            data = json.loads(legacy_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
-            return []
-
-    def _save(self, events: list[dict[str, Any]]) -> None:
-        self.store_path.parent.mkdir(parents=True, exist_ok=True)
-        self.store_path.write_text(json.dumps(events, indent=2, sort_keys=True), encoding="utf-8")
+            return
+        if not isinstance(data, list) or not data:
+            return
+        with self.db.transaction() as connection:
+            for record in data:
+                connection.execute(
+                    "INSERT INTO feedback_events (event_json, recorded_at) VALUES (?, ?)",
+                    (json.dumps(record, default=str), record.get("recorded_at") or self._now()),
+                )
 
     def append(self, event: FeedbackEvent) -> dict[str, Any]:
-        events = self._load()
         record = event.model_dump(mode="json")
-        record["recorded_at"] = datetime.now(timezone.utc).isoformat()
-        events.append(record)
-        self._save(events)
+        record["recorded_at"] = self._now()
+        with self.db.transaction() as connection:
+            connection.execute(
+                "INSERT INTO feedback_events (event_json, recorded_at) VALUES (?, ?)",
+                (json.dumps(record, default=str), record["recorded_at"]),
+            )
         return record
 
     def count(self) -> int:
-        return len(self._load())
+        with self.db.transaction() as connection:
+            row = connection.execute("SELECT COUNT(*) AS count FROM feedback_events").fetchone()
+        return int(row["count"]) if row else 0
 
     def is_writable(self) -> bool:
         try:
-            self.store_path.parent.mkdir(parents=True, exist_ok=True)
-            if not self.store_path.exists():
-                self.store_path.write_text("[]", encoding="utf-8")
-            probe = self.store_path.with_suffix(".probe")
-            probe.write_text("ok", encoding="utf-8")
-            probe.unlink(missing_ok=True)
+            with self.db.transaction() as connection:
+                connection.execute(
+                    "INSERT INTO feedback_events (event_json, recorded_at) VALUES (?, ?)",
+                    ('{"probe": true}', self._now()),
+                )
+                connection.execute("DELETE FROM feedback_events WHERE event_json = ?", ('{"probe": true}',))
             return True
         except OSError:
             return False

@@ -1,17 +1,20 @@
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import router as v1_router
-from app.config import settings
+from app import config as edta_config
+from app.config import settings as _initial_settings
 import app.container as app_container
+from app.demo_html import render_scenario_demo
+from app.demo_proxy import router as demo_proxy_router
 from app.health import build_health_payload, build_live_payload
 from app.middleware.http import (
     AccessLogMiddleware,
+    LegacyDeprecationMiddleware,
     RateLimitMiddleware,
     RequestContextMiddleware,
     SecurityHeadersMiddleware,
@@ -32,9 +35,8 @@ from app.models import (
 from app.observability.logging import configure_logging, get_logger
 from app.observability.metrics import metrics_enabled, render_metrics
 from app.observability.tracing import configure_tracing, shutdown_tracing
-from app.services import recommendation_handlers
-from app.demo_html import render_scenario_demo
 from app.security import require_api_key
+from app.services import recommendation_handlers
 
 logger = get_logger(__name__)
 
@@ -42,14 +44,15 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     configure_logging()
+    edta_config.settings.validate_for_startup()
     configure_tracing(app)
     logger.info(
         "EDTA API starting",
         extra={
             "event": "startup",
-            "environment": settings.environment,
+            "environment": edta_config.settings.environment,
             "metrics_enabled": metrics_enabled(),
-            "auth_enabled": settings.auth_enabled,
+            "auth_enabled": edta_config.settings.auth_enabled,
         },
     )
     yield
@@ -60,18 +63,19 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Experience-Driven Targeting Architecture",
     description="Detailed AI models for Experience-Driven Targeting Architecture: intent, journey, TAPL, channel, outcome simulation, and ranking.",
-    version="2.3.0",
+    version="2.4.0",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origins=_initial_settings.cors_origins,
+    allow_credentials=_initial_settings.cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimitMiddleware, limit_per_minute=settings.rate_limit_per_minute)
+app.add_middleware(LegacyDeprecationMiddleware)
+app.add_middleware(RateLimitMiddleware, limit_per_minute=_initial_settings.rate_limit_per_minute)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(RequestContextMiddleware)
@@ -79,6 +83,7 @@ register_exception_handlers(app)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(v1_router)
+app.include_router(demo_proxy_router)
 
 
 def _health_response():
@@ -144,13 +149,12 @@ def metrics():
 
 @app.get("/demo-config")
 def demo_config():
-    from app.config import settings as runtime_settings
-
+    runtime_settings = edta_config.settings
     if not runtime_settings.auth_enabled:
-        return {"auth_enabled": False, "api_key": None}
+        return {"auth_enabled": False, "demo_proxy_enabled": False, "api_key": None}
     if runtime_settings.expose_demo_api_key:
-        return {"auth_enabled": True, "api_key": runtime_settings.api_key}
-    return {"auth_enabled": True, "api_key": None}
+        return {"auth_enabled": True, "demo_proxy_enabled": False, "api_key": runtime_settings.api_key}
+    return {"auth_enabled": True, "demo_proxy_enabled": True, "api_key": None}
 
 
 @app.get("/demo")
@@ -168,12 +172,12 @@ def empathy_demo():
     return RedirectResponse(url="/scenario-demo?mode=empathy", status_code=307)
 
 
-@app.get("/scenario-examples")
+@app.get("/scenario-examples", dependencies=[Depends(require_api_key)])
 def scenario_examples():
     return recommendation_handlers.handlers.scenario_examples()
 
 
-@app.get("/travel-scenario-benchmark")
+@app.get("/travel-scenario-benchmark", dependencies=[Depends(require_api_key)])
 def travel_scenario_benchmark():
     return recommendation_handlers.handlers.travel_scenario_benchmark()
 
@@ -212,7 +216,7 @@ def compare_outcomes_legacy(request: CompareOutcomesRequest, http_request: Reque
     return response.model_dump(mode="json")
 
 
-@app.get("/context-graph")
+@app.get("/context-graph", dependencies=[Depends(require_api_key)])
 def get_context_graph_legacy(
     customer_id: str | None = None,
     anonymous_id: str | None = None,
@@ -221,7 +225,7 @@ def get_context_graph_legacy(
     return recommendation_handlers.handlers.get_context_graph(customer_id, anonymous_id, include_live)
 
 
-@app.get("/orchestration-status")
+@app.get("/orchestration-status", dependencies=[Depends(require_api_key)])
 def orchestration_status_legacy():
     return app_container.container.engine.orchestrator.status()
 
@@ -236,7 +240,7 @@ async def feedback_legacy(event: FeedbackEvent, http_request: Request):
     return payload
 
 
-@app.get("/experience-memory")
+@app.get("/experience-memory", dependencies=[Depends(require_api_key)])
 def get_experience_memory_legacy(customer_id: str | None = None, anonymous_id: str | None = None):
     from app.models import CustomerContext
 
@@ -244,7 +248,7 @@ def get_experience_memory_legacy(customer_id: str | None = None, anonymous_id: s
     return app_container.container.experience_memory.get_snapshot(context).model_dump(mode="json")
 
 
-@app.get("/self-distillation")
+@app.get("/self-distillation", dependencies=[Depends(require_api_key)])
 def self_distillation_status_legacy():
     return app_container.container.engine.distillation.status()
 

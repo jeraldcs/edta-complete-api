@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JourneyStage(str, Enum):
@@ -50,6 +50,30 @@ class TAPLAction(str, Enum):
     generic_fallback = "generic_fallback"
 
 
+class FeedbackEventType(str, Enum):
+    click = "click"
+    convert = "convert"
+    conversion = "conversion"
+    dismiss = "dismiss"
+    impression = "impression"
+    shown = "shown"
+
+
+class InferenceMode(str, Enum):
+    auto = "auto"
+    rules = "rules"
+    slm = "slm"
+    ml = "ml"
+    llm = "llm"
+    distilled_pattern = "distilled_pattern"
+    tkge = "tkge"
+
+
+class WebhookEventType(str, Enum):
+    recommendation_created = "recommendation.created"
+    feedback_received = "feedback.received"
+
+
 class CustomerContext(BaseModel):
     anonymous_id: Optional[str] = None
     customer_id: Optional[str] = None
@@ -64,6 +88,13 @@ class CustomerContext(BaseModel):
     channel_context: Dict[str, Any] = Field(default_factory=dict)
     device_context: Dict[str, Any] = Field(default_factory=dict)
     consent: Dict[str, bool] = Field(default_factory=lambda: {"personalization": True})
+
+    @field_validator("profile_attributes")
+    @classmethod
+    def limit_profile_attributes(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        if len(value) > 100:
+            raise ValueError("profile_attributes supports at most 100 keys")
+        return value
 
 
 class RecommendationCandidate(BaseModel):
@@ -185,7 +216,7 @@ class RecommendationRequest(BaseModel):
     use_llm: bool = False
     use_slm: bool = False
     use_llm_explanation: bool = False
-    inference_mode: str = "auto"
+    inference_mode: InferenceMode = InferenceMode.auto
 
 
 class ScenarioRecommendationRequest(BaseModel):
@@ -195,7 +226,7 @@ class ScenarioRecommendationRequest(BaseModel):
     use_llm: bool = False
     use_slm: bool = False
     use_llm_explanation: bool = False
-    inference_mode: str = "auto"
+    inference_mode: InferenceMode = InferenceMode.auto
     include_empathy: bool = False
     destination: Optional[str] = None
     route_miles: Optional[float] = Field(default=None, ge=0)
@@ -243,7 +274,7 @@ class FeedbackEvent(BaseModel):
     anonymous_id: Optional[str] = None
     recommendation_id: str
     channel: Channel = Channel.web
-    event_type: str = "click"
+    event_type: FeedbackEventType = FeedbackEventType.click
     converted: bool = False
     revenue: float = 0.0
     context_snapshot: Dict[str, Any] = Field(default_factory=dict)
@@ -255,8 +286,11 @@ class BatchRecommendationRequest(BaseModel):
 
 class WebhookRegistrationRequest(BaseModel):
     target_url: str = Field(min_length=8, max_length=2000)
-    event_types: List[str] = Field(
-        default_factory=lambda: ["recommendation.created", "feedback.received"]
+    event_types: List[WebhookEventType] = Field(
+        default_factory=lambda: [
+            WebhookEventType.recommendation_created,
+            WebhookEventType.feedback_received,
+        ]
     )
 
 

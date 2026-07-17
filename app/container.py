@@ -5,6 +5,7 @@ from app.events import EventBus, JobStore
 from app.experience_memory import ExperienceMemoryLayer
 from app.feedback_store import FeedbackStore
 from app.graph_store import GraphStore
+from app.idempotency import IdempotencyStore
 from app.profile_service import ProfileLookupService
 from app.provider_telemetry import ProviderTelemetryStore
 from app.recommender import RecommendationEngine
@@ -35,7 +36,8 @@ class ServiceContainer:
             memory_path=str(settings.experience_memory_file),
             db_path=str(settings.edta_db_path),
         )
-        self.feedback_store = FeedbackStore(str(settings.feedback_store_file))
+        self.feedback_store = FeedbackStore(str(settings.feedback_store_file), self.database)
+        self.idempotency_store = IdempotencyStore(self.database)
         self.event_bus = EventBus(self.database)
         self.job_store = JobStore(self.database)
 
