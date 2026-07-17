@@ -1,8 +1,8 @@
 """
-Generate InfoQ publication Word document with embedded architecture diagrams.
+Generate EDTA publication Word document with embedded architecture diagrams.
 
-Output: docs/INFOQ_PUBLICATION_DOCUMENT.docx
-Source:  docs/INFOQ_PUBLICATION_DOCUMENT.md
+Output: docs/EDTA_PUBLICATION_DOCUMENT.docx
+Source:  docs/EDTA_PUBLICATION_DOCUMENT.md
 Diagrams: docs/edta_architecture_diagram.pdf (3 pages, July 2026 codebase)
 """
 
@@ -21,10 +21,10 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parent
-SOURCE = ROOT / "INFOQ_PUBLICATION_DOCUMENT.md"
+SOURCE = ROOT / "EDTA_PUBLICATION_DOCUMENT.md"
 PDF_DIAGRAM = ROOT / "edta_architecture_diagram.pdf"
 ASSETS = ROOT / "_publication_docx_assets"
-OUTPUT = ROOT / "INFOQ_PUBLICATION_DOCUMENT.docx"
+OUTPUT = ROOT / "EDTA_PUBLICATION_DOCUMENT.docx"
 
 LIVE_DEMO = "https://edta-api.onrender.com/scenario-demo"
 GITHUB = "https://github.com/jeraldcs/edta-complete-api"
@@ -387,7 +387,7 @@ def build():
     section = doc.sections[0]
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer.add_run(f"EDTA InfoQ Publication — {GITHUB}")
+    run = footer.add_run(f"EDTA Publication — {GITHUB}")
     run.font.size = Pt(8)
     run.font.color.rgb = MUTED
 

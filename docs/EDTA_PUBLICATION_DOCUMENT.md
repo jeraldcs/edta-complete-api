@@ -1,11 +1,11 @@
-# EDTA — InfoQ Publication Document
+# EDTA — Publication Document
 
 ## Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations
 
 **Author:** Jerald Selvaraj  
 **Contact:** jerald.cs@gmail.com  
 **Version:** Publication package v2 — July 2026  
-**Status:** Ready for InfoQ Architecture / AI, ML & Data Engineering submission  
+**Status:** Ready for architecture publication and technical review  
 
 | Resource | URL |
 |----------|-----|
@@ -13,7 +13,7 @@
 | **GitHub** | https://github.com/jeraldcs/edta-complete-api |
 | **OpenAPI** | https://edta-api.onrender.com/docs |
 | **Architecture PDF** | `docs/edta_architecture_diagram.pdf` (3 pages — regenerate: `python docs/generate_architecture_pdf.py`) |
-| **Word export** | `docs/INFOQ_PUBLICATION_DOCUMENT.docx` |
+| **Word export** | `docs/EDTA_PUBLICATION_DOCUMENT.docx` |
 
 ---
 
@@ -42,7 +42,7 @@ Enterprise teams adopt LLMs for personalization faster than governance. **EDTA (
 15. [Lessons learned](#15-lessons-learned)
 16. [Scope and honest limits](#16-scope-and-honest-limits)
 17. [GitHub repository guide](#17-github-repository-guide)
-18. [Suggested InfoQ submission package](#18-suggested-infoq-submission-package)
+18. [Suggested publication package](#18-suggested-publication-package)
 19. [Architecture diagrams](#19-architecture-diagrams)
 
 ---
@@ -439,7 +439,7 @@ See `docs/BENCHMARKS.md` — tier routing fidelity, latency, cost units, fallbac
 | Vertical rewrite | New engine per industry | Same core; swap YAML, catalog, empathy profiles |
 | Travel recommender | Filter by category | Hidden needs + constraints + TCO + trained profiles |
 
-**Original contribution:** A governed, multi-tier, memory-aware personalization pipeline with API-native explainability — implemented as open reference code with live demo and reproducible benchmarks.
+**Key differentiator:** A governed, multi-tier, memory-aware personalization pipeline with API-native explainability — implemented as open reference code with live demo and reproducible benchmarks.
 
 ---
 
@@ -497,7 +497,7 @@ HCP education content routing with TAPL suppress on sensitive channels — **not
 edta-complete-api/
 ├── app/                    # FastAPI core — recommender, empathy, orchestration
 ├── config/                 # YAML — rules, TAPL, HAOE, empathy profiles
-├── docs/                   # InfoQ publication, architecture PDF, benchmarks
+├── docs/                   # Publication docs, architecture PDF, benchmarks
 ├── static/                 # scenario-demo UI
 ├── tests/                  # pytest (149+)
 ├── scripts/                # train, benchmark, load test
@@ -518,20 +518,20 @@ pytest
 
 ```bash
 python docs/generate_architecture_pdf.py      # 3-page PDF diagrams
-python docs/generate_infoq_publication_docx.py # Word document with embedded figures
+python docs/generate_publication_docx.py # Word document with embedded figures
 ```
 
 ---
 
-## 18. Suggested InfoQ submission package
+## 18. Suggested publication package
 
 | Artifact | Path |
 |----------|------|
-| **This publication document** | `docs/INFOQ_PUBLICATION_DOCUMENT.md` |
-| **Word export (with diagrams)** | `docs/INFOQ_PUBLICATION_DOCUMENT.docx` |
-| Narrative article draft | `docs/infoq_edta_llm_personalization_article_draft.md` |
-| Architecture reference | `docs/INFOQ_ARCHITECTURE_DOCUMENT.md` |
-| Positioning / cover note | `docs/INFOQ_POSITIONING.md` |
+| **This publication document** | `docs/EDTA_PUBLICATION_DOCUMENT.md` |
+| **Word export (with diagrams)** | `docs/EDTA_PUBLICATION_DOCUMENT.docx` |
+| Narrative article draft | `docs/edta_llm_personalization_article_draft.md` |
+| Architecture reference | `docs/EDTA_ARCHITECTURE_DOCUMENT.md` |
+| Positioning / cover note | `docs/EDTA_POSITIONING.md` |
 | Architecture PDF (3 pages) | `docs/edta_architecture_diagram.pdf` |
 | Travel benchmark | `docs/TRAVEL_SCENARIO_SCORES.md` |
 | Four-tier benchmarks | `docs/BENCHMARKS.md` |
@@ -561,4 +561,4 @@ Jerald Selvaraj is an enterprise architecture and digital experience technology 
 
 ---
 
-*Document prepared for InfoQ submission — EDTA reference implementation, Jerald Selvaraj, July 2026.*
+*Document prepared for technical publication — EDTA reference implementation, Jerald Selvaraj, July 2026.*

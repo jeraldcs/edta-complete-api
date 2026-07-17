@@ -1,17 +1,16 @@
 # Architecting Explainable, Trust-Aware Personalization with Local AI Models and Optional LLM Enrichment
 
-## Draft For InfoQ Submission
+## Article Draft
 
 **Working title:** Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations  
 **Alternative title:** Beyond LLM-First Recommendations: Cost-Aware, Auditable Personalization with Rules, SLM, ML, and Optional LLM  
 **Previous title:** Architecting Explainable, Trust-Aware Personalization with Local AI Models and Optional LLM Enrichment  
 **Author:** Jerald Selvaraj  
-**Target publication:** InfoQ Architecture / AI, ML & Data Engineering  
 **Status:** Draft v2 (positioning refresh)  
 **Live demo:** https://edta-api.onrender.com/scenario-demo  
 **Reference repo:** https://github.com/jeraldcs/edta-complete-api  
-**Architecture document (diagrams, layers, demo, GitHub map):** `docs/INFOQ_ARCHITECTURE_DOCUMENT.md`  
-**InfoQ publication package (full submission doc + Word export):** `docs/INFOQ_PUBLICATION_DOCUMENT.md`
+**Architecture document (diagrams, layers, demo, GitHub map):** `docs/EDTA_ARCHITECTURE_DOCUMENT.md`  
+**Publication package (full submission doc + Word export):** `docs/EDTA_PUBLICATION_DOCUMENT.md`
 
 ---
 
@@ -593,37 +592,3 @@ Explanation Router      -> SLM first, LLM escalation if needed
 ## Suggested Author Bio
 
 Jerald Selvaraj is an enterprise architecture and digital experience technology leader focused on AI-enabled personalization, omnichannel platforms, customer experience architecture, and responsible recommendation systems. His work spans experience decisioning, marketing technology, platform modernization, and applied AI architectures for scalable digital ecosystems.
-
----
-
-## Evidence Notes For EB-1A Positioning
-
-This section is not intended for publication in InfoQ. It is included to help prepare a stronger evidence package around the article. See also **`docs/EB1A_ORIGINAL_CONTRIBUTION.md`** and **`docs/INFOQ_POSITIONING.md`** in the repository.
-
-To make this article more useful for an EB-1A record, collect supporting evidence around:
-
-1. **Original contribution**
-   - Explain what is novel about combining EDS, TAPL, local AI, LLM enrichment, profile lookup, and multi-channel API decisioning.
-   - Preserve architecture diagrams, code repository history, demo screenshots, and design rationale.
-
-2. **Major significance**
-   - Add measurable results if available: conversion lift, recommendation accuracy, response latency, profile enrichment impact, governance reduction, channel reuse, or cost savings.
-   - If deployed in an organization, obtain letters explaining why the architecture mattered.
-
-3. **Authorship**
-   - Keep publication acceptance, article URL, editorial correspondence, and author page.
-   - Maintain a PDF copy of the published article.
-
-4. **Published material about the work**
-   - Track third-party mentions, citations, newsletters, reposts, conference references, or expert commentary.
-
-5. **Critical role**
-   - If this architecture was created as part of a distinguished employer/client initiative, collect letters confirming your leading or critical contribution.
-
-6. **Judging**
-   - Use this expertise to judge architecture submissions, AI hackathons, technical papers, or industry awards where appropriate.
-
-7. **Expert letters**
-   - Ask independent experts to comment specifically on technical originality, industry relevance, and significance beyond routine implementation.
-
-Avoid unsupported claims. The article should be technically strong and credible on its own; EB-1A value comes from independent recognition, adoption, and documented impact.

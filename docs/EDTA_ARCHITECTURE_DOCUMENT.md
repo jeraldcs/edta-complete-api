@@ -1,15 +1,15 @@
-# EDTA — InfoQ Architecture Document
+# EDTA — Architecture Document
 
 **Experience-Driven Targeting Architecture for Governed, Explainable, Trust-Aware Personalization**
 
 | Field | Value |
 |-------|--------|
 | **Author** | Jerald Selvaraj |
-| **Purpose** | InfoQ article submission, architecture review, and conference presentation |
+| **Purpose** | Architecture reference, technical review, and conference presentation |
 | **Working title** | *Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations* |
 | **Live demo** | https://edta-api.onrender.com/scenario-demo |
 | **GitHub** | https://github.com/jeraldcs/edta-complete-api |
-| **Companion draft** | `docs/infoq_edta_llm_personalization_article_draft.md` |
+| **Companion draft** | `docs/edta_llm_personalization_article_draft.md` |
 | **Benchmark report** | `docs/TRAVEL_SCENARIO_SCORES.md` |
 | **Status** | Architecture reference v1 — July 2026 |
 
@@ -32,7 +32,7 @@
 13. [Benchmarks and evidence](#13-benchmarks-and-evidence)
 14. [Presentation outline (20 slides)](#14-presentation-outline-20-slides)
 15. [Scope boundaries and honest limits](#15-scope-boundaries-and-honest-limits)
-16. [Suggested InfoQ submission package](#16-suggested-infoq-submission-package)
+16. [Suggested publication package](#16-suggested-publication-package)
 
 ---
 
@@ -517,7 +517,7 @@ Comparison against common patterns:
 | **Vertical rewrite** | New engine per industry | Same core; swap YAML rules, TAPL, catalog, empathy profiles |
 | **Travel recommender** | Filter by category | Empathy hidden needs + constraints + TCO + trained scenario profiles |
 
-**Original contribution summary:** A **governed, multi-tier, memory-aware personalization pipeline** with **API-native explainability** — implemented as open reference code, not slides-only architecture.
+**Technical summary:** A **governed, multi-tier, memory-aware personalization pipeline** with **API-native explainability** — implemented as open reference code, not slides-only architecture.
 
 ---
 
@@ -561,7 +561,7 @@ Comparison against common patterns:
 | **Empathy panels** | Hidden needs, weather/terrain, TCO, empathy pitch |
 | **Architecture panels** | TKGE, EML, HAOE, OSE, TAPL per run |
 | **Technical explanation** | NLP → filtering → scoring → TAPL → empathy |
-| **API request/response** | Raw JSON for InfoQ readers / integrators |
+| **API request/response** | Raw JSON for integrators and reviewers |
 | **Travel benchmark table** | All 11 trained scenarios with EDS, outcome, trust, rank scores |
 
 ### 11.2 Suggested live demo script (5 minutes)
@@ -600,7 +600,7 @@ edta-complete-api/
 ├── app/                    # FastAPI application core
 ├── config/                 # YAML — rules, TAPL, HAOE, empathy profiles
 ├── data/                   # Catalog, profiles, generated benchmarks
-├── docs/                   # InfoQ drafts, architecture, benchmarks
+├── docs/                   # Article drafts, architecture, benchmarks
 ├── models/                 # Trained sklearn joblib models
 ├── scripts/                # Train, benchmark, smoke test
 ├── static/                 # Scenario demo UI (HTML/JS/CSS)
@@ -690,7 +690,7 @@ pytest   # 149+ passed — API contracts, TAPL, empathy, trained scenarios, demo
 
 ## 14. Presentation outline (20 slides)
 
-Use this outline for InfoQ webinar or conference talk:
+Use this outline for a webinar or conference talk:
 
 | Slide | Title | Content |
 |-------|-------|---------|
@@ -721,7 +721,7 @@ Use this outline for InfoQ webinar or conference talk:
 
 ## 15. Scope boundaries and honest limits
 
-State clearly in InfoQ submission:
+State clearly in any publication submission:
 
 1. **Reference implementation** — demonstration corpus, not production traffic at scale.
 2. **ML models** — sklearn on synthetic/generated training data; heuristic blend when models saturate.
@@ -729,22 +729,22 @@ State clearly in InfoQ submission:
 4. **Empathy** — rule + profile based for travel demo; not a replacement for full NLP/LLM extraction at scale.
 5. **Hosted latency** — Render cold starts affect demo; engine benchmarks use Docker/local.
 
-Honest limits increase credibility with InfoQ architects.
+Honest limits increase credibility with technical reviewers.
 
 ---
 
-## 16. Suggested InfoQ submission package
+## 16. Suggested publication package
 
 Attach or link:
 
 | Artifact | Path |
 |----------|------|
-| **InfoQ publication document (primary)** | `docs/INFOQ_PUBLICATION_DOCUMENT.md` |
-| **Word export with diagrams** | `docs/INFOQ_PUBLICATION_DOCUMENT.docx` |
-| Article draft (narrative) | `docs/infoq_edta_llm_personalization_article_draft.md` |
-| This architecture document | `docs/INFOQ_ARCHITECTURE_DOCUMENT.md` |
+| **Publication document (primary)** | `docs/EDTA_PUBLICATION_DOCUMENT.md` |
+| **Word export with diagrams** | `docs/EDTA_PUBLICATION_DOCUMENT.docx` |
+| Article draft (narrative) | `docs/edta_llm_personalization_article_draft.md` |
+| This architecture document | `docs/EDTA_ARCHITECTURE_DOCUMENT.md` |
 | Architecture Word export | `docs/EDTA_ARCHITECTURE_DOCUMENT.docx` |
-| Positioning / cover note | `docs/INFOQ_POSITIONING.md` |
+| Positioning / cover note | `docs/EDTA_POSITIONING.md` |
 | Architecture PDF (3 pages) | `docs/edta_architecture_diagram.pdf` |
 | Travel benchmark | `docs/TRAVEL_SCENARIO_SCORES.md` |
 | Four-tier benchmarks | `docs/BENCHMARKS.md` |
@@ -793,9 +793,8 @@ For slides or PDF export when Mermaid is unavailable:
 
 ## Appendix B — Related documents in this repo
 
-- `docs/infoq_edta_llm_personalization_article_draft.md` — prose article for InfoQ editors
-- `docs/INFOQ_POSITIONING.md` — lead paragraph and vertical angles
-- `docs/EB1A_ORIGINAL_CONTRIBUTION.md` — contribution framing
+- `docs/edta_llm_personalization_article_draft.md` — prose article draft
+- `docs/EDTA_POSITIONING.md` — lead paragraph and vertical angles
 - `docs/EMPATHY_ENGINE_ROADMAP.md` — empathy engine evolution
 - `docs/ai_model_design.md` — ML model feature design
 - `docs/DEPLOYMENT.md` / `docs/RENDER.md` — hosting
@@ -803,4 +802,4 @@ For slides or PDF export when Mermaid is unavailable:
 
 ---
 
-*Document prepared for InfoQ submission and presentation — EDTA reference implementation, Jerald Selvaraj.*
+*Document prepared for technical publication and presentation — EDTA reference implementation, Jerald Selvaraj.*

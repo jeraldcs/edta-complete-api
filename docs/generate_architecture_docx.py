@@ -1,5 +1,5 @@
 """
-Generate EDTA Architecture Word document for GitHub / InfoQ publication.
+Generate EDTA Architecture Word document for GitHub publication.
 
 Output: docs/EDTA_ARCHITECTURE_DOCUMENT.docx
 Diagrams: embeds pages from edta_architecture_diagram.pdf + generated layer-stack PNG.

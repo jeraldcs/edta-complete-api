@@ -359,8 +359,8 @@ tco = TCOCalculator.compare(top_candidates, trip, enrichment)
 ### Documentation
 
 - `docs/EMPATHY_ENGINE.md` — user-facing  
-- InfoQ section: **"Empathy constraints beyond segmentation"**  
-- EB-1A: original contribution — **implicit need inference + enriched context ranking**  
+- Article section: **"Empathy constraints beyond segmentation"**
+- **Implicit need inference + enriched context ranking**  
 
 ---
 
@@ -419,7 +419,7 @@ tco = TCOCalculator.compare(top_candidates, trip, enrichment)
 | 6D.3 | Live panels: hidden needs / weather / TCO / pitch |
 | 6D.4 | Link from scenario-demo hero |
 
-**Exit:** Public URL for EB-1A / InfoQ demos.
+**Exit:** Public URL for live demos.
 
 ---
 
@@ -429,11 +429,11 @@ tco = TCOCalculator.compare(top_candidates, trip, enrichment)
 |------|--------|
 | 7.1 | `evaluate_empathy_accuracy.py` — constraint recall + top-1 vehicle |
 | 7.2 | Compare vs standard filter baseline |
-| 7.3 | InfoQ + EB-1A exhibit JSON |
+| 7.3 | Benchmark exhibit JSON |
 
 ---
 
-## Uniqueness / EB-1A angle
+## Uniqueness / differentiation angle
 
 | Generic recommender | Empathy Engine + EDTA |
 |---------------------|------------------------|
@@ -488,7 +488,7 @@ tco = TCOCalculator.compare(top_candidates, trip, enrichment)
 - `app/llm/prompt_templates.py`  
 - `app/services/recommendation_handlers.py`  
 - `static/scenario_demo.html` — link to empathy demo  
-- `docs/infoq_edta_llm_personalization_article_draft.md` — new section  
+- `docs/edta_llm_personalization_article_draft.md` — new section  
 - `render.yaml` — optional API key env vars  
 
 ---
@@ -498,7 +498,7 @@ tco = TCOCalculator.compare(top_candidates, trip, enrichment)
 ```text
 1. Vehicle catalog + hidden needs YAML + constraint matcher     (demo value fast)
 2. TCO calculator + explanation pitch                           (your hybrid $35 story)
-3. Empathy simulator UI (mock enrichment)                       (EB-1A demo)
+3. Empathy simulator UI (mock enrichment)                       (live demo)
 4. Live weather/route/gas APIs + cache                          (production polish)
 5. Accuracy eval vs standard filters                            (evidence)
 ```

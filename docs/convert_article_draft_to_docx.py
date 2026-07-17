@@ -10,8 +10,8 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parent
-SOURCE = ROOT / "infoq_edta_llm_personalization_article_draft.md"
-OUTPUT = ROOT / "infoq_edta_llm_personalization_article_draft.docx"
+SOURCE = ROOT / "edta_llm_personalization_article_draft.md"
+OUTPUT = ROOT / "edta_llm_personalization_article_draft.docx"
 
 
 BLUE = RGBColor(0x2E, 0x74, 0xB5)
@@ -236,7 +236,7 @@ def convert():
     section = doc.sections[0]
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    footer.add_run("InfoQ article draft - EDTA personalization architecture").font.size = Pt(8)
+    footer.add_run("EDTA personalization architecture article draft").font.size = Pt(8)
 
     doc.save(OUTPUT)
     print(OUTPUT.resolve())

@@ -141,7 +141,7 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert 'id="benchmarkToggleMetrics"' in response.text
     assert "scenario-demo-footer" in response.text
     assert 'id="scenarioOfferCard"' in response.text
-    assert "INFOQ_PUBLICATION_DOCUMENT" in response.text
+    assert "EDTA_PUBLICATION_DOCUMENT" in response.text
     assert 'id="scenarioStatus"' not in response.text
     assert "Experience memory" not in response.text
     assert "Describe a trip" in response.text

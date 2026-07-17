@@ -1,16 +1,16 @@
-# InfoQ Positioning — EDTA Article
+# EDTA Positioning — Article
 
-Use these sections in the InfoQ draft (`infoq_edta_llm_personalization_article_draft.md`) or as the editor’s cover note. Two vertical angles are provided; **pick one as the lead narrative** and keep the other as a “generalization” sidebar.
+Use these sections in the article draft (`edta_llm_personalization_article_draft.md`) or as an editor's cover note. Two vertical angles are provided; **pick one as the lead narrative** and keep the other as a "generalization" sidebar.
 
 ---
 
 ## Recommended article angle (lead paragraph)
 
-**Do not lead with:** “An AI recommendation API for car rental, hotel, and healthcare.”
+**Do not lead with:** "An AI recommendation API for car rental, hotel, and healthcare."
 
 **Lead with:**
 
-> Enterprise teams are adopting LLMs for personalization faster than they are adopting **governance** for personalization. The result is relevant but risky recommendations: opaque scores, uncontrolled token cost, and weak answers to “why did we show this?” EDTA (Experience-Driven Targeting Architecture) is a reference implementation that treats personalization as a **governed decision pipeline** — not a single model. It combines **Rules, distilled SLM memory, classical ML, and optional LLM teachers** under a **Hybrid AI Orchestration Engine (HAOE)** with **Trust-Aware Personalization Layer (TAPL)**, explainable scoring (EDS), and auditable API responses. The LLM enriches and explains; it does not own consent, compliance, fatigue, or final trust governance.
+> Enterprise teams are adopting LLMs for personalization faster than they are adopting **governance** for personalization. The result is relevant but risky recommendations: opaque scores, uncontrolled token cost, and weak answers to "why did we show this?" EDTA (Experience-Driven Targeting Architecture) is a reference implementation that treats personalization as a **governed decision pipeline** — not a single model. It combines **Rules, distilled SLM memory, classical ML, and optional LLM teachers** under a **Hybrid AI Orchestration Engine (HAOE)** with **Trust-Aware Personalization Layer (TAPL)**, explainable scoring (EDS), and auditable API responses. The LLM enriches and explains; it does not own consent, compliance, fatigue, or final trust governance.
 
 **Working title (refined):**  
 *Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations*
@@ -24,7 +24,7 @@ Use these sections in the InfoQ draft (`infoq_edta_llm_personalization_article_d
 
 ### Why this vertical works for readers
 
-Travel and car rental are **high-intent, journey-stage-driven** businesses. Personalization mistakes are costly (wrong offer, promo fatigue, channel mismatch) but rarely regulated like clinical decisions. InfoQ readers in travel tech can relate to **upsell, booking funnel, and cross-channel** problems without HIPAA complexity.
+Travel and car rental are **high-intent, journey-stage-driven** businesses. Personalization mistakes are costly (wrong offer, promo fatigue, channel mismatch) but rarely regulated like clinical decisions. Architects in travel tech can relate to **upsell, booking funnel, and cross-channel** problems without HIPAA complexity.
 
 ### Narrative hook
 
@@ -35,16 +35,16 @@ A family traveler searching for an **airport SUV rental** moves from research �
 | Challenge | EDTA mechanism |
 |-----------|----------------|
 | Structured booking context | **Rules tier** — fast, auditable intent/journey from session events |
-| Repeat “family SUV airport” queries | **SLM tier** — distilled pattern memory avoids repeated LLM cost |
+| Repeat "family SUV airport" queries | **SLM tier** — distilled pattern memory avoids repeated LLM cost |
 | Catalog-aligned ranking | **ML tier** — intent, journey, TAPL, outcome, ranker models |
 | Ambiguous one-liner in chatbot | **LLM tier** — optional teacher, budget-gated by HAOE |
-| “Why SUV upgrade now?” | **Explanation router** — SLM first, LLM escalation |
+| "Why SUV upgrade now?" | **Explanation router** — SLM first, LLM escalation |
 | Banner fatigue | **TAPL** — soften/suppress; **EML** — fatigue score |
 | Cross-channel (web, chatbot, connected car) | Unified API + channel fit model |
 
 ### Example scenario (for article callout)
 
-**Input:** *“customer checked SUV availability and started booking airport rental”*
+**Input:** *"customer checked SUV availability and started booking airport rental"*
 
 **Output:** `vehicle_upgrade_suv` with rules-tier routing, training alignment metadata, EDS/TAPL/outcome breakdown, SLM or rules-based explanation.
 
@@ -69,7 +69,7 @@ Report **four-tier comparison** on structured SUV rental payloads:
 
 ### Why this vertical works for readers
 
-Healthcare **commercial and education** teams face stricter scrutiny: approved content, channel sensitivity, audit expectations, and **no autonomous clinical decision-making**. InfoQ readers in health tech need architectures that **govern** AI, not just personalize.
+Healthcare **commercial and education** teams face stricter scrutiny: approved content, channel sensitivity, audit expectations, and **no autonomous clinical decision-making**. Architects in health tech need architectures that **govern** AI, not just personalize.
 
 ### Narrative hook
 
@@ -81,7 +81,7 @@ An HCP browsing **obesity product education** on web or chatbot needs **approved
 |-----------|----------------|
 | Approved content only | **Catalog + rules packs** — candidate types scoped to education assets |
 | Compliance sensitivity | **TAPL** — suppress/soften on sensitive channels (SMS, push, wearable) |
-| Audit “why this content?” | **rules_fired[], TAPL audit, InferenceResult** in API |
+| Audit "why this content?" | **rules_fired[], TAPL audit, InferenceResult** in API |
 | Low tolerance for LLM hallucination in routing | **Rules + ML default**; LLM optional for enrichment/explanation only |
 | Consent / personalization flags | **TAPL consent policy** — generic fallback when consent missing |
 
@@ -91,17 +91,17 @@ An HCP browsing **obesity product education** on web or chatbot needs **approved
 
 ### Example scenario (for article callout)
 
-**Input:** *“HCP seeking obesity product education content”*  
+**Input:** *"HCP seeking obesity product education content"*  
 **Expected candidate:** `obesity_product_hcp_education`  
 **Governance:** TAPL show/soften based on trust and channel; full reason codes in response.
 
-### Why this is stronger for “original contribution” than travel alone
+### Why healthcare strengthens the governance story
 
-Healthcare forces the **governance story** to the foreground — TAPL, audit trails, tier routing, and explainability are not optional nice-to-haves. That aligns with the article’s core thesis better than conversion optimization alone.
+Healthcare forces the **governance story** to the foreground — TAPL, audit trails, tier routing, and explainability are not optional nice-to-haves. That aligns with the article's core thesis better than conversion optimization alone.
 
 ---
 
-## Section C — Unified “multi-industry” paragraph (use if not picking one hero)
+## Section C — Unified "multi-industry" paragraph (use if not picking one hero)
 
 EDTA is intentionally **vertical-agnostic at the engine layer** and **vertical-specific at the policy layer**:
 
@@ -114,11 +114,11 @@ The architecture demonstrates **portability**: the same four-tier pipeline, diff
 
 ---
 
-## Suggested new subsection for InfoQ draft (insert after §2 Reference Architecture)
+## Suggested new subsection for article draft (insert after §2 Reference Architecture)
 
 ### 2.1 Four-tier inference and why it matters
 
-Most 2024–2026 personalization stacks converge on “rules + ML + LLM.” EDTA makes tiers **first-class and benchmarkable**:
+Most 2024–2026 personalization stacks converge on "rules + ML + LLM." EDTA makes tiers **first-class and benchmarkable**:
 
 ```text
 Rules  → deterministic, auditable (YAML + EDS + TKGE-boosted confidence)
@@ -129,7 +129,7 @@ LLM    → optional teacher (intent, explanation, synthetic labels)
 
 **HAOE** selects tier by confidence, cost budget, and policy — not by hardcoded if/else in the recommender. **Explanation routing** (SLM first, LLM escalation) keeps token cost bounded.
 
-This is the primary architectural lesson for InfoQ readers: **govern tier selection and explanation cost the same way you govern database connection pools or API rate limits.**
+This is the primary architectural lesson for readers: **govern tier selection and explanation cost the same way you govern database connection pools or API rate limits.**
 
 ---
 
@@ -159,9 +159,9 @@ This is the primary architectural lesson for InfoQ readers: **govern tier select
 
 ---
 
-## Cover note to InfoQ editors (optional)
+## Cover note to editors (optional)
 
-> This article describes a **deployed reference architecture** (open source, live demo) for **trust-aware, multi-tier personalization**. It is implementation-focused: FastAPI, YAML policies, SQLite audit, Docker/Render deploy, and reproducible tier benchmarks. Primary audience: architects building **multi-channel personalization** in travel, hospitality, or compliance-sensitive industries. Not a survey of Amazon Personalize or LLM prompt tricks — the contribution is **orchestration and governance**.
+> This article describes a **deployed reference architecture** (open source, live demo) for **trust-aware, multi-tier personalization**. It is implementation-focused: FastAPI, YAML policies, SQLite audit, Docker/Render deploy, and reproducible tier benchmarks. Primary audience: architects building **multi-channel personalization** in travel, hospitality, or compliance-sensitive industries. Not a survey of Amazon Personalize or LLM prompt tricks — the focus is **orchestration and governance**.
 
 ---
 
@@ -176,4 +176,4 @@ This is the primary architectural lesson for InfoQ readers: **govern tier select
 
 ---
 
-*Use with `docs/EB1A_ORIGINAL_CONTRIBUTION.md` for petition alignment and `docs/infoq_edta_llm_personalization_article_draft.md` for full article body.*
+*Use with `docs/edta_llm_personalization_article_draft.md` for the full article body.*
