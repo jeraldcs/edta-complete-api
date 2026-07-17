@@ -1,11 +1,32 @@
 let lastScenarioData = null;
 let lastParsedScenarioText = "";
 let demoReady = false;
+let activeScenarioKey = "loyalty";
+
+const DEMO_SCENARIOS = {
+  loyalty: {
+    label: "Family loyalty (cust-789)",
+    text: "cust-789 is a preferred loyalty member booking a family SUV rental at SFO. She checked availability and started booking. Personalization consent is true.",
+  },
+  winter: {
+    label: "Winter Denver AWD",
+    text: "I am planning a 500-mile one-way road trip to Denver, Colorado during the winter season. The journey may include mountain roads, snow-covered roads, and icy pavement. I will be traveling with my spouse and luggage. My highest priorities are passenger safety, winter traction, and reliability. Please recommend the most suitable vehicle for this trip.",
+  },
+  no_consent: {
+    label: "No consent",
+    text: "Known customer cust-789 is booking a family SUV rental at SFO. She checked availability and started booking. Personalization consent is false.",
+  },
+  fatigue: {
+    label: "High fatigue",
+    text: "Known customer cust-789 is booking a family SUV rental at SFO. Fatigue count is 8 and she has seen many promotional ads today. Personalization consent is true.",
+  },
+};
 
 let scenarioText = null;
 let scenarioRunBtn = null;
 let scenarioForm = null;
 let scenarioRunError = null;
+let scenarioColdStart = null;
 let scenarioLoading = null;
 let scenarioRecommendation = null;
 let parsedContext = null;
@@ -47,6 +68,19 @@ function updatePayloadPreview() {
   }
 }
 
+function setColdStartMessage(message) {
+  if (!scenarioColdStart) {
+    return;
+  }
+  if (message) {
+    scenarioColdStart.textContent = message;
+    scenarioColdStart.classList.remove("hidden");
+  } else {
+    scenarioColdStart.textContent = "";
+    scenarioColdStart.classList.add("hidden");
+  }
+}
+
 function setRunError(message) {
   if (!scenarioRunError) {
     return;
@@ -68,6 +102,50 @@ function setRunning(isRunning) {
   if (scenarioLoading) {
     scenarioLoading.classList.toggle("hidden", !isRunning);
   }
+}
+
+function updateActiveScenarioChip(key) {
+  activeScenarioKey = key || null;
+  document.querySelectorAll(".scenario-chip-btn").forEach((button) => {
+    const matches = key && button.dataset.scenarioKey === key;
+    button.classList.toggle("is-active", Boolean(matches));
+  });
+}
+
+function detectScenarioKey(text) {
+  const normalized = String(text || "").trim().replace(/\s+/g, " ");
+  for (const [key, scenario] of Object.entries(DEMO_SCENARIOS)) {
+    if (normalized === scenario.text.trim().replace(/\s+/g, " ")) {
+      return key;
+    }
+  }
+  return null;
+}
+
+function applyScenarioChip(key, { autoRun = false } = {}) {
+  const scenario = DEMO_SCENARIOS[key];
+  if (!scenario || !scenarioText) {
+    return;
+  }
+  scenarioText.value = scenario.text;
+  updateActiveScenarioChip(key);
+  updatePayloadPreview();
+  setRunError("");
+  if (autoRun) {
+    runScenario();
+  }
+}
+
+function bindScenarioChips() {
+  document.querySelectorAll(".scenario-chip-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.scenarioKey;
+      if (!key) {
+        return;
+      }
+      applyScenarioChip(key, { autoRun: true });
+    });
+  });
 }
 
 function scrollToResults() {
@@ -312,16 +390,8 @@ function renderRecommendation(data) {
   renderEmpathyPanels(summary, rec);
 }
 
-function updateRuntimeSectionHeadings(summary) {
-  const archTitle = document.querySelector(".architecture-section h2");
-  const techTitle = document.querySelector(".technical-section h2");
-  const domain = pretty((summary?.nlp || {}).detected_domain || "scenario");
-  if (archTitle) {
-    archTitle.textContent = `TKGE, EML, HAOE, and OSE for this ${domain.toLowerCase()} run`;
-  }
-  if (techTitle) {
-    techTitle.textContent = "Why this recommendation was selected for your scenario";
-  }
+function updateRuntimeSectionHeadings(_summary) {
+  // Accordion summaries replace the old dynamic section headings.
 }
 
 function renderTechnicalExplanation(data) {
@@ -493,6 +563,7 @@ async function runScenario() {
   const payload = buildPayload();
   updatePayloadPreview();
   setRunError("");
+  setColdStartMessage("");
   setRunning(true);
   scrollToResults();
 
@@ -501,6 +572,7 @@ async function runScenario() {
     const response = await window.DemoApi.fetch("/recommend-from-scenario", {
       method: "POST",
       body: JSON.stringify(payload),
+      onProgress: setColdStartMessage,
     });
     const body = await response.text();
     if (!response.ok) {
@@ -519,10 +591,12 @@ async function runScenario() {
     renderRecommendation(data);
     renderRuntimeInsights(data);
     setRunError("");
+    setColdStartMessage("");
   } catch (error) {
     showError(error);
   } finally {
     setRunning(false);
+    setColdStartMessage("");
   }
 }
 
@@ -531,6 +605,7 @@ function bindScenarioDemo() {
   scenarioRunBtn = document.getElementById("scenarioRunBtn");
   scenarioForm = document.getElementById("scenarioForm");
   scenarioRunError = document.getElementById("scenarioRunError");
+  scenarioColdStart = document.getElementById("scenarioColdStart");
   scenarioLoading = document.getElementById("scenarioLoading");
   scenarioRecommendation = document.getElementById("scenarioRecommendation");
   parsedContext = document.getElementById("parsedContext");
@@ -552,10 +627,13 @@ function bindScenarioDemo() {
 
   scenarioText.addEventListener("input", () => {
     updatePayloadPreview();
+    updateActiveScenarioChip(detectScenarioKey(scenarioText.value));
     if (scenarioRunError && !scenarioRunError.classList.contains("hidden")) {
       setRunError("");
     }
   });
+
+  bindScenarioChips();
 
   scenarioForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -570,7 +648,21 @@ function bindScenarioDemo() {
   });
 
   updatePayloadPreview();
+  updateActiveScenarioChip(detectScenarioKey(scenarioText.value) || activeScenarioKey);
   window.DemoApi?.init?.();
+}
+
+function loadScenarioFromBenchmarkRow(row) {
+  const text = row?.scenario_text;
+  if (!text || !scenarioText) {
+    return;
+  }
+  scenarioText.value = text;
+  updateActiveScenarioChip(detectScenarioKey(text));
+  updatePayloadPreview();
+  setRunError("");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  runScenario();
 }
 
 window.ScenarioDemo = {
@@ -585,6 +677,8 @@ function fmtScore(value) {
   return Number.isFinite(num) ? num.toFixed(3) : String(value);
 }
 
+let travelBenchmarkRows = [];
+
 async function loadTravelBenchmark() {
   const meta = document.getElementById("travelBenchmarkMeta");
   const body = document.getElementById("travelBenchmarkBody");
@@ -598,9 +692,10 @@ async function loadTravelBenchmark() {
     if (!response.ok) {
       throw new Error(payload.detail || "Could not load travel scenario benchmark.");
     }
-    meta.textContent = `${payload.scenario_count} scenarios · ${Math.round(payload.vehicle_match_rate * 100)}% vehicle match rate`;
-    body.innerHTML = (payload.scenarios || []).map((row, index) => `
-      <tr>
+    travelBenchmarkRows = payload.scenarios || [];
+    meta.textContent = `${payload.scenario_count} scenarios · ${Math.round(payload.vehicle_match_rate * 100)}% vehicle match rate · click a row to try it`;
+    body.innerHTML = travelBenchmarkRows.map((row, index) => `
+      <tr class="benchmark-row" tabindex="0" role="button" data-row-index="${index}" title="Load this scenario">
         <td>${index + 1}</td>
         <td>${escapeHtml(row.title || row.scenario_key || "")}</td>
         <td>${escapeHtml(row.profile_id || "—")}</td>
@@ -617,6 +712,23 @@ async function loadTravelBenchmark() {
         <td>${row.vehicle_match ? "yes" : "no"}</td>
       </tr>
     `).join("");
+    body.querySelectorAll(".benchmark-row").forEach((rowEl) => {
+      const activate = () => {
+        const index = Number(rowEl.getAttribute("data-row-index"));
+        const row = travelBenchmarkRows[index];
+        if (!row?.scenario_text) {
+          return;
+        }
+        loadScenarioFromBenchmarkRow(row);
+      };
+      rowEl.addEventListener("click", activate);
+      rowEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
+        }
+      });
+    });
   } catch (error) {
     meta.textContent = "Could not load benchmark scores.";
     body.innerHTML = `<tr><td colspan="14">${escapeHtml(error.message || String(error))}</td></tr>`;

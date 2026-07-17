@@ -120,15 +120,20 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     response = client.get("/scenario-demo")
     assert response.status_code == 200
     assert "scenario_app.js" in response.text
+    assert 'id="scenarioChipRow"' in response.text
+    assert "scenario-chip-btn" in response.text
     assert 'data-mode="empathy"' not in response.text
     assert 'id="travelBenchmarkTable"' in response.text
     assert "empathy-preset" not in response.text
     assert 'id="empathyDestination"' not in response.text
     assert "scenario-mode-tab" not in response.text
-    assert 'id="scenarioRunBtn"' in response.text
     assert 'id="scenarioForm"' in response.text
+    assert 'id="scenarioRunBtn"' in response.text
     assert "__EDTA_DEMO_CONFIG__" in response.text
     assert "scenario_app.js?v=" in response.text
     assert 'id="scenarioRunError"' in response.text
+    assert 'id="scenarioColdStart"' in response.text
+    assert "demo-accordion" in response.text
     assert 'id="scenarioStatus"' not in response.text
     assert "Experience memory" not in response.text
+    assert "Describe a trip" in response.text

@@ -11,16 +11,19 @@
     <section class="scenario-hero">
       <nav class="topbar scenario-topbar" aria-label="Primary">
         <div class="nav-links">
-          <a href="/scenario-demo">EDTA demo</a>
+          <a href="/scenario-demo">Demo</a>
+          <a href="https://github.com/jeraldcs/edta-complete-api" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href="/docs">Swagger</a>
         </div>
       </nav>
       <div class="scenario-hero-content">
-        <h1>EDTA Personalization Demo — Trust-Aware, Outcome-Simulated Recommendations</h1>
+        <p class="eyebrow">EDTA live demo</p>
+        <h1>Describe a trip. See governed AI pick the right vehicle.</h1>
+        <p class="subtitle">Rules → ML → trust policy → outcome score — explainable in one click.</p>
         <div class="hero-stat-row" aria-label="Demo capabilities">
           <span>Free-text scenarios</span>
-          <span>Unified empathy-aware ranking</span>
-          <span>Trust-aware outcome simulation</span>
+          <span>Trust-aware ranking</span>
+          <span>11-scenario benchmark</span>
         </div>
       </div>
     </section>
@@ -30,13 +33,23 @@
         <form id="scenarioForm" novalidate>
           <div class="panel-title-row">
             <span class="step-badge">Scenario input</span>
-            <p>Describe and run</p>
+            <p>Try a sample or write your own</p>
           </div>
+
+          <div id="scenarioChipRow" class="scenario-chip-row scenario-chip-row-input" role="group" aria-label="Sample scenarios">
+            <button type="button" class="scenario-chip-btn is-active" data-scenario-key="loyalty">Family loyalty (cust-789)</button>
+            <button type="button" class="scenario-chip-btn" data-scenario-key="winter">Winter Denver AWD</button>
+            <button type="button" class="scenario-chip-btn" data-scenario-key="no_consent">No consent</button>
+            <button type="button" class="scenario-chip-btn" data-scenario-key="fatigue">High fatigue</button>
+          </div>
+
           <label class="scenario-text-label" for="scenarioText">
             <span class="eyebrow">User scenario</span>
             <strong>Describe what the visitor is doing</strong>
           </label>
-          <textarea id="scenarioText" rows="9" required minlength="10">Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.</textarea>
+          <textarea id="scenarioText" rows="5" required minlength="10">cust-789 is a preferred loyalty member booking a family SUV rental at SFO. She checked availability and started booking. Personalization consent is true.</textarea>
+
+          <p id="scenarioColdStart" class="scenario-cold-start hidden" role="status" aria-live="polite"></p>
 
           <div class="scenario-actions">
             <button id="scenarioRunBtn" type="submit">Recommend</button>
@@ -70,11 +83,12 @@
     </section>
 
     <section id="empathyResultsSection" class="site-section empathy-results-section hidden" aria-hidden="true">
-      <header class="empathy-section-header">
-        <p class="eyebrow">Empathy insights</p>
-        <h2>Hidden needs, enrichment, and cost-to-drive</h2>
-        <p class="empathy-section-lead">Included with every recommendation — extracted from your scenario text and trip context.</p>
-      </header>
+      <details class="demo-accordion" id="empathyAccordion" open>
+        <summary>
+          <span class="demo-accordion-title">Empathy insights</span>
+          <span class="demo-accordion-hint">Hidden needs, enrichment, and cost-to-drive</span>
+        </summary>
+        <div class="demo-accordion-body">
       <div class="empathy-results-grid">
         <article class="empathy-panel empathy-panel-needs">
           <div class="empathy-panel-head">
@@ -105,13 +119,17 @@
           <div id="scenarioEmpathyPitch" class="empathy-panel-body empathy-pitch">Tailored pitch based on hidden needs and trip economics.</div>
         </article>
       </div>
+        </div>
+      </details>
     </section>
 
     <section class="site-section architecture-section">
-      <div class="section-heading">
-        <p class="eyebrow">EDTA architecture</p>
-        <h2>TKGE, EML, HAOE, and OSE from the last run</h2>
-      </div>
+      <details class="demo-accordion" id="architectureAccordion">
+        <summary>
+          <span class="demo-accordion-title">Architecture panels</span>
+          <span class="demo-accordion-hint">TKGE, EML, HAOE, and OSE from the last run</span>
+        </summary>
+        <div class="demo-accordion-body">
       <div id="scenarioArchitecturePanels" class="architecture-grid">
         <article class="architecture-card placeholder-card">
           <span class="architecture-label">Waiting</span>
@@ -119,25 +137,33 @@
           <p>Architecture panels populate after your scenario is parsed.</p>
         </article>
       </div>
+        </div>
+      </details>
     </section>
 
     <section class="site-section technical-section">
+      <details class="demo-accordion" id="technicalAccordion">
+        <summary>
+          <span class="demo-accordion-title">Technical explanation</span>
+          <span class="demo-accordion-hint">Parsing, scoring, TAPL, and ranking details</span>
+        </summary>
+        <div class="demo-accordion-body">
       <article class="insight-card technical-card">
-        <div class="section-heading compact-heading">
-          <p class="eyebrow">Technical explanation</p>
-          <h2>Why this recommendation was selected</h2>
-        </div>
         <div id="technicalExplanation" class="technical-explanation">
           Run a scenario to see parsing, candidate filtering, scoring, TAPL, and ranking details.
         </div>
       </article>
+        </div>
+      </details>
     </section>
 
     <section class="site-section api-layout">
-      <div class="section-heading">
-        <p class="eyebrow">API details</p>
-        <h2>Scenario request and response</h2>
-      </div>
+      <details class="demo-accordion" id="apiAccordion">
+        <summary>
+          <span class="demo-accordion-title">Developer view</span>
+          <span class="demo-accordion-hint">API request and response JSON</span>
+        </summary>
+        <div class="demo-accordion-body">
       <div class="code-grid">
         <article>
           <h3>Request</h3>
@@ -148,14 +174,18 @@
           <pre id="scenarioResponsePreview">Run a scenario to see the response.</pre>
         </article>
       </div>
+        </div>
+      </details>
     </section>
 
     <section class="site-section travel-benchmark-section">
-      <div class="section-heading">
-        <p class="eyebrow">Travel benchmark</p>
-        <h2>Score matrix for all 11 benchmark scenarios</h2>
-        <p class="empathy-section-lead">Pre-tuned profiles with distinct EDS, outcome simulation, TAPL trust/fatigue, and rank scores per scenario.</p>
-      </div>
+      <details class="demo-accordion" id="benchmarkAccordion">
+        <summary>
+          <span class="demo-accordion-title">Travel benchmark</span>
+          <span class="demo-accordion-hint">Score matrix for all 11 trained scenarios</span>
+        </summary>
+        <div class="demo-accordion-body">
+      <p class="empathy-section-lead benchmark-lead">Pre-tuned profiles with distinct EDS, outcome, TAPL trust/fatigue, and rank scores. Click a row to load that scenario.</p>
       <div id="travelBenchmarkMeta" class="benchmark-meta">Loading benchmark scores…</div>
       <div class="benchmark-table-wrap" tabindex="0" aria-label="Travel scenario score matrix">
         <table id="travelBenchmarkTable" class="benchmark-score-table">
@@ -182,6 +212,8 @@
           </tbody>
         </table>
       </div>
+        </div>
+      </details>
     </section>
   </main>
   <!--EDTA_DEMO_BOOT-->
