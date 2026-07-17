@@ -1,8 +1,10 @@
 let lastScenarioData = null;
 let lastParsedScenarioText = "";
+let demoReady = false;
 
 const scenarioText = document.getElementById("scenarioText");
 const scenarioRunBtn = document.getElementById("scenarioRunBtn");
+const scenarioRunError = document.getElementById("scenarioRunError");
 const scenarioLoading = document.getElementById("scenarioLoading");
 const scenarioRecommendation = document.getElementById("scenarioRecommendation");
 const parsedContext = document.getElementById("parsedContext");
@@ -15,8 +17,13 @@ const scenarioEmpathyHiddenNeeds = document.getElementById("scenarioEmpathyHidde
 const scenarioEmpathyEnrichment = document.getElementById("scenarioEmpathyEnrichment");
 const scenarioEmpathyTco = document.getElementById("scenarioEmpathyTco");
 const scenarioEmpathyPitch = document.getElementById("scenarioEmpathyPitch");
+const scenarioResultsSection = document.querySelector(".scenario-results");
 
-const { escapeHtml, pct, pretty, renderArchitecturePanels } = window.DemoShared;
+const shared = window.DemoShared || {};
+const escapeHtml = shared.escapeHtml || ((value) => String(value ?? ""));
+const pct = shared.pct || ((value) => `${Math.round(Number(value || 0) * 100)}%`);
+const pretty = shared.pretty || ((value) => String(value || "").replaceAll("_", " "));
+const renderArchitecturePanels = shared.renderArchitecturePanels || (() => {});
 
 function num(value) {
   return Number(value || 0).toFixed(2);
@@ -24,7 +31,7 @@ function num(value) {
 
 function buildPayload() {
   return {
-    scenario_text: scenarioText.value.trim(),
+    scenario_text: (scenarioText?.value || "").trim(),
     limit: 3,
     use_ai_models: true,
     use_llm: false,
@@ -34,7 +41,52 @@ function buildPayload() {
 }
 
 function updatePayloadPreview() {
-  payloadPreview.textContent = JSON.stringify(buildPayload(), null, 2);
+  if (payloadPreview) {
+    payloadPreview.textContent = JSON.stringify(buildPayload(), null, 2);
+  }
+}
+
+function setRunError(message) {
+  if (!scenarioRunError) {
+    return;
+  }
+  if (message) {
+    scenarioRunError.textContent = message;
+    scenarioRunError.classList.remove("hidden");
+  } else {
+    scenarioRunError.textContent = "";
+    scenarioRunError.classList.add("hidden");
+  }
+}
+
+function setRunning(isRunning) {
+  if (scenarioRunBtn) {
+    scenarioRunBtn.disabled = isRunning;
+    scenarioRunBtn.textContent = isRunning ? "Running..." : "Recommend";
+  }
+  if (scenarioLoading) {
+    scenarioLoading.classList.toggle("hidden", !isRunning);
+  }
+}
+
+function scrollToResults() {
+  if (scenarioResultsSection) {
+    scenarioResultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function validateScenarioText(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) {
+    return "Enter a scenario description before running Recommend.";
+  }
+  if (trimmed.length < 10) {
+    return "Scenario text must be at least 10 characters.";
+  }
+  if (trimmed.length > 4000) {
+    return "Scenario text must be 4000 characters or fewer.";
+  }
+  return "";
 }
 
 function hasEmpathyInsights(summary) {
@@ -86,6 +138,9 @@ function renderEmpathyVehicleCard(summary) {
 }
 
 function renderEmpathyPanels(summary, topRec) {
+  if (!empathyResultsSection) {
+    return;
+  }
   if (!hasEmpathyInsights(summary)) {
     empathyResultsSection.classList.add("hidden");
     empathyResultsSection.setAttribute("aria-hidden", "true");
@@ -103,80 +158,88 @@ function renderEmpathyPanels(summary, topRec) {
     — ${escapeHtml(item.reason || "")}</li>
   `).join("");
 
-  scenarioEmpathyHiddenNeeds.innerHTML = `
-    <dl class="empathy-facts">
-      <div><dt>Persona</dt><dd>${escapeHtml((profile.persona_tags || []).join(", ") || "None")}</dd></div>
-      <div><dt>Standard filter would match</dt><dd>${escapeHtml(profile.standard_filter_match || "Generic category")}</dd></div>
-      <div><dt>Confidence</dt><dd>${Math.round(Number(profile.confidence || 0) * 100)}%</dd></div>
-      <div><dt>Evidence</dt><dd>${escapeHtml((profile.evidence_phrases || []).join(", ") || "—")}</dd></div>
-    </dl>
-    <h3 class="empathy-subtitle">Implicit constraints</h3>
-    <ul class="empathy-constraint-list">${constraintRows || "<li>No constraints extracted.</li>"}</ul>
-  `;
+  if (scenarioEmpathyHiddenNeeds) {
+    scenarioEmpathyHiddenNeeds.innerHTML = `
+      <dl class="empathy-facts">
+        <div><dt>Persona</dt><dd>${escapeHtml((profile.persona_tags || []).join(", ") || "None")}</dd></div>
+        <div><dt>Standard filter would match</dt><dd>${escapeHtml(profile.standard_filter_match || "Generic category")}</dd></div>
+        <div><dt>Confidence</dt><dd>${Math.round(Number(profile.confidence || 0) * 100)}%</dd></div>
+        <div><dt>Evidence</dt><dd>${escapeHtml((profile.evidence_phrases || []).join(", ") || "—")}</dd></div>
+      </dl>
+      <h3 class="empathy-subtitle">Implicit constraints</h3>
+      <ul class="empathy-constraint-list">${constraintRows || "<li>No constraints extracted.</li>"}</ul>
+    `;
+  }
 
   const enrichment = summary.enrichment || empathy.enrichment || {};
   const weather = enrichment.weather || {};
   const route = enrichment.route || {};
   const stops = (empathy.trip?.stops || []).join(" -> ");
-  scenarioEmpathyEnrichment.innerHTML = `
-    <dl class="empathy-facts">
-      <div><dt>Route</dt><dd>${escapeHtml(empathy.trip?.route_label || route.source || "—")}</dd></div>
-      <div><dt>Stops</dt><dd class="empathy-stops">${escapeHtml(stops || "—")}</dd></div>
-      <div><dt>Weather forecast</dt><dd>${escapeHtml(weather.forecast || "clear")} (${escapeHtml(weather.source || "stub")})</dd></div>
-      <div><dt>Wind</dt><dd>${escapeHtml(weather.wind_mph ?? 0)} mph</dd></div>
-      <div><dt>Weather note</dt><dd>${escapeHtml(weather.note || "—")}</dd></div>
-      <div><dt>Max elevation</dt><dd>${escapeHtml(route.max_elevation_ft ?? 0)} ft</dd></div>
-      <div><dt>Steep grade</dt><dd>${route.steep_grade ? "Yes" : "No"}</dd></div>
-      <div><dt>Route distance</dt><dd>${escapeHtml(route.distance_miles ?? empathy.trip?.distance_miles ?? "—")} mi</dd></div>
-      <div><dt>Gas price</dt><dd>$${Number(enrichment.gas_price_usd || 0).toFixed(2)}/gal</dd></div>
-      <div><dt>Derived constraints</dt><dd>${escapeHtml((enrichment.derived_constraints || []).join(", ") || "—")}</dd></div>
-    </dl>
-  `;
+  if (scenarioEmpathyEnrichment) {
+    scenarioEmpathyEnrichment.innerHTML = `
+      <dl class="empathy-facts">
+        <div><dt>Route</dt><dd>${escapeHtml(empathy.trip?.route_label || route.source || "—")}</dd></div>
+        <div><dt>Stops</dt><dd class="empathy-stops">${escapeHtml(stops || "—")}</dd></div>
+        <div><dt>Weather forecast</dt><dd>${escapeHtml(weather.forecast || "clear")} (${escapeHtml(weather.source || "stub")})</dd></div>
+        <div><dt>Wind</dt><dd>${escapeHtml(weather.wind_mph ?? 0)} mph</dd></div>
+        <div><dt>Weather note</dt><dd>${escapeHtml(weather.note || "—")}</dd></div>
+        <div><dt>Max elevation</dt><dd>${escapeHtml(route.max_elevation_ft ?? 0)} ft</dd></div>
+        <div><dt>Steep grade</dt><dd>${route.steep_grade ? "Yes" : "No"}</dd></div>
+        <div><dt>Route distance</dt><dd>${escapeHtml(route.distance_miles ?? empathy.trip?.distance_miles ?? "—")} mi</dd></div>
+        <div><dt>Gas price</dt><dd>$${Number(enrichment.gas_price_usd || 0).toFixed(2)}/gal</dd></div>
+        <div><dt>Derived constraints</dt><dd>${escapeHtml((enrichment.derived_constraints || []).join(", ") || "—")}</dd></div>
+      </dl>
+    `;
+  }
 
   const tco = summary.tco || {};
-  const comparisons = tco.comparisons || empathy.tco_comparisons || [];
+  const comparisons = [...(tco.comparisons || empathy.tco_comparisons || [])];
   if (!comparisons.length && topRec?.tco) {
     comparisons.push(topRec.tco);
   }
-  if (!comparisons.length) {
-    scenarioEmpathyTco.innerHTML = "<p>Add route miles to see fuel and total trip cost.</p>";
-  } else {
-    const rows = comparisons.map(item => `
-      <tr>
-        <td>${escapeHtml(item.candidate_id.replaceAll("_", " "))}</td>
-        <td>$${Number(item.daily_rate_total || 0).toFixed(0)}</td>
-        <td>$${Number(item.estimated_fuel_cost || 0).toFixed(0)}</td>
-        <td>$${Number(item.total_trip_cost || 0).toFixed(0)}</td>
-        <td>${item.net_savings != null ? `$${Number(item.net_savings).toFixed(0)}` : "—"}</td>
-      </tr>
-    `).join("");
-    scenarioEmpathyTco.innerHTML = `
-      <div class="empathy-tco-scroll" tabindex="0" aria-label="Trip cost comparison table">
-        <table class="empathy-tco-table">
-          <thead>
-            <tr>
-              <th>Vehicle</th>
-              <th>Rental</th>
-              <th>Fuel</th>
-              <th>Total</th>
-              <th>Net vs compact</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    `;
+  if (scenarioEmpathyTco) {
+    if (!comparisons.length) {
+      scenarioEmpathyTco.innerHTML = "<p>Add route miles to see fuel and total trip cost.</p>";
+    } else {
+      const rows = comparisons.map(item => `
+        <tr>
+          <td>${escapeHtml(String(item.candidate_id || "").replaceAll("_", " "))}</td>
+          <td>$${Number(item.daily_rate_total || 0).toFixed(0)}</td>
+          <td>$${Number(item.estimated_fuel_cost || 0).toFixed(0)}</td>
+          <td>$${Number(item.total_trip_cost || 0).toFixed(0)}</td>
+          <td>${item.net_savings != null ? `$${Number(item.net_savings).toFixed(0)}` : "—"}</td>
+        </tr>
+      `).join("");
+      scenarioEmpathyTco.innerHTML = `
+        <div class="empathy-tco-scroll" tabindex="0" aria-label="Trip cost comparison table">
+          <table class="empathy-tco-table">
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Rental</th>
+                <th>Fuel</th>
+                <th>Total</th>
+                <th>Net vs compact</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
   }
 
   const match = topRec?.empathy_match || {};
   const vehicle = empathyVehicleRecommendation(summary) || {};
   const pitch = tco.top_pitch || empathy.empathy_pitch || vehicle.pitch || topRec?.explanation || "";
-  scenarioEmpathyPitch.innerHTML = `
-    <p class="empathy-top-vehicle"><strong>Empathy vehicle:</strong> ${escapeHtml((vehicle.title || topRec?.candidate?.title || "").replaceAll("_", " "))}</p>
-    ${(vehicle.satisfied || match.satisfied || []).length ? `<p><strong>Constraints met:</strong> ${escapeHtml((vehicle.satisfied || match.satisfied || []).map(item => item.replaceAll("_", " ")).join(", "))}</p>` : ""}
-    ${(topRec?.enrichment_notes || []).length ? `<p><strong>Enrichment:</strong> ${escapeHtml(topRec.enrichment_notes.join(" "))}</p>` : ""}
-    <p>${escapeHtml(pitch)}</p>
-  `;
+  if (scenarioEmpathyPitch) {
+    scenarioEmpathyPitch.innerHTML = `
+      <p class="empathy-top-vehicle"><strong>Empathy vehicle:</strong> ${escapeHtml((vehicle.title || topRec?.candidate?.title || "").replaceAll("_", " "))}</p>
+      ${(vehicle.satisfied || match.satisfied || []).length ? `<p><strong>Constraints met:</strong> ${escapeHtml((vehicle.satisfied || match.satisfied || []).map(item => item.replaceAll("_", " ")).join(", "))}</p>` : ""}
+      ${(topRec?.enrichment_notes || []).length ? `<p><strong>Enrichment:</strong> ${escapeHtml(topRec.enrichment_notes.join(" "))}</p>` : ""}
+      <p>${escapeHtml(pitch)}</p>
+    `;
+  }
 }
 
 function parsedContextFromSummary(summary) {
@@ -184,6 +247,9 @@ function parsedContextFromSummary(summary) {
 }
 
 function renderParsedContext(summary) {
+  if (!parsedContext) {
+    return;
+  }
   const context = parsedContextFromSummary(summary);
   const nlp = summary.nlp || {};
   const llmStatus = nlp.llm_status || {};
@@ -215,6 +281,11 @@ function renderRecommendation(data) {
   const tcoLine = rec.tco?.recommendation_pitch
     ? `<p class="explanation empathy-inline-tco"><strong>TCO:</strong> ${escapeHtml(rec.tco.recommendation_pitch)}</p>`
     : "";
+  const reasonCodes = rec.reason_codes || [];
+
+  if (!scenarioRecommendation) {
+    return;
+  }
 
   scenarioRecommendation.innerHTML = `
     <p class="eyebrow">Top recommendation ${empathyBadge}</p>
@@ -233,7 +304,7 @@ function renderRecommendation(data) {
     </div>
     <p class="explanation">${escapeHtml(rec.explanation)}</p>
     ${tcoLine}
-    <div class="pill-row">${rec.reason_codes.map(reason => `<span>${escapeHtml(reason.replaceAll("_", " "))}</span>`).join("")}</div>
+    <div class="pill-row">${reasonCodes.map(reason => `<span>${escapeHtml(reason.replaceAll("_", " "))}</span>`).join("")}</div>
     ${renderEmpathyVehicleCard(summary)}
   `;
 
@@ -253,6 +324,9 @@ function updateRuntimeSectionHeadings(summary) {
 }
 
 function renderTechnicalExplanation(data) {
+  if (!technicalExplanation) {
+    return;
+  }
   const summary = data.request_summary || {};
   const context = summary.parsed_context || {};
   const nlp = summary.nlp || {};
@@ -359,51 +433,123 @@ function renderRuntimeInsights(data) {
   }
 }
 
-function showError(error) {
-  scenarioRecommendation.innerHTML = `
-    <p class="eyebrow">Error</p>
-    <h2>Could not generate recommendation.</h2>
-    <p class="explanation">${escapeHtml(error.message || String(error))}</p>
-  `;
-  responsePreview.textContent = String(error.stack || error.message || error);
-  empathyResultsSection.classList.add("hidden");
-  empathyResultsSection.setAttribute("aria-hidden", "true");
+function formatApiError(status, body) {
+  try {
+    const payload = JSON.parse(body);
+    if (Array.isArray(payload.detail)) {
+      return payload.detail.map(item => item.msg || JSON.stringify(item)).join(" ");
+    }
+    if (typeof payload.detail === "string") {
+      return payload.detail;
+    }
+  } catch (_error) {
+    // fall through to raw body
+  }
+  return body || `Request failed with status ${status}.`;
+}
+
+function showError(error, inlineMessage) {
+  const message = inlineMessage || error?.message || String(error);
+  setRunError(message);
+  if (scenarioRecommendation) {
+    scenarioRecommendation.innerHTML = `
+      <p class="eyebrow">Error</p>
+      <h2>Could not generate recommendation.</h2>
+      <p class="explanation">${escapeHtml(message)}</p>
+    `;
+  }
+  if (responsePreview) {
+    responsePreview.textContent = String(error?.stack || message);
+  }
+  if (empathyResultsSection) {
+    empathyResultsSection.classList.add("hidden");
+    empathyResultsSection.setAttribute("aria-hidden", "true");
+  }
+  scrollToResults();
+}
+
+async function ensureDemoReady() {
+  if (!window.DemoApi?.init) {
+    throw new Error("Demo API helper failed to load. Refresh the page and try again.");
+  }
+  if (!demoReady) {
+    await window.DemoApi.init();
+    demoReady = true;
+  }
 }
 
 async function runScenario() {
+  const validationError = validateScenarioText(scenarioText?.value || "");
+  if (validationError) {
+    showError(new Error(validationError), validationError);
+    return;
+  }
+
   const payload = buildPayload();
   updatePayloadPreview();
-  scenarioLoading.classList.remove("hidden");
+  setRunError("");
+  setRunning(true);
+  scrollToResults();
 
   try {
-    const response = await DemoApi.fetch("/recommend-from-scenario", {
+    await ensureDemoReady();
+    const response = await window.DemoApi.fetch("/recommend-from-scenario", {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
+    const body = await response.text();
     if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`POST /recommend-from-scenario returned ${response.status}: ${body}`);
+      throw new Error(formatApiError(response.status, body));
     }
-    const data = await response.json();
+    const data = JSON.parse(body);
     lastScenarioData = data;
-    lastParsedScenarioText = scenarioText.value.trim();
-    responsePreview.textContent = JSON.stringify(data, null, 2);
+    lastParsedScenarioText = payload.scenario_text;
+    if (responsePreview) {
+      responsePreview.textContent = JSON.stringify(data, null, 2);
+    }
     renderParsedContext(data.request_summary);
-    if (!data.recommendations.length) {
+    if (!data.recommendations?.length) {
       throw new Error("The API returned no recommendations for this scenario.");
     }
     renderRecommendation(data);
     renderRuntimeInsights(data);
+    setRunError("");
   } catch (error) {
     showError(error);
   } finally {
-    scenarioLoading.classList.add("hidden");
+    setRunning(false);
   }
 }
 
-scenarioText.addEventListener("input", updatePayloadPreview);
-if (scenarioRunBtn) {
-  scenarioRunBtn.addEventListener("click", runScenario);
+function bindScenarioDemo() {
+  if (!scenarioText || !scenarioRunBtn) {
+    return;
+  }
+
+  scenarioText.addEventListener("input", () => {
+    updatePayloadPreview();
+    if (scenarioRunError && !scenarioRunError.classList.contains("hidden")) {
+      setRunError("");
+    }
+  });
+
+  scenarioRunBtn.addEventListener("click", () => {
+    runScenario();
+  });
+
+  scenarioText.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      runScenario();
+    }
+  });
+
+  updatePayloadPreview();
+  window.DemoApi?.init?.();
 }
 
-updatePayloadPreview();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bindScenarioDemo);
+} else {
+  bindScenarioDemo();
+}
