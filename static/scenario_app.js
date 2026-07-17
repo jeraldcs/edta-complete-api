@@ -46,6 +46,9 @@ const escapeHtml = shared.escapeHtml || ((value) => String(value ?? ""));
 const pct = shared.pct || ((value) => `${Math.round(Number(value || 0) * 100)}%`);
 const pretty = shared.pretty || ((value) => String(value || "").replaceAll("_", " "));
 const renderArchitecturePanels = shared.renderArchitecturePanels || (() => {});
+const renderTaplBadge = shared.renderTaplBadge || ((action) => escapeHtml(pretty(action)));
+const scoreMeter = shared.scoreMeter || (() => "");
+const vehicleGlyph = shared.vehicleGlyph || (() => "🚗");
 
 function num(value) {
   return Number(value || 0).toFixed(2);
@@ -184,36 +187,32 @@ function empathyVehicleRecommendation(summary) {
   return summary?.empathy?.vehicle_recommendation || null;
 }
 
-function renderEmpathyVehicleCard(summary) {
+function renderAlternateEmpathyVehicle(summary, topCandidateId) {
   const vehicle = empathyVehicleRecommendation(summary);
-  if (!vehicle) {
+  if (!vehicle || vehicle.candidate_id === topCandidateId) {
     return "";
   }
-  const tco = vehicle.tco || {};
-  const tcoLine = tco.total_trip_cost != null
-    ? `<p class="explanation empathy-inline-tco"><strong>TCO:</strong> $${Number(tco.total_trip_cost).toFixed(0)} total`
-      + (tco.estimated_fuel_cost ? ` ($${Number(tco.daily_rate_total || 0).toFixed(0)} rental + $${Number(tco.estimated_fuel_cost).toFixed(0)} fuel)` : "")
-      + `</p>`
-    : "";
-  const constraints = (vehicle.satisfied || []).slice(0, 4).map(item => item.replaceAll("_", " ")).join(", ");
+  const constraints = (vehicle.satisfied || []).slice(0, 3).map(item => item.replaceAll("_", " ")).join(", ");
   return `
-    <article class="empathy-vehicle-rec">
-      <p class="eyebrow">Empathy Engine vehicle recommendation</p>
-      <div class="offer-header">
-        <div>
-          <h3>${escapeHtml(vehicle.title || vehicle.candidate_id)}</h3>
-          <p>${escapeHtml(vehicle.description || "")}</p>
-        </div>
-        <strong class="score-badge">${pct(vehicle.match_score || 0)}</strong>
-      </div>
-      <div class="offer-metrics">
-        <div><span>Vehicle ID</span><strong>${escapeHtml(vehicle.candidate_id)}</strong></div>
-        <div><span>Empathy match</span><strong>${pct(vehicle.match_score || 0)}</strong>${constraints ? `<small>${escapeHtml(constraints)}</small>` : ""}</div>
-      </div>
-      <p class="explanation">${escapeHtml(vehicle.pitch || "")}</p>
-      ${tcoLine}
-    </article>
+    <aside class="hero-alt-vehicle">
+      <p class="eyebrow">Also considered (empathy fit)</p>
+      <p><strong>${escapeHtml(vehicle.title || vehicle.candidate_id)}</strong> — ${pct(vehicle.match_score || 0)} empathy match${constraints ? ` · ${escapeHtml(constraints)}` : ""}</p>
+    </aside>
   `;
+}
+
+function pulseOfferCard() {
+  const card = document.getElementById("scenarioOfferCard");
+  if (!card) {
+    return;
+  }
+  card.classList.remove("is-ready");
+  void card.offsetWidth;
+  card.classList.add("is-ready");
+}
+
+function renderEmpathyVehicleCard(_summary) {
+  return "";
 }
 
 function renderEmpathyPanels(summary, topRec) {
@@ -330,20 +329,15 @@ function renderParsedContext(summary) {
     return;
   }
   const context = parsedContextFromSummary(summary);
-  const nlp = summary.nlp || {};
-  const llmStatus = nlp.llm_status || {};
+  const profile = summary.scenario_profile || {};
   parsedContext.innerHTML = `
-    <div><span>Parser</span><strong>${escapeHtml(pretty(nlp.parser || "unknown"))}</strong></div>
-    <div><span>LLM status</span><strong>${escapeHtml(pretty(llmStatus.last_status || (summary.llm_enabled ? "ready" : "not_configured")))}</strong></div>
-    <div><span>Channel</span><strong>${escapeHtml(pretty(context.channel))}</strong></div>
-    <div><span>Intent</span><strong>${escapeHtml(pretty(context.current_intent))}</strong></div>
-    <div><span>Journey</span><strong>${escapeHtml(pretty(context.journey_stage))}</strong></div>
-    <div><span>Customer</span><strong>${escapeHtml(context.customer_id || "anonymous")}</strong></div>
-    <div><span>Channel fallback</span><strong>${escapeHtml(nlp.demo_channel_fallback ? `${nlp.demo_channel_fallback.from} → ${nlp.demo_channel_fallback.to}` : (nlp.empathy_channel_override ? `${nlp.empathy_channel_override.from} → ${nlp.empathy_channel_override.to}` : "None"))}</strong></div>
-    <div><span>LLM fallback</span><strong>${escapeHtml(nlp.llm_fallback ? (nlp.llm_fallback_reason || "Yes") : "No")}</strong></div>
-    <div><span>Profile lookup</span><strong>${escapeHtml(pretty((summary.profile || {}).profile_lookup || "not used"))}</strong></div>
-    <div><span>Events</span><strong>${escapeHtml((context.session_events || []).join(", "))}</strong></div>
-    <div><span>Search terms</span><strong>${escapeHtml((context.search_terms || []).join(", "))}</strong></div>
+    <div class="parsed-context-compact">
+      <div><span>Channel</span><strong>${escapeHtml(pretty(context.channel))}</strong></div>
+      <div><span>Intent</span><strong>${escapeHtml(pretty(context.current_intent))}</strong></div>
+      <div><span>Journey</span><strong>${escapeHtml(pretty(context.journey_stage))}</strong></div>
+      <div><span>Customer</span><strong>${escapeHtml(context.customer_id || "anonymous")}</strong></div>
+    </div>
+    ${profile.profile_id ? `<p class="parsed-profile-chip"><span>Travel profile</span> <strong>${escapeHtml(profile.profile_id)}</strong></p>` : ""}
   `;
 }
 
@@ -351,43 +345,69 @@ function renderRecommendation(data) {
   const rec = data.recommendations[0];
   const summary = data.request_summary || {};
   const empathyInsights = hasEmpathyInsights(summary);
-  const empathyBadge = empathyInsights
-    ? `<span class="example-chip">Empathy-aware</span>`
-    : "";
-  const empathyMetrics = rec.empathy_match
-    ? `<div><span>Empathy match</span><strong>${pct(rec.empathy_match.match_score || 0)}</strong><small>${escapeHtml((rec.empathy_match.satisfied || []).slice(0, 3).join(", ").replaceAll("_", " "))}</small></div>`
-    : "";
-  const tcoLine = rec.tco?.recommendation_pitch
-    ? `<p class="explanation empathy-inline-tco"><strong>TCO:</strong> ${escapeHtml(rec.tco.recommendation_pitch)}</p>`
-    : "";
+  const empathyVehicle = empathyVehicleRecommendation(summary);
+  const ai = rec.ai_score || {};
+  const tapl = ai.tapl || {};
+  const outcome = ai.outcome_simulation || {};
+  const empathyMatch = rec.empathy_match?.match_score ?? empathyVehicle?.match_score ?? 0;
+  const profile = summary.scenario_profile || {};
   const reasonCodes = rec.reason_codes || [];
+  const taplAction = tapl.action || "show";
 
   if (!scenarioRecommendation) {
     return;
   }
 
+  const badges = [
+    empathyInsights ? `<span class="hero-badge hero-badge-empathy">Empathy-aware</span>` : "",
+    profile.profile_id ? `<span class="hero-badge hero-badge-profile">${escapeHtml(profile.profile_id.replaceAll("_", " "))}</span>` : "",
+  ].filter(Boolean).join("");
+
   scenarioRecommendation.innerHTML = `
-    <p class="eyebrow">Top recommendation ${empathyBadge}</p>
-    <div class="offer-header">
-      <div>
-        <h2>${escapeHtml(rec.candidate.title)}</h2>
-        <p>${escapeHtml(rec.candidate.description)}</p>
+    <div class="hero-result-head">
+      <div class="hero-result-title">
+        <p class="eyebrow">Recommended vehicle ${badges ? `<span class="hero-badge-row">${badges}</span>` : ""}</p>
+        <div class="offer-header hero-offer-header">
+          <div class="hero-vehicle-title">
+            <span class="vehicle-glyph" aria-hidden="true">${vehicleGlyph(rec.candidate.id)}</span>
+            <div>
+              <h2>${escapeHtml(rec.candidate.title)}</h2>
+              <p class="hero-vehicle-id">${escapeHtml(rec.candidate.id.replaceAll("_", " "))}</p>
+            </div>
+          </div>
+          <div class="hero-score-stack">
+            <strong class="score-badge score-badge-hero">${pct(ai.final_hybrid_score)}</strong>
+            <span class="score-badge-caption">Final score</span>
+          </div>
+        </div>
       </div>
-      <strong class="score-badge">${pct(rec.ai_score.final_hybrid_score)}</strong>
+      <div class="hero-policy-row">
+        <span class="hero-policy-label">TAPL policy</span>
+        ${renderTaplBadge(taplAction)}
+        <span class="hero-policy-reason">${escapeHtml(tapl.reason || "Policy evaluated for this scenario.")}</span>
+      </div>
     </div>
-    <div class="offer-metrics">
-      <div><span>Intent</span><strong>${escapeHtml(pretty(rec.ai_score.intent.label))}</strong><small>${escapeHtml(pretty(rec.ai_score.intent.source))}</small></div>
-      <div><span>TAPL action</span><strong>${escapeHtml(pretty(rec.ai_score.tapl.action))}</strong></div>
-      <div><span>Explanation</span><strong>${escapeHtml(pretty(rec.explanation_source || "local"))}</strong></div>
-      ${empathyMetrics}
+
+    <div class="hero-score-grid">
+      ${scoreMeter("Final rank", ai.final_hybrid_score, { tone: "primary" })}
+      ${scoreMeter("Trust", tapl.trust_score, { tone: "trust" })}
+      ${scoreMeter("Fatigue", tapl.fatigue_score, { tone: "fatigue" })}
+      ${scoreMeter("Empathy match", empathyMatch, { tone: "empathy" })}
+      ${scoreMeter("Expected outcome", outcome.expected_outcome_score, { tone: "outcome" })}
     </div>
-    <p class="explanation">${escapeHtml(rec.explanation)}</p>
-    ${tcoLine}
-    <div class="pill-row">${reasonCodes.map(reason => `<span>${escapeHtml(reason.replaceAll("_", " "))}</span>`).join("")}</div>
-    ${renderEmpathyVehicleCard(summary)}
+
+    <p class="explanation hero-why-line">${escapeHtml(rec.explanation)}</p>
+    ${rec.tco?.recommendation_pitch ? `<p class="explanation empathy-inline-tco"><strong>TCO:</strong> ${escapeHtml(rec.tco.recommendation_pitch)}</p>` : ""}
+    <div class="pill-row hero-reason-row">${reasonCodes.slice(0, 6).map(reason => `<span>${escapeHtml(reason.replaceAll("_", " "))}</span>`).join("")}</div>
+    ${renderAlternateEmpathyVehicle(summary, rec.candidate.id)}
+    <div class="hero-meta-row">
+      <span>Intent: <strong>${escapeHtml(pretty(ai.intent?.label))}</strong></span>
+      <span>Source: <strong>${escapeHtml(pretty(rec.explanation_source || "local"))}</strong></span>
+    </div>
   `;
 
   renderEmpathyPanels(summary, rec);
+  pulseOfferCard();
 }
 
 function updateRuntimeSectionHeadings(_summary) {
