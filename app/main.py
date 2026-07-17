@@ -58,8 +58,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="EDTA Full AI Models",
-    description="Detailed AI models for EDTA: intent, journey, TAPL, channel, outcome simulation, and ranking.",
+    title="Experience-Driven Targeting Architecture",
+    description="Detailed AI models for Experience-Driven Targeting Architecture: intent, journey, TAPL, channel, outcome simulation, and ranking.",
     version="2.3.0",
     lifespan=lifespan,
 )
@@ -91,7 +91,7 @@ def _health_response():
         haoe_status=app_container.container.engine.orchestrator.status(),
     )
     payload.update({
-        "service": "EDTA Full AI Models",
+        "service": "Experience-Driven Targeting Architecture",
         "api_version": "v1",
         "profile_lookup": app_container.container.profile_service.adapter.adapter_name,
         "experience_memory": "sqlite",
