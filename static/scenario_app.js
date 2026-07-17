@@ -12,6 +12,14 @@ const DEMO_SCENARIOS = {
     label: "Winter Denver AWD",
     text: "I am planning a 500-mile one-way road trip to Denver, Colorado during the winter season. The journey may include mountain roads, snow-covered roads, and icy pavement. I will be traveling with my spouse and luggage. My highest priorities are passenger safety, winter traction, and reliability. Please recommend the most suitable vehicle for this trip.",
   },
+  family_vacation: {
+    label: "Family vacation (Orlando)",
+    text: "I am planning a 1,200-mile family vacation from New Jersey to Orlando, Florida during the summer. We are a family of five with three children, multiple suitcases, a stroller, and sports equipment. Comfort, cargo capacity, fuel efficiency, and advanced driver assistance features are my highest priorities.",
+  },
+  business: {
+    label: "Business executive",
+    text: "I travel frequently for business, averaging 35,000 highway miles annually. Most trips involve airport transfers, interstate driving, and meetings with clients. I want a premium vehicle with excellent comfort, advanced technology, outstanding safety, and a professional appearance.",
+  },
   no_consent: {
     label: "No consent",
     text: "Known customer cust-789 is booking a family SUV rental at SFO. She checked availability and started booking. Personalization consent is false.",
