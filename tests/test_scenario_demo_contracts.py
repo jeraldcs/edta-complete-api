@@ -124,3 +124,6 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert "Trained travel scenarios" not in response.text
     assert "empathy-preset" not in response.text
     assert 'id="empathyDestination"' not in response.text
+    assert "scenario-mode-tab" not in response.text
+    assert 'id="scenarioRunBtn"' not in response.text
+    assert "Experience memory" not in response.text

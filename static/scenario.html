@@ -19,8 +19,8 @@
         <h1>EDTA Personalization Demo — Trust-Aware, Outcome-Simulated Recommendations</h1>
         <div class="hero-stat-row" aria-label="Demo capabilities">
           <span>Free-text scenarios</span>
-          <span>Recommend · Simulate · Memory</span>
-          <span>Empathy-aware unified ranking</span>
+          <span>Unified empathy-aware ranking</span>
+          <span>Trust-aware outcome simulation</span>
         </div>
       </div>
     </section>
@@ -37,14 +37,6 @@
         </label>
         <textarea id="scenarioText" rows="9">Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member searching for a family SUV airport rental at SFO, checked availability, and started booking for a summer trip. Personalization consent is true.</textarea>
 
-        <div class="scenario-actions">
-          <div class="scenario-mode-tabs" role="tablist" aria-label="Scenario demo mode">
-            <button type="button" class="scenario-mode-tab is-active" data-mode="recommend" role="tab" aria-selected="true">Recommend</button>
-            <button type="button" class="scenario-mode-tab" data-mode="simulate" role="tab" aria-selected="false">Simulate</button>
-            <button type="button" class="scenario-mode-tab" data-mode="memory" role="tab" aria-selected="false">Experience memory</button>
-          </div>
-          <button id="scenarioRunBtn" type="button">Recommend</button>
-        </div>
         <div id="scenarioStatus" class="scenario-status">Ready</div>
       </article>
     </section>
@@ -84,7 +76,7 @@
             <span class="empathy-panel-icon" aria-hidden="true">01</span>
             <h2>Hidden needs</h2>
           </div>
-          <div id="scenarioEmpathyHiddenNeeds" class="empathy-panel-body">Run Recommend to see implicit constraints extracted from your scenario.</div>
+          <div id="scenarioEmpathyHiddenNeeds" class="empathy-panel-body">Enter a scenario to see implicit constraints extracted from your text.</div>
         </article>
         <article class="empathy-panel empathy-panel-enrichment">
           <div class="empathy-panel-head">
@@ -119,7 +111,7 @@
         <article class="architecture-card placeholder-card">
           <span class="architecture-label">Waiting</span>
           <h3>Run a scenario</h3>
-          <p>Architecture panels populate after recommend, simulate, or memory calls.</p>
+          <p>Architecture panels populate after your scenario is parsed.</p>
         </article>
       </div>
     </section>
