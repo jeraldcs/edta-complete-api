@@ -173,6 +173,11 @@ def scenario_examples():
     return recommendation_handlers.handlers.scenario_examples()
 
 
+@app.get("/travel-scenario-benchmark")
+def travel_scenario_benchmark():
+    return recommendation_handlers.handlers.travel_scenario_benchmark()
+
+
 @app.post("/recommend", response_model=RecommendationResponse, dependencies=[Depends(require_api_key)])
 async def recommend_legacy(request: RecommendationRequest, http_request: Request):
     response = recommendation_handlers.handlers.recommend(request, request_id=get_request_id(http_request))

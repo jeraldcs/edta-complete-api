@@ -1799,3 +1799,49 @@ textarea:focus,
   }
 }
 
+.travel-benchmark-section {
+  margin-top: 8px;
+}
+
+.benchmark-meta {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.benchmark-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.benchmark-score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.benchmark-score-table th,
+.benchmark-score-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.benchmark-score-table th {
+  background: var(--sky);
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+}
+
+.benchmark-score-table td:nth-child(2) {
+  white-space: normal;
+  min-width: 220px;
+}
+
+.benchmark-score-table tbody tr:hover {
+  background: rgba(15, 98, 168, 0.04);
+}

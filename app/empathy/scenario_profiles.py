@@ -182,13 +182,13 @@ class ScenarioProfileMatcher:
         }
 
     def apply_scoring_attributes(self, scenario_text: str, profile_attributes: dict[str, Any]) -> dict[str, Any]:
-        """Apply persona-specific trust/fatigue hints so TAPL and OSE vary by travel profile."""
+        """Apply profile-specific trust/fatigue hints so TAPL and OSE vary by travel profile."""
         matched = self.match(scenario_text)
         if not matched:
             return profile_attributes
-        _, config = matched
+        profile_id, config = matched
         persona = config.get("persona") or ""
-        hints = self.PERSONA_SCORING_HINTS.get(persona, {})
+        hints = dict(config.get("scoring") or self.PERSONA_SCORING_HINTS.get(persona, {}))
         updated = dict(profile_attributes)
         for key, value in hints.items():
             flag = f"parsed_{key}"
@@ -196,6 +196,7 @@ class ScenarioProfileMatcher:
                 updated[key] = value
         if persona:
             updated["scenario_persona"] = persona
+        updated["trained_profile_id"] = profile_id
         return updated
 
 
