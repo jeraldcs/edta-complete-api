@@ -76,14 +76,33 @@ def test_travel_scenario_isolates_architecture_subjects(client):
     assert denver_summary["experience_memory"]["before"]["subject_id"] == "anonymous:travel-winter_mountain_denver"
 
 
+@pytest.mark.parametrize("scenario_key", list(TRAINED_SCENARIOS.keys()))
+def test_trained_scenario_top_rank_matches_expected_vehicle(client, scenario_key):
+    scenario = TRAINED_SCENARIOS[scenario_key]
+    response = client.post(
+        "/recommend-from-scenario",
+        json={"scenario_text": scenario["text"], "limit": 1, "use_ai_models": True, "use_llm": False},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    top_id = data["recommendations"][0]["candidate"]["id"]
+    assert top_id == scenario["expected_vehicle"], f"{scenario_key}: top={top_id}, expected={scenario['expected_vehicle']}"
+    empathy = data["request_summary"].get("empathy") or {}
+    vehicle = empathy.get("vehicle_recommendation") or {}
+    assert vehicle.get("candidate_id") == scenario["expected_vehicle"]
+
+
 def test_travel_scenario_benchmark_endpoint(client):
     response = client.get("/travel-scenario-benchmark")
     assert response.status_code == 200
     payload = response.json()
     assert payload["scenario_count"] == len(TRAINED_SCENARIOS)
     assert payload["vehicle_match_count"] == len(TRAINED_SCENARIOS)
+    assert payload["top_rank_match_count"] == len(TRAINED_SCENARIOS)
     assert len(payload["scenarios"]) == len(TRAINED_SCENARIOS)
     for row in payload["scenarios"]:
         assert row["vehicle_match"] is True
+        assert row["top_rank_match"] is True
+        assert row["top_vehicle"] == row["expected_vehicle"]
         assert row["eds_score"] is not None
         assert row["expected_outcome"] is not None

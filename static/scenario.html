@@ -188,23 +188,26 @@
         <div class="demo-accordion-body">
       <p class="empathy-section-lead benchmark-lead">Pre-tuned profiles with distinct EDS, outcome, TAPL trust/fatigue, and rank scores. Click a row to load that scenario.</p>
       <div id="travelBenchmarkMeta" class="benchmark-meta">Loading benchmark scores…</div>
+      <div class="benchmark-toolbar">
+        <button type="button" id="benchmarkToggleMetrics" class="benchmark-toggle-btn" aria-pressed="false">Show all metrics</button>
+      </div>
       <div class="benchmark-table-wrap" tabindex="0" aria-label="Travel scenario score matrix">
-        <table id="travelBenchmarkTable" class="benchmark-score-table">
+        <table id="travelBenchmarkTable" class="benchmark-score-table benchmark-score-table--compact">
           <thead>
             <tr>
               <th>#</th>
               <th>Scenario</th>
-              <th>Profile</th>
-              <th>Top vehicle</th>
-              <th>EDS</th>
-              <th>Semantic</th>
-              <th>Outcome</th>
-              <th>Conv.</th>
+              <th class="col-profile">Profile</th>
+              <th>Vehicle</th>
+              <th class="col-metric">EDS</th>
+              <th class="col-metric">Semantic</th>
+              <th class="col-metric">Outcome</th>
+              <th class="col-metric">Conv.</th>
               <th>TAPL</th>
               <th>Trust</th>
-              <th>Fatigue</th>
-              <th>Base</th>
-              <th>Final</th>
+              <th class="col-metric">Fatigue</th>
+              <th class="col-metric">Base</th>
+              <th class="col-metric">Final</th>
               <th>Match</th>
             </tr>
           </thead>
@@ -217,6 +220,17 @@
       </details>
     </section>
   </main>
+  <footer class="scenario-demo-footer">
+    <p>
+      <a href="https://edta-api.onrender.com/scenario-demo">Live demo</a>
+      ·
+      <a href="https://github.com/jeraldcs/edta-complete-api" target="_blank" rel="noopener noreferrer">GitHub</a>
+      ·
+      <a href="https://github.com/jeraldcs/edta-complete-api/blob/master/docs/INFOQ_PUBLICATION_DOCUMENT.md" target="_blank" rel="noopener noreferrer">Architecture doc</a>
+      ·
+      <a href="/docs">OpenAPI</a>
+    </p>
+  </footer>
   <!--EDTA_DEMO_BOOT-->
   <script src="/static/demo-api.js"></script>
   <script src="/static/demo-shared.js"></script>

@@ -23,7 +23,9 @@ def extract_scenario_scores(response_body: dict[str, Any], scenario_key: str, sc
 
     top_id = candidate.get("id")
     empathy_id = empathy_vehicle.get("candidate_id")
-    vehicle_match = top_id == expected or empathy_id == expected
+    top_rank_match = top_id == expected
+    empathy_match = empathy_id == expected
+    vehicle_match = top_rank_match or empathy_match
 
     return {
         "scenario_key": scenario_key,
@@ -33,6 +35,8 @@ def extract_scenario_scores(response_body: dict[str, Any], scenario_key: str, sc
         "expected_vehicle": expected,
         "top_vehicle": top_id,
         "empathy_vehicle": empathy_id,
+        "top_rank_match": top_rank_match,
+        "empathy_match": empathy_match,
         "vehicle_match": vehicle_match,
         "eds_score": eds.get("final_eds_score"),
         "semantic_score": ai.get("semantic_similarity_score"),
@@ -62,10 +66,13 @@ def run_travel_benchmark(recommend_fn) -> dict[str, Any]:
         rows.append(extract_scenario_scores(body, key, meta))
 
     matched = sum(1 for row in rows if row.get("vehicle_match"))
+    top_matched = sum(1 for row in rows if row.get("top_rank_match"))
     return {
         "scenario_count": len(rows),
         "vehicle_match_count": matched,
         "vehicle_match_rate": round(matched / len(rows), 4) if rows else 0.0,
+        "top_rank_match_count": top_matched,
+        "top_rank_match_rate": round(top_matched / len(rows), 4) if rows else 0.0,
         "scenarios": rows,
     }
 

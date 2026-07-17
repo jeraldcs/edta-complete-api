@@ -1974,6 +1974,84 @@ textarea:focus,
   background: rgba(15, 98, 168, 0.04);
 }
 
+.benchmark-score-table--compact .col-metric,
+.benchmark-score-table--compact .col-profile {
+  display: none;
+}
+
+.benchmark-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0 10px;
+}
+
+.benchmark-toggle-btn {
+  border: 1px solid #c9d7e5;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #17324d;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.benchmark-toggle-btn:hover {
+  background: #edf4fb;
+}
+
+.benchmark-row.is-selected {
+  background: #e7f0f8;
+  box-shadow: inset 3px 0 0 #2f6f9f;
+}
+
+.benchmark-match {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.benchmark-match-yes {
+  color: #14583b;
+  background: #d8f3e4;
+}
+
+.benchmark-match-partial {
+  color: #7a4d00;
+  background: #fff3d6;
+}
+
+.benchmark-match-no {
+  color: #912018;
+  background: #fee4e2;
+}
+
+.benchmark-score-table .tapl-badge {
+  font-size: 9px;
+  padding: 3px 7px;
+}
+
+.scenario-demo-footer {
+  margin: 24px auto 32px;
+  width: min(1120px, calc(100vw - 40px));
+  text-align: center;
+  color: #667085;
+  font-size: 12px;
+}
+
+.scenario-demo-footer a {
+  color: #2f6f9f;
+  font-weight: 700;
+}
+
+.scenario-demo-footer a:hover {
+  text-decoration: underline;
+}
+
 /* Phase B — hero card, score meters, TAPL badges */
 .scenario-offer.is-ready {
   animation: heroCardReveal 0.45s ease;
