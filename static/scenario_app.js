@@ -610,6 +610,7 @@ async function runScenario() {
     }
     renderRecommendation(data);
     renderRuntimeInsights(data);
+    highlightBenchmarkRow(payload.scenario_text);
     setRunError("");
     setColdStartMessage("");
   } catch (error) {
@@ -669,7 +670,9 @@ function bindScenarioDemo() {
 
   updatePayloadPreview();
   updateActiveScenarioChip(detectScenarioKey(scenarioText.value) || activeScenarioKey);
+  bindBenchmarkToggle();
   window.DemoApi?.init?.();
+  scheduleInitialDemoRun();
 }
 
 function loadScenarioFromBenchmarkRow(row) {
@@ -698,6 +701,54 @@ function fmtScore(value) {
 }
 
 let travelBenchmarkRows = [];
+let benchmarkMetricsExpanded = false;
+let initialDemoScheduled = false;
+
+function renderBenchmarkMatchCell(row) {
+  if (row.top_rank_match && row.empathy_match) {
+    return `<span class="benchmark-match benchmark-match-yes" title="Top rank and empathy both match">✓</span>`;
+  }
+  if (row.vehicle_match) {
+    return `<span class="benchmark-match benchmark-match-partial" title="Vehicle aligned via rank or empathy">~</span>`;
+  }
+  return `<span class="benchmark-match benchmark-match-no" title="No match">✗</span>`;
+}
+
+function highlightBenchmarkRow(scenarioText) {
+  const normalized = String(scenarioText || "").trim().replace(/\s+/g, " ");
+  document.querySelectorAll(".benchmark-row").forEach((rowEl) => {
+    const index = Number(rowEl.getAttribute("data-row-index"));
+    const row = travelBenchmarkRows[index];
+    const same = row?.scenario_text && row.scenario_text.trim().replace(/\s+/g, " ") === normalized;
+    rowEl.classList.toggle("is-selected", Boolean(same));
+  });
+}
+
+function bindBenchmarkToggle() {
+  const toggle = document.getElementById("benchmarkToggleMetrics");
+  const table = document.getElementById("travelBenchmarkTable");
+  if (!toggle || !table) {
+    return;
+  }
+  toggle.addEventListener("click", () => {
+    benchmarkMetricsExpanded = !benchmarkMetricsExpanded;
+    table.classList.toggle("benchmark-score-table--compact", !benchmarkMetricsExpanded);
+    toggle.textContent = benchmarkMetricsExpanded ? "Show compact view" : "Show all metrics";
+    toggle.setAttribute("aria-pressed", benchmarkMetricsExpanded ? "true" : "false");
+  });
+}
+
+function scheduleInitialDemoRun() {
+  if (initialDemoScheduled || !scenarioText?.value.trim()) {
+    return;
+  }
+  initialDemoScheduled = true;
+  window.setTimeout(() => {
+    if (!lastScenarioData) {
+      runScenario();
+    }
+  }, 450);
+}
 
 async function loadTravelBenchmark() {
   const meta = document.getElementById("travelBenchmarkMeta");
@@ -713,23 +764,24 @@ async function loadTravelBenchmark() {
       throw new Error(payload.detail || "Could not load travel scenario benchmark.");
     }
     travelBenchmarkRows = payload.scenarios || [];
-    meta.textContent = `${payload.scenario_count} scenarios · ${Math.round(payload.vehicle_match_rate * 100)}% vehicle match rate · click a row to try it`;
+    const topRate = Math.round((payload.top_rank_match_rate ?? payload.vehicle_match_rate ?? 0) * 100);
+    meta.textContent = `${payload.scenario_count} scenarios · ${topRate}% top-rank match · click a row to try it`;
     body.innerHTML = travelBenchmarkRows.map((row, index) => `
       <tr class="benchmark-row" tabindex="0" role="button" data-row-index="${index}" title="Load this scenario">
         <td>${index + 1}</td>
         <td>${escapeHtml(row.title || row.scenario_key || "")}</td>
-        <td>${escapeHtml(row.profile_id || "—")}</td>
-        <td>${escapeHtml(row.top_vehicle || "—")}</td>
-        <td>${fmtScore(row.eds_score)}</td>
-        <td>${fmtScore(row.semantic_score)}</td>
-        <td>${fmtScore(row.expected_outcome)}</td>
-        <td>${fmtScore(row.conversion_probability)}</td>
-        <td>${escapeHtml(pretty(row.tapl_action || "—"))}</td>
+        <td class="col-profile">${escapeHtml(row.profile_id || "—")}</td>
+        <td>${escapeHtml((row.top_vehicle || "—").replaceAll("_", " "))}</td>
+        <td class="col-metric">${fmtScore(row.eds_score)}</td>
+        <td class="col-metric">${fmtScore(row.semantic_score)}</td>
+        <td class="col-metric">${fmtScore(row.expected_outcome)}</td>
+        <td class="col-metric">${fmtScore(row.conversion_probability)}</td>
+        <td>${renderTaplBadge(row.tapl_action || "show")}</td>
         <td>${fmtScore(row.trust_score)}</td>
-        <td>${fmtScore(row.fatigue_score)}</td>
-        <td>${fmtScore(row.ai_rank_score)}</td>
-        <td>${fmtScore(row.final_hybrid_score)}</td>
-        <td>${row.vehicle_match ? "yes" : "no"}</td>
+        <td class="col-metric">${fmtScore(row.fatigue_score)}</td>
+        <td class="col-metric">${fmtScore(row.ai_rank_score)}</td>
+        <td class="col-metric">${fmtScore(row.final_hybrid_score)}</td>
+        <td>${renderBenchmarkMatchCell(row)}</td>
       </tr>
     `).join("");
     body.querySelectorAll(".benchmark-row").forEach((rowEl) => {

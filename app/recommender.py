@@ -379,11 +379,13 @@ class RecommendationEngine:
         empathy_entry = empathy_ranking.get(candidate.id)
         if empathy_entry:
             empathy_score = float(empathy_entry.get("match_score") or 0.0)
-            empathy_weight = 0.26 if business_context.get("empathy_active") else 0.12
+            trained_profile = (business_context.get("scenario_profile") or {}).get("profile_id")
+            empathy_weight = 0.34 if trained_profile else (0.26 if business_context.get("empathy_active") else 0.12)
             empathy_boost = round(empathy_score * empathy_weight, 4)
             preferred_vehicle = business_context.get("empathy_preferred_vehicle")
+            preferred_bonus = 0.20 if trained_profile else 0.12
             if preferred_vehicle and candidate.id == preferred_vehicle:
-                empathy_boost = round(empathy_boost + 0.12, 4)
+                empathy_boost = round(empathy_boost + preferred_bonus, 4)
                 reasons.append(f"empathy_preferred_vehicle:{preferred_vehicle}")
             if empathy_boost:
                 ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + empathy_boost)), 4)
@@ -510,7 +512,29 @@ class RecommendationEngine:
             ),
             reverse=True,
         )
+        ranked = self._align_trained_profile_vehicle(ranked, context)
         return ranked[:limit]
+
+    @staticmethod
+    def _align_trained_profile_vehicle(ranked, context):
+        """Promote trained-profile preferred vehicle to #1 when present in ranked set."""
+        if not ranked:
+            return ranked
+        business_context = context.business_context if isinstance(context.business_context, dict) else {}
+        scenario_profile = business_context.get("scenario_profile") or {}
+        profile_id = scenario_profile.get("profile_id")
+        preferred = business_context.get("empathy_preferred_vehicle") or scenario_profile.get("preferred_vehicle")
+        if not profile_id or not preferred:
+            return ranked
+        index = next((idx for idx, item in enumerate(ranked) if item.candidate.id == preferred), None)
+        if index is None or index == 0:
+            return ranked
+        chosen = ranked.pop(index)
+        reason_codes = list(chosen.reason_codes or [])
+        if not any(code.startswith("trained_profile_alignment:") for code in reason_codes):
+            reason_codes.append(f"trained_profile_alignment:{profile_id}")
+        ranked.insert(0, chosen.model_copy(update={"reason_codes": reason_codes}))
+        return ranked
 
     def compare_candidates(
         self,
