@@ -379,11 +379,11 @@ class RecommendationEngine:
         empathy_entry = empathy_ranking.get(candidate.id)
         if empathy_entry:
             empathy_score = float(empathy_entry.get("match_score") or 0.0)
-            empathy_weight = 0.40 if business_context.get("empathy_active") else 0.18
+            empathy_weight = 0.26 if business_context.get("empathy_active") else 0.12
             empathy_boost = round(empathy_score * empathy_weight, 4)
             preferred_vehicle = business_context.get("empathy_preferred_vehicle")
             if preferred_vehicle and candidate.id == preferred_vehicle:
-                empathy_boost = round(empathy_boost + 0.25, 4)
+                empathy_boost = round(empathy_boost + 0.12, 4)
                 reasons.append(f"empathy_preferred_vehicle:{preferred_vehicle}")
             if empathy_boost:
                 ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + empathy_boost)), 4)

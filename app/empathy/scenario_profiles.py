@@ -39,6 +39,19 @@ class ScenarioProfileMatcher:
         "wet_weather_travel": "AWD SUV",
     }
 
+    PERSONA_SCORING_HINTS = {
+        "mountain_travel": {"trust_score": 0.76, "fatigue_count": 2},
+        "large_family": {"trust_score": 0.80, "fatigue_count": 3},
+        "business_executive": {"trust_score": 0.91, "fatigue_count": 1},
+        "adventure_travel": {"trust_score": 0.77, "fatigue_count": 2},
+        "urban_commuter": {"trust_score": 0.68, "fatigue_count": 4},
+        "ev_buyer": {"trust_score": 0.73, "fatigue_count": 2},
+        "luxury_winter": {"trust_score": 0.85, "fatigue_count": 1},
+        "first_time_driver": {"trust_score": 0.41, "fatigue_count": 6},
+        "rental_travel": {"trust_score": 0.62, "fatigue_count": 3},
+        "wet_weather_travel": {"trust_score": 0.71, "fatigue_count": 2},
+    }
+
     def __init__(self, config_path: str | Path | None = None):
         path = Path(config_path or "config/empathy/scenario_profiles.yaml")
         payload = self._load_config(path)
@@ -165,7 +178,25 @@ class ScenarioProfileMatcher:
             "objective": config.get("objective"),
             "preferred_vehicle": config.get("preferred_vehicle"),
             "pitch": config.get("pitch"),
+            "persona": config.get("persona"),
         }
+
+    def apply_scoring_attributes(self, scenario_text: str, profile_attributes: dict[str, Any]) -> dict[str, Any]:
+        """Apply persona-specific trust/fatigue hints so TAPL and OSE vary by travel profile."""
+        matched = self.match(scenario_text)
+        if not matched:
+            return profile_attributes
+        _, config = matched
+        persona = config.get("persona") or ""
+        hints = self.PERSONA_SCORING_HINTS.get(persona, {})
+        updated = dict(profile_attributes)
+        for key, value in hints.items():
+            flag = f"parsed_{key}"
+            if not updated.get(flag):
+                updated[key] = value
+        if persona:
+            updated["scenario_persona"] = persona
+        return updated
 
 
 def scenario_anonymous_id(scenario_text: str) -> str:

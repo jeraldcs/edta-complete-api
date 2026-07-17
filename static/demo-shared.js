@@ -93,6 +93,7 @@
     const enrichment = summary.enrichment || empathy.enrichment || {};
     const scenarioProfile = summary.scenario_profile || {};
     const outcome = topRecommendation?.ai_score?.outcome_simulation || {};
+    const tapl = topRecommendation?.ai_score?.tapl || {};
     const orchestration = topRecommendation?.ai_score?.orchestration || {};
     const inference = summary.inference || {};
     const intentSource = inference.intent_source || topRecommendation?.ai_score?.intent?.source || "unknown";
@@ -186,9 +187,22 @@
           <div><dt>Conversion prob.</dt><dd>${pct(outcome.conversion_probability)}</dd></div>
           <div><dt>Revenue impact</dt><dd>$${Number(outcome.revenue_impact || 0).toFixed(0)}</dd></div>
           <div><dt>Expected outcome</dt><dd>${pct(outcome.expected_outcome_score)}</dd></div>
+          <div><dt>Trust impact</dt><dd>${pct(outcome.trust_impact)}</dd></div>
+          <div><dt>Journey impact</dt><dd>${pct(outcome.journey_impact)}</dd></div>
           <div><dt>Historical CVR</dt><dd>${escapeHtml(historicalCvrLabel)}</dd></div>
-          <div><dt>Empathy vehicle TCO</dt><dd>${empathyTco.total_trip_cost != null ? `$${Number(empathyTco.total_trip_cost).toFixed(0)}` : "Add route miles for TCO"}</dd></div>
-          <div><dt>Hybrid rank score</dt><dd>${pct(topRecommendation?.ai_score?.final_hybrid_score)}</dd></div>
+          <div><dt>Base rank score</dt><dd>${pct(topRecommendation?.ai_score?.ai_rank_score)}</dd></div>
+          <div><dt>Final rank score</dt><dd>${pct(topRecommendation?.ai_score?.final_hybrid_score)}</dd></div>
+        </dl>
+      </article>
+      <article class="architecture-card">
+        <span class="architecture-label">TAPL</span>
+        <h3>Trust-Aware Policy Layer</h3>
+        <dl>
+          <div><dt>Action</dt><dd>${escapeHtml(pretty(tapl.action || "show"))}</dd></div>
+          <div><dt>Trust</dt><dd>${pct(tapl.trust_score)}</dd></div>
+          <div><dt>Fatigue</dt><dd>${pct(tapl.fatigue_score)}</dd></div>
+          <div><dt>Compliance</dt><dd>${pct(tapl.compliance_score)}</dd></div>
+          <div><dt>Reason</dt><dd>${escapeHtml(tapl.reason || "Policy evaluated for this scenario.")}</dd></div>
         </dl>
       </article>
     `;

@@ -127,7 +127,20 @@ class ScenarioNLPParser:
         channel_context = self._infer_channel_context(lower, channel, keywords, domain)
         device_context = self._infer_device_context(lower, channel)
         consent = {
-            "personalization": not any(term in lower for term in ["no personalization", "opted out", "without consent"]),
+            "personalization": not any(
+                term in lower
+                for term in [
+                    "no personalization",
+                    "opted out",
+                    "without consent",
+                    "consent false",
+                    "consent is false",
+                    "consent: false",
+                    "personalization consent false",
+                    "personalization false",
+                    "personalization consent is false",
+                ]
+            ),
             "profile_lookup": "no profile lookup" not in lower,
         }
         search_terms = self._search_terms(text, keywords)
@@ -278,7 +291,38 @@ class ScenarioNLPParser:
         if therapeutic_keywords:
             profile["therapeutic_interest"] = therapeutic_keywords[0]
         fatigue = re.search(r"fatigue(?: count)?\s*(?:is|=|:)?\s*(\d+)", lower)
-        profile["fatigue_count"] = int(fatigue.group(1)) if fatigue else 1
+        if fatigue:
+            profile["fatigue_count"] = int(fatigue.group(1))
+            profile["parsed_fatigue_count"] = True
+        elif any(
+            term in lower
+            for term in [
+                "high fatigue",
+                "fatigued",
+                "ad fatigue",
+                "many ads",
+                "bombarded",
+                "overwhelmed by ads",
+                "too many recommendations",
+            ]
+        ):
+            profile["fatigue_count"] = 8
+            profile["parsed_fatigue_count"] = True
+        elif any(term in lower for term in ["some fatigue", "tired of ads", "repeated exposure", "seen too many"]):
+            profile["fatigue_count"] = 5
+            profile["parsed_fatigue_count"] = True
+        if any(term in lower for term in ["distrust", "skeptical", "low trust", "privacy concerned", "do not trust"]):
+            profile["trust_score"] = 0.38
+            profile["parsed_trust_score"] = True
+        elif any(term in lower for term in ["first time", "first-time", "new customer", "nervous", "beginner"]):
+            profile["trust_score"] = 0.45
+            profile["parsed_trust_score"] = True
+        elif "gold" in lower:
+            profile["trust_score"] = 0.90
+            profile["parsed_trust_score"] = True
+        elif "preferred" in lower or "loyalty" in lower:
+            profile["trust_score"] = 0.82
+            profile["parsed_trust_score"] = True
         return profile
 
     def _infer_business_context(self, lower: str, keywords: list[str], domain: str) -> dict[str, Any]:
