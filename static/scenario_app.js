@@ -1,9 +1,8 @@
 let lastScenarioData = null;
 let lastParsedScenarioText = "";
-let activeMode = "recommend";
+let scenarioRunTimer = null;
 
 const scenarioText = document.getElementById("scenarioText");
-const scenarioRunBtn = document.getElementById("scenarioRunBtn");
 const scenarioStatus = document.getElementById("scenarioStatus");
 const scenarioLoading = document.getElementById("scenarioLoading");
 const scenarioRecommendation = document.getElementById("scenarioRecommendation");
@@ -12,7 +11,6 @@ const technicalExplanation = document.getElementById("technicalExplanation");
 const payloadPreview = document.getElementById("scenarioPayloadPreview");
 const responsePreview = document.getElementById("scenarioResponsePreview");
 const scenarioArchitecturePanels = document.getElementById("scenarioArchitecturePanels");
-const scenarioModeTabs = document.querySelectorAll(".scenario-mode-tab");
 const empathyResultsSection = document.getElementById("empathyResultsSection");
 const scenarioEmpathyHiddenNeeds = document.getElementById("scenarioEmpathyHiddenNeeds");
 const scenarioEmpathyEnrichment = document.getElementById("scenarioEmpathyEnrichment");
@@ -40,19 +38,13 @@ function updatePayloadPreview() {
   payloadPreview.textContent = JSON.stringify(buildPayload(), null, 2);
 }
 
-function setActiveMode(mode) {
-  activeMode = mode;
-  scenarioModeTabs.forEach(tab => {
-    const selected = tab.dataset.mode === mode;
-    tab.classList.toggle("is-active", selected);
-    tab.setAttribute("aria-selected", selected ? "true" : "false");
-  });
-  const labels = {
-    recommend: "Recommend",
-    simulate: "Simulate all outcomes",
-    memory: "Load experience memory",
-  };
-  scenarioRunBtn.textContent = labels[mode] || "Run";
+function scheduleScenarioRun() {
+  clearTimeout(scenarioRunTimer);
+  scenarioRunTimer = setTimeout(() => {
+    if (scenarioText.value.trim()) {
+      runScenario();
+    }
+  }, 700);
 }
 
 function hasEmpathyInsights(summary) {
@@ -195,32 +187,6 @@ function renderEmpathyPanels(summary, topRec) {
     ${(topRec?.enrichment_notes || []).length ? `<p><strong>Enrichment:</strong> ${escapeHtml(topRec.enrichment_notes.join(" "))}</p>` : ""}
     <p>${escapeHtml(pitch)}</p>
   `;
-}
-
-async function parseScenarioContext() {
-  const payload = buildPayload();
-  const response = await DemoApi.fetch("/recommend-from-scenario", {
-    method: "POST",
-    body: JSON.stringify({ ...payload, limit: 1 }),
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Could not parse scenario (${response.status}): ${body}`);
-  }
-  const parsed = await response.json();
-  lastScenarioData = parsed;
-  lastParsedScenarioText = scenarioText.value.trim();
-  renderParsedContext(parsed.request_summary);
-  return parsed.request_summary.parsed_context;
-}
-
-async function ensureParsedContext() {
-  const currentText = scenarioText.value.trim();
-  const cached = parsedContextFromSummary(lastScenarioData?.request_summary || {});
-  if (cached.channel && lastParsedScenarioText === currentText) {
-    return cached;
-  }
-  return parseScenarioContext();
 }
 
 function parsedContextFromSummary(summary) {
@@ -416,13 +382,6 @@ function showError(error) {
 }
 
 async function runScenario() {
-  if (activeMode === "simulate") {
-    return runSimulate();
-  }
-  if (activeMode === "memory") {
-    return runExperienceMemory();
-  }
-
   const payload = buildPayload();
   updatePayloadPreview();
   scenarioLoading.classList.remove("hidden");
@@ -460,123 +419,11 @@ async function runScenario() {
   }
 }
 
-async function runSimulate() {
-  scenarioLoading.classList.remove("hidden");
-  scenarioStatus.textContent = "Parsing scenario for simulation...";
-
-  try {
-    const context = await ensureParsedContext();
-
-    const payload = { context };
-    payloadPreview.textContent = JSON.stringify(payload, null, 2);
-    scenarioStatus.textContent = "Simulating all candidate outcomes...";
-
-    const response = await DemoApi.fetch("/simulate", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`POST /simulate returned ${response.status}: ${body}`);
-    }
-    const data = await response.json();
-    responsePreview.textContent = JSON.stringify(data, null, 2);
-    renderParsedContext(data.request_summary);
-    if (!data.recommendations.length) {
-      throw new Error("Simulate returned no recommendations.");
-    }
-    scenarioRecommendation.innerHTML = `
-      <p class="eyebrow">Simulated outcomes</p>
-      <h2>${data.recommendations.length} candidates ranked for this context</h2>
-      <div class="recommendation-list">
-        ${data.recommendations.map((rec, index) => `
-          <article class="mini-card">
-            <div>
-              <span class="rank">#${index + 1}</span>
-              <h3>${escapeHtml(rec.candidate.title)}</h3>
-              <p>${escapeHtml(rec.explanation)}</p>
-            </div>
-            <strong>${pct(rec.ai_score.final_hybrid_score)}</strong>
-          </article>
-        `).join("")}
-      </div>
-    `;
-    technicalExplanation.textContent = "Simulate ranks every catalog candidate for the parsed context without TAPL delivery filtering.";
-    updateRuntimeSectionHeadings(data.request_summary);
-    renderArchitecturePanels(scenarioArchitecturePanels, data.request_summary, data.recommendations[0]);
-    scenarioStatus.textContent = "Simulation complete.";
-  } catch (error) {
-    showError(error);
-  } finally {
-    scenarioLoading.classList.add("hidden");
-  }
-}
-
-async function runExperienceMemory() {
-  scenarioLoading.classList.remove("hidden");
-  scenarioStatus.textContent = "Resolving subject for experience memory...";
-
-  try {
-    const context = await ensureParsedContext();
-
-    const params = new URLSearchParams();
-    if (context.customer_id) {
-      params.set("customer_id", context.customer_id);
-    }
-    if (context.anonymous_id) {
-      params.set("anonymous_id", context.anonymous_id);
-    }
-    const url = `/experience-memory?${params.toString()}`;
-    payloadPreview.textContent = url;
-    scenarioStatus.textContent = "Loading EML snapshot...";
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`GET /experience-memory returned ${response.status}`);
-    }
-    const memory = await response.json();
-    responsePreview.textContent = JSON.stringify(memory, null, 2);
-    scenarioRecommendation.innerHTML = `
-      <p class="eyebrow">Experience memory snapshot</p>
-      <h2>${escapeHtml(memory.subject_id || "Unknown subject")}</h2>
-      ${window.DemoShared.memoryBlock(memory)}
-    `;
-    technicalExplanation.textContent = "Experience memory stores trust, fatigue, preferences, and outcome history for the parsed subject.";
-    if (lastScenarioData?.request_summary) {
-      updateRuntimeSectionHeadings(lastScenarioData.request_summary);
-    }
-    renderArchitecturePanels(scenarioArchitecturePanels, {
-      ...(lastScenarioData?.request_summary || {}),
-      scenario_text: lastScenarioData?.request_summary?.scenario_text || scenarioText.value.trim(),
-      experience_memory: { before: memory, after: memory },
-      context_graph: lastScenarioData?.request_summary?.context_graph || {},
-      haoe: lastScenarioData?.request_summary?.haoe || {},
-      ose_calibration: lastScenarioData?.request_summary?.ose_calibration || {},
-      inference: lastScenarioData?.request_summary?.inference || {},
-      nlp: lastScenarioData?.request_summary?.nlp || {},
-      empathy: lastScenarioData?.request_summary?.empathy || {},
-      scenario_profile: lastScenarioData?.request_summary?.scenario_profile || {},
-    }, lastScenarioData?.recommendations?.[0]);
-    scenarioStatus.textContent = "Experience memory loaded.";
-  } catch (error) {
-    showError(error);
-  } finally {
-    scenarioLoading.classList.add("hidden");
-  }
-}
-
-scenarioText.addEventListener("input", updatePayloadPreview);
-if (scenarioRunBtn) {
-  scenarioRunBtn.addEventListener("click", runScenario);
-}
-scenarioModeTabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    setActiveMode(tab.dataset.mode);
-    updatePayloadPreview();
-  });
+scenarioText.addEventListener("input", () => {
+  updatePayloadPreview();
+  scheduleScenarioRun();
 });
 
-setActiveMode("recommend");
 updatePayloadPreview();
 if (scenarioText?.value.trim()) {
   runScenario();
