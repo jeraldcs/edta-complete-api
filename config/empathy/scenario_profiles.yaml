@@ -1,5 +1,27 @@
 # Trained travel recommendation scenarios — keyword match + empathy vehicle mapping
 profiles:
+  loyalty_family_rental:
+    objective: "Preferred loyalty member family SUV airport rental."
+    required_keywords:
+      - cust-789
+      - family suv
+    optional_keywords:
+      - sfo
+      - preferred
+      - loyalty
+      - summer
+      - airport rental
+    persona: rental_travel
+    preferred_vehicle: family_friendly_suv
+    default_miles: 350
+    default_rental_days: 5
+    pitch: "Family-friendly SUV for a preferred loyalty member booking an airport rental at SFO for a summer trip."
+    constraints:
+      - high_cargo_family
+    scoring:
+      trust_score: 0.82
+      fatigue_count: 1
+
   winter_mountain_denver:
     objective: "Safe vehicle recommendation for winter mountain driving."
     required_keywords:
@@ -22,6 +44,9 @@ profiles:
     constraints:
       - awd_preferred
       - strong_engine
+    scoring:
+      trust_score: 0.78
+      fatigue_count: 2
 
   long_family_vacation:
     objective: "Family SUV recommendation."
@@ -46,6 +71,9 @@ profiles:
       - isofix_anchors
       - rear_legroom
       - high_cargo_family
+    scoring:
+      trust_score: 0.80
+      fatigue_count: 3
 
   business_executive:
     objective: "Luxury sedan recommendation."
@@ -69,6 +97,9 @@ profiles:
       - luxury_comfort
       - premium_audio
       - fuel_efficiency
+    scoring:
+      trust_score: 0.91
+      fatigue_count: 1
 
   national_park_adventure:
     objective: "Adventure SUV recommendation."
@@ -93,6 +124,9 @@ profiles:
       - awd_preferred
       - cargo_volume
       - strong_engine
+    scoring:
+      trust_score: 0.77
+      fatigue_count: 3
 
   urban_commuter:
     objective: "City commuting recommendation."
@@ -113,6 +147,9 @@ profiles:
     pitch: "Hybrid midsize for strong fuel economy, reliability, and safety tech on daily urban commutes and weekend highway trips."
     constraints:
       - fuel_efficiency
+    scoring:
+      trust_score: 0.68
+      fatigue_count: 4
 
   electric_vehicle:
     objective: "EV recommendation."
@@ -133,6 +170,9 @@ profiles:
     constraints:
       - ev_powertrain
       - fuel_efficiency
+    scoring:
+      trust_score: 0.73
+      fatigue_count: 2
 
   luxury_winter_suv:
     objective: "Premium AWD recommendation."
@@ -155,6 +195,9 @@ profiles:
       - awd_preferred
       - luxury_comfort
       - strong_engine
+    scoring:
+      trust_score: 0.85
+      fatigue_count: 1
 
   first_time_driver:
     objective: "Beginner-friendly recommendation."
@@ -176,6 +219,9 @@ profiles:
     pitch: "Economy compact that is easy to drive, fuel-efficient, and equipped with core safety tech for a new driver."
     constraints:
       - beginner_easy
+    scoring:
+      trust_score: 0.41
+      fatigue_count: 6
 
   rental_seattle_vacation:
     objective: "Rental vehicle selection."
@@ -198,6 +244,9 @@ profiles:
     constraints:
       - awd_preferred
       - cargo_volume
+    scoring:
+      trust_score: 0.62
+      fatigue_count: 3
 
   wet_weather_hurricane:
     objective: "Wet-weather safety recommendation."
@@ -220,3 +269,6 @@ profiles:
     constraints:
       - wet_weather_grip
       - awd_preferred
+    scoring:
+      trust_score: 0.71
+      fatigue_count: 2

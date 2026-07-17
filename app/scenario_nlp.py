@@ -189,7 +189,7 @@ class ScenarioNLPParser:
     def _infer_channel(lower: str) -> Channel:
         checks = [
             (Channel.chatbot, ["chatbot", "chat bot", "chat", "conversation"]),
-            (Channel.iot, ["iot", "sensor", "device", "firmware", "battery"]),
+            (Channel.iot, ["iot", "sensor", "device", "firmware", "low battery"]),
             (Channel.wearable, ["wearable", "watch", "smartwatch"]),
             (Channel.connected_car, ["connected car", "vehicle dashboard", "in-car"]),
             (Channel.mobile, ["mobile app", "phone app", "iphone", "android", "mobile", "barcode", "qr code", "qr"]),

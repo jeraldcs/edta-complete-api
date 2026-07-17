@@ -1,0 +1,123 @@
+# Canonical trained travel scenarios — full text, expected vehicle, and title for benchmarks
+scenarios:
+  loyalty_family_rental:
+    title: "Loyalty family SUV rental (cust-789)"
+    objective: "Preferred loyalty member family SUV airport rental."
+    expected_vehicle: family_friendly_suv
+    expected_miles: 350
+    text: >
+      Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member
+      searching for a family SUV airport rental at SFO, checked availability, and started
+      booking for a summer trip. Personalization consent is true.
+
+  winter_mountain_denver:
+    title: "Scenario 1 – Winter Mountain Road Trip"
+    objective: "Safe vehicle recommendation for winter mountain driving."
+    expected_vehicle: awd_suv
+    text: >
+      I am planning a 500-mile one-way road trip to Denver, Colorado during the winter season.
+      The journey may include interstate highways, mountain roads, steep inclines and declines,
+      snow-covered roads, icy pavement, and rapidly changing weather conditions. I will be
+      traveling with my spouse and luggage. My highest priorities are passenger safety, winter
+      traction, braking performance, driver confidence, and reliability. Please recommend the
+      most suitable vehicle for this trip and explain why.
+
+  long_family_vacation:
+    title: "Scenario 2 – Long Family Vacation"
+    objective: "Family SUV recommendation."
+    expected_vehicle: large_family_suv
+    text: >
+      I am planning a 1,200-mile family vacation from New Jersey to Orlando, Florida during
+      the summer. We are a family of five with three children, multiple suitcases, a stroller,
+      and sports equipment. Most driving will be on interstate highways with occasional city
+      traffic. Comfort, cargo capacity, fuel efficiency, reliability, and advanced driver
+      assistance features are my highest priorities. Please recommend the best vehicle for
+      this trip.
+
+  business_executive:
+    title: "Scenario 3 – Business Executive Travel"
+    objective: "Luxury sedan recommendation."
+    expected_vehicle: luxury_sedan
+    text: >
+      I travel frequently for business, averaging 35,000 highway miles annually. Most trips
+      involve airport transfers, interstate driving, and meetings with clients. I want a
+      premium vehicle that provides excellent comfort, advanced technology, outstanding safety,
+      a quiet cabin, and strong fuel efficiency while maintaining a professional appearance.
+      Recommend the most suitable vehicle.
+
+  national_park_adventure:
+    title: "Scenario 4 – National Park Adventure"
+    objective: "Adventure SUV recommendation."
+    expected_vehicle: awd_suv
+    text: >
+      I am planning a 10-day road trip covering Yellowstone, Grand Teton, Glacier National Park,
+      and Rocky Mountain National Park. The trip includes paved highways, gravel roads, mountain
+      passes, wildlife areas, and occasional rough terrain. I need a vehicle that offers good
+      ground clearance, AWD capability, cargo space for camping equipment, reliability, and
+      excellent safety. Recommend the best vehicle for this adventure.
+
+  urban_commuter:
+    title: "Scenario 5 – Daily Urban Commuter"
+    objective: "City commuting recommendation."
+    expected_vehicle: hybrid_midsize
+    text: >
+      I drive approximately 18,000 miles per year, primarily commuting through heavy urban
+      traffic with occasional weekend highway trips. Fuel economy, reliability, parking
+      convenience, low maintenance costs, and advanced safety features are my highest priorities.
+      I also prefer modern infotainment and driver assistance technologies. Recommend the most
+      suitable vehicle.
+
+  electric_vehicle:
+    title: "Scenario 6 – Electric Vehicle Recommendation"
+    objective: "EV recommendation."
+    expected_vehicle: electric_midsize
+    text: >
+      I am considering purchasing my first electric vehicle. I drive approximately 50 miles per
+      day, have access to home charging, and occasionally take 300-mile weekend trips. My
+      priorities include long driving range, fast charging capability, battery reliability,
+      safety, low maintenance, advanced technology, and overall ownership cost. Recommend the
+      most suitable electric vehicle.
+
+  luxury_winter_suv:
+    title: "Scenario 7 – Luxury Winter SUV"
+    objective: "Premium AWD recommendation."
+    expected_vehicle: premium_suv
+    text: >
+      I live in Colorado and frequently drive through mountainous regions during winter. My
+      budget allows me to purchase a luxury SUV. I value exceptional safety, AWD performance,
+      premium comfort, advanced driver assistance systems, heated features, and long-distance
+      driving comfort. Winter capability is more important than fuel economy. Recommend the
+      ideal luxury SUV.
+
+  first_time_driver:
+    title: "Scenario 8 – First-Time Driver"
+    objective: "Beginner-friendly recommendation."
+    expected_vehicle: economy_compact
+    text: >
+      I recently received my driver's license and will primarily drive within suburban
+      neighborhoods and nearby highways. I have limited driving experience and want a vehicle
+      that is easy to drive, highly reliable, affordable to maintain, fuel-efficient, and
+      equipped with comprehensive safety technologies. Please recommend the best vehicle for
+      a new driver.
+
+  rental_seattle_vacation:
+    title: "Scenario 9 – Rental Car Recommendation"
+    objective: "Rental vehicle selection."
+    expected_vehicle: awd_suv
+    text: >
+      I am flying to Seattle and renting a vehicle for a 7-day vacation. My itinerary includes
+      city driving, scenic coastal highways, Mount Rainier, Olympic National Park, and occasional
+      mountain roads. Rental cost is important, but safety, reliability, fuel efficiency, cargo
+      space, and driving comfort are more important. Recommend the best rental vehicle category
+      and specific models if available.
+
+  wet_weather_hurricane:
+    title: "Scenario 10 – Heavy Rain and Hurricane Season Travel"
+    objective: "Wet-weather safety recommendation."
+    expected_vehicle: awd_suv
+    text: >
+      I am planning a 700-mile road trip across the southeastern United States during hurricane
+      season. The journey may involve heavy rain, flooded roads, strong crosswinds, poor
+      visibility, and long highway drives. I prioritize hydroplaning resistance, braking
+      performance, stability control, driver assistance technologies, visibility, and overall
+      safety. Recommend the most suitable vehicle for these conditions.

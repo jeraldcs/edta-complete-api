@@ -536,6 +536,22 @@ class RecommendationHandlers:
             record["purpose"] = record.get("purpose") or _scenario_purpose(record)
         return {"count": len(records), "records": records}
 
+    def travel_scenario_benchmark(self):
+        from app.services.travel_benchmark import run_travel_benchmark
+
+        def recommend(scenario_text: str) -> dict:
+            response = self.recommend_from_scenario(
+                ScenarioRecommendationRequest(
+                    scenario_text=scenario_text,
+                    limit=1,
+                    use_ai_models=True,
+                ),
+                request_id="travel-benchmark",
+            )
+            return response.model_dump(mode="json")
+
+        return run_travel_benchmark(recommend)
+
     def empathy_simulate(self, request: EmpathySimulationRequest, request_id: str) -> dict:
         payload = self.services.empathy_engine.simulate(
             request.scenario_text,

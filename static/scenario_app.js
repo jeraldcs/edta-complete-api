@@ -577,8 +577,58 @@ window.ScenarioDemo = {
   run: () => runScenario(),
 };
 
+function fmtScore(value) {
+  if (value == null || value === "") {
+    return "—";
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toFixed(3) : String(value);
+}
+
+async function loadTravelBenchmark() {
+  const meta = document.getElementById("travelBenchmarkMeta");
+  const body = document.getElementById("travelBenchmarkBody");
+  if (!meta || !body) {
+    return;
+  }
+  try {
+    await ensureDemoReady();
+    const response = await window.DemoApi.fetch("/travel-scenario-benchmark");
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.detail || "Could not load travel scenario benchmark.");
+    }
+    meta.textContent = `${payload.scenario_count} scenarios · ${Math.round(payload.vehicle_match_rate * 100)}% vehicle match rate`;
+    body.innerHTML = (payload.scenarios || []).map((row, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${escapeHtml(row.title || row.scenario_key || "")}</td>
+        <td>${escapeHtml(row.profile_id || "—")}</td>
+        <td>${escapeHtml(row.top_vehicle || "—")}</td>
+        <td>${fmtScore(row.eds_score)}</td>
+        <td>${fmtScore(row.semantic_score)}</td>
+        <td>${fmtScore(row.expected_outcome)}</td>
+        <td>${fmtScore(row.conversion_probability)}</td>
+        <td>${escapeHtml(pretty(row.tapl_action || "—"))}</td>
+        <td>${fmtScore(row.trust_score)}</td>
+        <td>${fmtScore(row.fatigue_score)}</td>
+        <td>${fmtScore(row.ai_rank_score)}</td>
+        <td>${fmtScore(row.final_hybrid_score)}</td>
+        <td>${row.vehicle_match ? "yes" : "no"}</td>
+      </tr>
+    `).join("");
+  } catch (error) {
+    meta.textContent = "Could not load benchmark scores.";
+    body.innerHTML = `<tr><td colspan="14">${escapeHtml(error.message || String(error))}</td></tr>`;
+  }
+}
+
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bindScenarioDemo);
+  document.addEventListener("DOMContentLoaded", () => {
+    bindScenarioDemo();
+    loadTravelBenchmark();
+  });
 } else {
   bindScenarioDemo();
+  loadTravelBenchmark();
 }

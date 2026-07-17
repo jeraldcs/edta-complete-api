@@ -121,7 +121,7 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert response.status_code == 200
     assert "scenario_app.js" in response.text
     assert 'data-mode="empathy"' not in response.text
-    assert "Trained travel scenarios" not in response.text
+    assert 'id="travelBenchmarkTable"' in response.text
     assert "empathy-preset" not in response.text
     assert 'id="empathyDestination"' not in response.text
     assert "scenario-mode-tab" not in response.text
