@@ -739,10 +739,13 @@ Attach or link:
 
 | Artifact | Path |
 |----------|------|
+| **InfoQ publication document (primary)** | `docs/INFOQ_PUBLICATION_DOCUMENT.md` |
+| **Word export with diagrams** | `docs/INFOQ_PUBLICATION_DOCUMENT.docx` |
 | Article draft (narrative) | `docs/infoq_edta_llm_personalization_article_draft.md` |
 | This architecture document | `docs/INFOQ_ARCHITECTURE_DOCUMENT.md` |
+| Architecture Word export | `docs/EDTA_ARCHITECTURE_DOCUMENT.docx` |
 | Positioning / cover note | `docs/INFOQ_POSITIONING.md` |
-| Architecture PDF | `docs/edta_architecture_diagram.pdf` |
+| Architecture PDF (3 pages) | `docs/edta_architecture_diagram.pdf` |
 | Travel benchmark | `docs/TRAVEL_SCENARIO_SCORES.md` |
 | Four-tier benchmarks | `docs/BENCHMARKS.md` |
 | Live demo | https://edta-api.onrender.com/scenario-demo |

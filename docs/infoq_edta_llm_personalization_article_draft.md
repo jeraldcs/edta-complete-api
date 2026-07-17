@@ -10,7 +10,8 @@
 **Status:** Draft v2 (positioning refresh)  
 **Live demo:** https://edta-api.onrender.com/scenario-demo  
 **Reference repo:** https://github.com/jeraldcs/edta-complete-api  
-**Architecture document (diagrams, layers, demo, GitHub map):** `docs/INFOQ_ARCHITECTURE_DOCUMENT.md`
+**Architecture document (diagrams, layers, demo, GitHub map):** `docs/INFOQ_ARCHITECTURE_DOCUMENT.md`  
+**InfoQ publication package (full submission doc + Word export):** `docs/INFOQ_PUBLICATION_DOCUMENT.md`
 
 ---
 
