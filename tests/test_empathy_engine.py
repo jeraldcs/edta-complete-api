@@ -31,6 +31,19 @@ def test_hidden_needs_grandmother_toddler():
     assert profile.standard_filter_match
 
 
+def test_hidden_needs_does_not_misfire_on_personalization_word():
+    scenario = (
+        "Known customer cust-789 is on the web vehicle page. She is a preferred loyalty member "
+        "searching for a family SUV airport rental at SFO, checked availability, and started "
+        "booking for a summer trip. Personalization consent is true."
+    )
+    profile = HiddenNeedsExtractor().extract(scenario)
+    assert "toddler_family" not in profile.persona_tags
+    constraint_ids = {item.constraint_id for item in profile.implicit_constraints}
+    assert "isofix_anchors" not in constraint_ids
+    assert "rear_legroom" not in constraint_ids
+
+
 def test_empathy_ranking_only_when_signals_present():
     engine = EmpathyEngine()
     profile = engine.hidden_needs.extract(FAMILY_SCENARIO)
