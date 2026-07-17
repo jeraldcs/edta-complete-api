@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 
 import app.config as edta_config
 
-DEMO_ASSET_VERSION = "20260717q"
+DEMO_ASSET_VERSION = "20260717r"
 _DEMO_CSP = (
     "default-src 'self'; "
     "script-src 'self'; "
@@ -37,7 +37,7 @@ def render_scenario_demo() -> HTMLResponse:
         f'el.classList.remove("hidden");}}}});</script>'
     )
     html = html.replace("<!--EDTA_DEMO_BOOT-->", boot, 1)
-    for asset in ("demo-api.js", "demo-shared.js", "scenario_app.js"):
+    for asset in ("styles.css", "demo-api.js", "demo-shared.js", "scenario_app.js"):
         html = html.replace(f"/static/{asset}", f"/static/{asset}?v={DEMO_ASSET_VERSION}")
     return HTMLResponse(
         content=html,

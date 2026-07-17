@@ -59,6 +59,15 @@
                 <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="fatigue" title="High ad fatigue → recommendation delayed or softened">High fatigue</button>
               </div>
             </div>
+            <div class="scenario-sampler-row scenario-sampler-row-compare">
+              <div class="scenario-sampler-label">Compare vs traditional <span class="scenario-sampler-arrow" aria-hidden="true">→</span></div>
+              <div id="scenarioChipRowCompare" class="scenario-sampler-chips scenario-sampler-chips-compare" role="group" aria-label="Traditional versus EDTA comparison scenarios">
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-compare" data-scenario-key="compare_rules" title="Rules-era upsell: same booking path, but EDTA returns TAPL, EDS, and explanation">Rules-era upsell</button>
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-compare" data-scenario-key="compare_ranker" title="ML ranker era: family trip where catalog fit and outcome beat similarity alone">ML ranker era</button>
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-compare" data-scenario-key="compare_llm" title="LLM bolt-on risk: ambiguous request with visible tier and TAPL governance">LLM bolt-on risk</button>
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-compare" data-scenario-key="compare_edta" title="EDTA governed baseline: consent, trust, empathy, and outcome scores">EDTA governed</button>
+              </div>
+            </div>
           </div>
 
           <label class="scenario-text-label" for="scenarioText">
