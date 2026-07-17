@@ -30,6 +30,36 @@ const DEMO_SCENARIOS = {
   },
 };
 
+const TRY_NEXT = {
+  loyalty: [
+    { key: "no_consent", label: "Next: No consent" },
+    { key: "winter", label: "Try Winter Denver" },
+  ],
+  winter: [
+    { key: "family_vacation", label: "Next: Family vacation" },
+    { key: "loyalty", label: "Compare loyalty baseline" },
+  ],
+  family_vacation: [
+    { key: "business", label: "Next: Business executive" },
+    { key: "winter", label: "Try Winter Denver" },
+  ],
+  business: [
+    { key: "loyalty", label: "Next: Family loyalty" },
+    { key: "no_consent", label: "Try No consent" },
+  ],
+  no_consent: [
+    { key: "fatigue", label: "Next: High fatigue" },
+    { key: "loyalty", label: "Back to loyalty baseline" },
+  ],
+  fatigue: [
+    { key: "no_consent", label: "Compare No consent" },
+    { key: "loyalty", label: "Back to loyalty baseline" },
+  ],
+};
+
+let previousRunSnapshot = null;
+let lastTaplAction = null;
+
 let scenarioText = null;
 let scenarioRunBtn = null;
 let scenarioForm = null;
@@ -37,7 +67,6 @@ let scenarioRunError = null;
 let scenarioColdStart = null;
 let scenarioLoading = null;
 let scenarioRecommendation = null;
-let parsedContext = null;
 let technicalExplanation = null;
 let payloadPreview = null;
 let responsePreview = null;
@@ -48,11 +77,15 @@ let scenarioEmpathyEnrichment = null;
 let scenarioEmpathyTco = null;
 let scenarioEmpathyPitch = null;
 let scenarioResultsSection = null;
+let demoWakeBanner = null;
+let tryNextSuggestions = null;
+let copyDemoLinkBtn = null;
 
 const shared = window.DemoShared || {};
 const escapeHtml = shared.escapeHtml || ((value) => String(value ?? ""));
 const pct = shared.pct || ((value) => `${Math.round(Number(value || 0) * 100)}%`);
 const pretty = shared.pretty || ((value) => String(value || "").replaceAll("_", " "));
+const taplPlainLabel = shared.taplPlainLabel || ((action) => pretty(action));
 const renderArchitecturePanels = shared.renderArchitecturePanels || (() => {});
 const renderTaplBadge = shared.renderTaplBadge || ((action) => escapeHtml(pretty(action)));
 const scoreMeter = shared.scoreMeter || (() => "");
@@ -79,16 +112,31 @@ function updatePayloadPreview() {
   }
 }
 
-function setColdStartMessage(message) {
-  if (!scenarioColdStart) {
+function setWakeBanner(message) {
+  if (!demoWakeBanner) {
     return;
   }
   if (message) {
-    scenarioColdStart.textContent = message;
-    scenarioColdStart.classList.remove("hidden");
+    demoWakeBanner.textContent = message;
+    demoWakeBanner.classList.remove("hidden");
   } else {
-    scenarioColdStart.textContent = "";
-    scenarioColdStart.classList.add("hidden");
+    demoWakeBanner.classList.add("hidden");
+  }
+}
+
+function setColdStartMessage(message) {
+  if (message) {
+    setWakeBanner(message);
+    if (scenarioColdStart) {
+      scenarioColdStart.textContent = message;
+      scenarioColdStart.classList.remove("hidden");
+    }
+  } else {
+    setWakeBanner("");
+    if (scenarioColdStart) {
+      scenarioColdStart.textContent = "";
+      scenarioColdStart.classList.add("hidden");
+    }
   }
 }
 
@@ -110,8 +158,68 @@ function setRunning(isRunning) {
     scenarioRunBtn.disabled = isRunning;
     scenarioRunBtn.textContent = isRunning ? "Running..." : "Recommend";
   }
+  const mobileBtn = document.getElementById("scenarioMobileRunBtn");
+  if (mobileBtn) {
+    mobileBtn.disabled = isRunning;
+    mobileBtn.textContent = isRunning ? "Running..." : "Recommend";
+  }
   if (scenarioLoading) {
     scenarioLoading.classList.toggle("hidden", !isRunning);
+  }
+  if (isRunning && !scenarioColdStart?.textContent) {
+    setWakeBanner("Waking demo service… first request may take up to a minute.");
+  }
+  if (!isRunning) {
+    setWakeBanner("");
+  }
+}
+
+function pulseChip(key) {
+  if (!key) {
+    return;
+  }
+  const button = document.querySelector(`.scenario-chip-btn[data-scenario-key="${key}"]`);
+  if (!button) {
+    return;
+  }
+  button.classList.remove("is-chip-pulse");
+  void button.offsetWidth;
+  button.classList.add("is-chip-pulse");
+}
+
+function syncScenarioUrl(key) {
+  if (!key || !window.history?.replaceState) {
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("scenario", key);
+  window.history.replaceState({}, "", url);
+}
+
+function readScenarioFromUrl() {
+  const key = new URLSearchParams(window.location.search).get("scenario");
+  if (key && DEMO_SCENARIOS[key]) {
+    return key;
+  }
+  return null;
+}
+
+async function copyDemoLink() {
+  const key = activeScenarioKey || detectScenarioKey(scenarioText?.value || "") || "loyalty";
+  const url = new URL(window.location.href);
+  url.searchParams.set("scenario", key);
+  const link = url.toString();
+  try {
+    await navigator.clipboard.writeText(link);
+    if (copyDemoLinkBtn) {
+      const original = copyDemoLinkBtn.textContent;
+      copyDemoLinkBtn.textContent = "Link copied!";
+      window.setTimeout(() => {
+        copyDemoLinkBtn.textContent = original;
+      }, 1800);
+    }
+  } catch (_error) {
+    window.prompt("Copy this demo link:", link);
   }
 }
 
@@ -140,6 +248,8 @@ function applyScenarioChip(key, { autoRun = false } = {}) {
   }
   scenarioText.value = scenario.text;
   updateActiveScenarioChip(key);
+  pulseChip(key);
+  syncScenarioUrl(key);
   updatePayloadPreview();
   setRunError("");
   if (autoRun) {
@@ -332,21 +442,128 @@ function parsedContextFromSummary(summary) {
   return summary?.parsed_context || summary?.context || lastScenarioData?.request_summary?.parsed_context || {};
 }
 
-function renderParsedContext(summary) {
-  if (!parsedContext) {
-    return;
+function consentLabelFromContext(context) {
+  const consent = context?.consent?.personalization;
+  if (consent === true) {
+    return "On";
   }
+  if (consent === false) {
+    return "Off";
+  }
+  return "—";
+}
+
+function captureRunSnapshot(data) {
+  const rec = data?.recommendations?.[0];
+  if (!rec) {
+    return null;
+  }
+  const summary = data.request_summary || {};
+  const context = parsedContextFromSummary(summary);
+  const ai = rec.ai_score || {};
+  return {
+    scenarioKey: activeScenarioKey || detectScenarioKey(summary.scenario_text || scenarioText?.value || ""),
+    consent: consentLabelFromContext(context),
+    taplAction: ai.tapl?.action || "show",
+    trust: Number(ai.tapl?.trust_score || 0),
+    fatigue: Number(ai.tapl?.fatigue_score || 0),
+    finalScore: Number(ai.final_hybrid_score || 0),
+    vehicle: rec.candidate?.id || "",
+  };
+}
+
+function renderHeroContextStrip(summary) {
   const context = parsedContextFromSummary(summary);
   const profile = summary.scenario_profile || {};
-  parsedContext.innerHTML = `
-    <div class="parsed-context-compact">
-      <div><span>Channel</span><strong>${escapeHtml(pretty(context.channel))}</strong></div>
-      <div><span>Intent</span><strong>${escapeHtml(pretty(context.current_intent))}</strong></div>
-      <div><span>Journey</span><strong>${escapeHtml(pretty(context.journey_stage))}</strong></div>
-      <div><span>Customer</span><strong>${escapeHtml(context.customer_id || "anonymous")}</strong></div>
+  return `
+    <div class="hero-context-strip" aria-label="Parsed scenario context">
+      <span>Channel <strong>${escapeHtml(pretty(context.channel))}</strong></span>
+      <span>Intent <strong>${escapeHtml(pretty(context.current_intent))}</strong></span>
+      <span>Journey <strong>${escapeHtml(pretty(context.journey_stage))}</strong></span>
+      ${profile.profile_id ? `<span>Profile <strong>${escapeHtml(profile.profile_id.replaceAll("_", " "))}</strong></span>` : ""}
+      <span>Consent <strong>${escapeHtml(consentLabelFromContext(context))}</strong></span>
     </div>
-    ${profile.profile_id ? `<p class="parsed-profile-chip"><span>Travel profile</span> <strong>${escapeHtml(profile.profile_id)}</strong></p>` : ""}
   `;
+}
+
+function renderGovernanceDiff(previous, current) {
+  if (!previous || !current) {
+    return "";
+  }
+  const rows = [];
+  if (previous.consent !== current.consent) {
+    rows.push({ label: "Consent", from: previous.consent, to: current.consent });
+  }
+  if (previous.taplAction !== current.taplAction) {
+    rows.push({
+      label: "Trust policy",
+      from: taplPlainLabel(previous.taplAction),
+      to: taplPlainLabel(current.taplAction),
+    });
+  }
+  if (previous.vehicle !== current.vehicle && previous.vehicle && current.vehicle) {
+    rows.push({
+      label: "Top vehicle",
+      from: previous.vehicle.replaceAll("_", " "),
+      to: current.vehicle.replaceAll("_", " "),
+    });
+  }
+  const scoreDelta = Math.round((current.finalScore - previous.finalScore) * 100);
+  if (Math.abs(scoreDelta) >= 1) {
+    rows.push({
+      label: "Final score",
+      from: pct(previous.finalScore),
+      to: pct(current.finalScore),
+      delta: scoreDelta,
+    });
+  }
+  if (!rows.length) {
+    return "";
+  }
+  const items = rows.map((row) => {
+    const delta = row.delta != null
+      ? `<span class="governance-diff-delta ${row.delta >= 0 ? "is-up" : "is-down"}">${row.delta >= 0 ? "+" : ""}${row.delta} pts</span>`
+      : "";
+    return `
+      <div class="governance-diff-item">
+        <span class="governance-diff-label">${escapeHtml(row.label)}</span>
+        <span class="governance-diff-values">${escapeHtml(String(row.from))} → <strong>${escapeHtml(String(row.to))}</strong>${delta}</span>
+      </div>
+    `;
+  }).join("");
+  return `
+    <aside class="governance-diff-strip" aria-label="Changes since last run">
+      <span class="governance-diff-title">What changed</span>
+      ${items}
+    </aside>
+  `;
+}
+
+function renderTryNextSuggestions(key) {
+  if (!tryNextSuggestions) {
+    return;
+  }
+  const suggestions = TRY_NEXT[key] || [];
+  if (!suggestions.length) {
+    tryNextSuggestions.classList.add("hidden");
+    tryNextSuggestions.innerHTML = "";
+    return;
+  }
+  tryNextSuggestions.classList.remove("hidden");
+  tryNextSuggestions.innerHTML = `
+    <span class="try-next-label">Try next</span>
+    ${suggestions.map((item) => `
+      <button type="button" class="try-next-btn" data-scenario-key="${escapeHtml(item.key)}">${escapeHtml(item.label)}</button>
+    `).join("")}
+  `;
+  tryNextSuggestions.querySelectorAll(".try-next-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextKey = button.dataset.scenarioKey;
+      if (nextKey) {
+        applyScenarioChip(nextKey, { autoRun: true });
+      }
+    });
+  });
 }
 
 function renderRecommendation(data) {
@@ -361,6 +578,11 @@ function renderRecommendation(data) {
   const profile = summary.scenario_profile || {};
   const reasonCodes = rec.reason_codes || [];
   const taplAction = tapl.action || "show";
+  const taplChanged = lastTaplAction && lastTaplAction !== taplAction;
+  lastTaplAction = taplAction;
+  const newSnapshot = captureRunSnapshot(data);
+  const diffHtml = renderGovernanceDiff(previousRunSnapshot, newSnapshot);
+  previousRunSnapshot = newSnapshot;
 
   if (!scenarioRecommendation) {
     return;
@@ -372,12 +594,14 @@ function renderRecommendation(data) {
   ].filter(Boolean).join("");
 
   scenarioRecommendation.innerHTML = `
+    ${diffHtml}
+    ${renderHeroContextStrip(summary)}
     <div class="hero-result-head">
       <div class="hero-result-title">
         <p class="eyebrow">Recommended vehicle ${badges ? `<span class="hero-badge-row">${badges}</span>` : ""}</p>
         <div class="offer-header hero-offer-header">
           <div class="hero-vehicle-title">
-            <span class="vehicle-glyph" aria-hidden="true">${vehicleGlyph(rec.candidate.id)}</span>
+            <span class="vehicle-glyph vehicle-glyph-lg" aria-hidden="true">${vehicleGlyph(rec.candidate.id)}</span>
             <div>
               <h2>${escapeHtml(rec.candidate.title)}</h2>
               <p class="hero-vehicle-id">${escapeHtml(rec.candidate.id.replaceAll("_", " "))}</p>
@@ -385,23 +609,24 @@ function renderRecommendation(data) {
           </div>
           <div class="hero-score-stack">
             <strong class="score-badge score-badge-hero">${pct(ai.final_hybrid_score)}</strong>
-            <span class="score-badge-caption">Final score</span>
+            <span class="score-badge-caption">Match score</span>
           </div>
         </div>
       </div>
       <div class="hero-policy-row">
-        <span class="hero-policy-label">TAPL policy</span>
-        ${renderTaplBadge(taplAction)}
+        <span class="hero-policy-label">Trust policy <small>(TAPL)</small></span>
+        ${renderTaplBadge(taplAction, { animated: taplChanged })}
+        <span class="hero-policy-plain">${escapeHtml(taplPlainLabel(taplAction))}</span>
         <span class="hero-policy-reason">${escapeHtml(tapl.reason || "Policy evaluated for this scenario.")}</span>
       </div>
     </div>
 
     <div class="hero-score-grid">
-      ${scoreMeter("Final rank", ai.final_hybrid_score, { tone: "primary" })}
-      ${scoreMeter("Trust", tapl.trust_score, { tone: "trust" })}
-      ${scoreMeter("Fatigue", tapl.fatigue_score, { tone: "fatigue" })}
-      ${scoreMeter("Empathy match", empathyMatch, { tone: "empathy" })}
-      ${scoreMeter("Expected outcome", outcome.expected_outcome_score, { tone: "outcome" })}
+      ${scoreMeter("Match score", ai.final_hybrid_score, { tone: "primary", band: "score", subtitle: "EDS + rank blend" })}
+      ${scoreMeter("Trust", tapl.trust_score, { tone: "trust", band: "trust" })}
+      ${scoreMeter("Fatigue", tapl.fatigue_score, { tone: "fatigue", band: "fatigue" })}
+      ${scoreMeter("Empathy fit", empathyMatch, { tone: "empathy", band: "empathy" })}
+      ${scoreMeter("Expected outcome", outcome.expected_outcome_score, { tone: "outcome", band: "outcome", subtitle: "Conversion sim" })}
     </div>
 
     <p class="explanation hero-why-line">${escapeHtml(rec.explanation)}</p>
@@ -414,6 +639,7 @@ function renderRecommendation(data) {
     </div>
   `;
 
+  renderTryNextSuggestions(activeScenarioKey || detectScenarioKey(summary.scenario_text || ""));
   renderEmpathyPanels(summary, rec);
   pulseOfferCard();
 }
@@ -612,7 +838,6 @@ async function runScenario() {
     if (responsePreview) {
       responsePreview.textContent = JSON.stringify(data, null, 2);
     }
-    renderParsedContext(data.request_summary);
     if (!data.recommendations?.length) {
       throw new Error("The API returned no recommendations for this scenario.");
     }
@@ -637,7 +862,6 @@ function bindScenarioDemo() {
   scenarioColdStart = document.getElementById("scenarioColdStart");
   scenarioLoading = document.getElementById("scenarioLoading");
   scenarioRecommendation = document.getElementById("scenarioRecommendation");
-  parsedContext = document.getElementById("parsedContext");
   technicalExplanation = document.getElementById("technicalExplanation");
   payloadPreview = document.getElementById("scenarioPayloadPreview");
   responsePreview = document.getElementById("scenarioResponsePreview");
@@ -648,15 +872,27 @@ function bindScenarioDemo() {
   scenarioEmpathyTco = document.getElementById("scenarioEmpathyTco");
   scenarioEmpathyPitch = document.getElementById("scenarioEmpathyPitch");
   scenarioResultsSection = document.querySelector(".scenario-results");
+  demoWakeBanner = document.getElementById("demoWakeBanner");
+  tryNextSuggestions = document.getElementById("tryNextSuggestions");
+  copyDemoLinkBtn = document.getElementById("copyDemoLinkBtn");
 
   if (!scenarioText || !scenarioRunBtn || !scenarioForm) {
     console.error("Scenario demo: missing form, textarea, or Recommend button.");
     return;
   }
 
+  const urlScenario = readScenarioFromUrl();
+  if (urlScenario) {
+    applyScenarioChip(urlScenario, { autoRun: false });
+  }
+
   scenarioText.addEventListener("input", () => {
     updatePayloadPreview();
-    updateActiveScenarioChip(detectScenarioKey(scenarioText.value));
+    const detected = detectScenarioKey(scenarioText.value);
+    updateActiveScenarioChip(detected);
+    if (detected) {
+      syncScenarioUrl(detected);
+    }
     if (scenarioRunError && !scenarioRunError.classList.contains("hidden")) {
       setRunError("");
     }
@@ -668,6 +904,15 @@ function bindScenarioDemo() {
     event.preventDefault();
     runScenario();
   });
+
+  const mobileRunBtn = document.getElementById("scenarioMobileRunBtn");
+  if (mobileRunBtn) {
+    mobileRunBtn.addEventListener("click", () => runScenario());
+  }
+
+  if (copyDemoLinkBtn) {
+    copyDemoLinkBtn.addEventListener("click", () => copyDemoLink());
+  }
 
   scenarioText.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -689,7 +934,11 @@ function loadScenarioFromBenchmarkRow(row) {
     return;
   }
   scenarioText.value = text;
-  updateActiveScenarioChip(detectScenarioKey(text));
+  const detected = detectScenarioKey(text);
+  updateActiveScenarioChip(detected);
+  if (detected) {
+    syncScenarioUrl(detected);
+  }
   updatePayloadPreview();
   setRunError("");
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -741,7 +990,8 @@ function bindBenchmarkToggle() {
   toggle.addEventListener("click", () => {
     benchmarkMetricsExpanded = !benchmarkMetricsExpanded;
     table.classList.toggle("benchmark-score-table--compact", !benchmarkMetricsExpanded);
-    toggle.textContent = benchmarkMetricsExpanded ? "Show compact view" : "Show all metrics";
+    table.classList.toggle("benchmark-score-table--demo", !benchmarkMetricsExpanded);
+    toggle.textContent = benchmarkMetricsExpanded ? "Demo view" : "View full 11-scenario matrix";
     toggle.setAttribute("aria-pressed", benchmarkMetricsExpanded ? "true" : "false");
   });
 }

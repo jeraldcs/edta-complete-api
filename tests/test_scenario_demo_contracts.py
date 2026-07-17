@@ -125,6 +125,11 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert "scenario-sampler" in response.text
     assert "Try scenario" in response.text
     assert "Try governance" in response.text
+    assert "scenario-start-here" in response.text
+    assert 'id="demoWakeBanner"' in response.text
+    assert 'id="tryNextSuggestions"' in response.text
+    assert 'id="copyDemoLinkBtn"' in response.text
+    assert "demo-details-section" in response.text
     assert "scenario-chip-btn" in response.text
     assert 'data-mode="empathy"' not in response.text
     assert 'id="travelBenchmarkTable"' in response.text
