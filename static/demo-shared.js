@@ -96,19 +96,55 @@
     return "tapl-show";
   }
 
-  function renderTaplBadge(action) {
+  function renderTaplBadge(action, options = {}) {
     const label = pretty(action || "show");
-    return `<span class="tapl-badge ${taplTone(action)}">${escapeHtml(label)}</span>`;
+    const animated = options.animated ? " tapl-badge-updated" : "";
+    return `<span class="tapl-badge ${taplTone(action)}${animated}">${escapeHtml(label)}</span>`;
+  }
+
+  function scoreMeterBand(value, bandType) {
+    const num = Math.max(0, Math.min(1, Number(value || 0)));
+    if (bandType === "trust") {
+      if (num >= 0.75) {
+        return "good";
+      }
+      if (num >= 0.45) {
+        return "mid";
+      }
+      return "low";
+    }
+    if (bandType === "fatigue") {
+      if (num >= 0.7) {
+        return "low";
+      }
+      if (num >= 0.4) {
+        return "mid";
+      }
+      return "good";
+    }
+    if (bandType === "outcome" || bandType === "empathy" || bandType === "score") {
+      if (num >= 0.65) {
+        return "good";
+      }
+      if (num >= 0.4) {
+        return "mid";
+      }
+      return "low";
+    }
+    return "mid";
   }
 
   function scoreMeter(label, value, options = {}) {
     const tone = options.tone || "default";
+    const bandType = options.band || tone;
     const num = Math.max(0, Math.min(1, Number(value || 0)));
     const pctVal = Math.round(num * 100);
+    const band = scoreMeterBand(num, bandType);
+    const subtitle = options.subtitle ? `<small>${escapeHtml(options.subtitle)}</small>` : "";
     return `
-      <div class="score-meter score-meter--${tone}">
+      <div class="score-meter score-meter--${tone} score-meter--band-${band}">
         <div class="score-meter-head">
-          <span>${escapeHtml(label)}</span>
+          <span>${escapeHtml(label)}${subtitle}</span>
           <strong title="${num.toFixed(3)}">${pctVal}%</strong>
         </div>
         <div class="score-meter-track" aria-hidden="true">
@@ -264,13 +300,27 @@
     `;
   }
 
+  function taplPlainLabel(action) {
+    const key = String(action || "show").toLowerCase();
+    const labels = {
+      show: "Show offer",
+      soften: "Soften offer",
+      delay: "Delay offer",
+      suppress: "Suppress offer",
+      generic_fallback: "Generic fallback",
+    };
+    return labels[key] || pretty(action);
+  }
+
   window.DemoShared = {
     escapeHtml,
     pct,
     pretty,
     taplTone,
+    taplPlainLabel,
     renderTaplBadge,
     scoreMeter,
+    scoreMeterBand,
     vehicleGlyph,
     renderArchitecturePanels,
     memoryBlock,

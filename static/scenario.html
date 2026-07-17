@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="/static/styles.css"/>
 </head>
 <body class="scenario-page">
+  <div id="demoWakeBanner" class="demo-wake-banner hidden" role="status" aria-live="polite">
+    Waking demo service… first request may take up to a minute.
+  </div>
   <main>
     <section class="scenario-hero">
       <nav class="topbar scenario-topbar" aria-label="Primary">
@@ -20,7 +23,7 @@
       <div class="scenario-hero-content">
         <p class="eyebrow">EDTA live demo</p>
         <h1>Describe a trip. See governed AI pick the right vehicle.</h1>
-        <p class="subtitle">Rules → ML → trust policy → outcome score — explainable in one click.</p>
+        <p class="subtitle">See why this vehicle was chosen — and when trust policy says not to personalize.</p>
         <div class="hero-stat-row" aria-label="Demo capabilities">
           <span>Free-text scenarios</span>
           <span>Trust-aware ranking</span>
@@ -37,6 +40,8 @@
             <p>Try a sample or write your own</p>
           </div>
 
+          <p class="scenario-start-here">Pick a sample below — results update automatically.</p>
+
           <div class="scenario-sampler" aria-label="Sample scenarios">
             <div class="scenario-sampler-row scenario-sampler-row-travel">
               <div class="scenario-sampler-label">Try scenario <span class="scenario-sampler-arrow" aria-hidden="true">→</span></div>
@@ -50,8 +55,8 @@
             <div class="scenario-sampler-row scenario-sampler-row-governance">
               <div class="scenario-sampler-label">Try governance <span class="scenario-sampler-arrow" aria-hidden="true">→</span></div>
               <div id="scenarioChipRowGovernance" class="scenario-sampler-chips scenario-sampler-chips-governance" role="group" aria-label="Governance sample scenarios">
-                <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="no_consent">No consent</button>
-                <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="fatigue">High fatigue</button>
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="no_consent" title="Personalization consent off → generic fallback offer">No consent</button>
+                <button type="button" class="scenario-chip-btn scenario-chip-btn-governance" data-scenario-key="fatigue" title="High ad fatigue → recommendation delayed or softened">High fatigue</button>
               </div>
             </div>
           </div>
@@ -66,13 +71,14 @@
 
           <div class="scenario-actions">
             <button id="scenarioRunBtn" type="submit">Recommend</button>
+            <p class="scenario-kbd-hint">Tip: <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</p>
             <p id="scenarioRunError" class="scenario-run-error hidden" role="alert"></p>
           </div>
         </form>
       </article>
     </section>
 
-    <section class="site-section scenario-results">
+    <section class="site-section scenario-results scenario-results--story">
       <article id="scenarioOfferCard" class="offer-card scenario-offer">
         <div id="scenarioLoading" class="loading hidden">
           <div class="spinner"></div>
@@ -85,14 +91,7 @@
         </div>
       </article>
 
-      <aside class="insight-card">
-        <div class="panel-title-row">
-          <span class="step-badge">Context</span>
-          <p>Parsed from text</p>
-        </div>
-        <p class="eyebrow">Parsed NLP context</p>
-        <div id="parsedContext" class="parsed-context">No parsed context yet.</div>
-      </aside>
+      <div id="tryNextSuggestions" class="try-next-row hidden" aria-label="Suggested next scenarios"></div>
     </section>
 
     <section id="empathyResultsSection" class="site-section empathy-results-section hidden" aria-hidden="true">
@@ -136,75 +135,20 @@
       </details>
     </section>
 
-    <section class="site-section architecture-section">
-      <details class="demo-accordion" id="architectureAccordion">
-        <summary>
-          <span class="demo-accordion-title">Architecture panels</span>
-          <span class="demo-accordion-hint">TKGE, EML, HAOE, and OSE from the last run</span>
-        </summary>
-        <div class="demo-accordion-body">
-      <div id="scenarioArchitecturePanels" class="architecture-grid">
-        <article class="architecture-card placeholder-card">
-          <span class="architecture-label">Waiting</span>
-          <h3>Run a scenario</h3>
-          <p>Architecture panels populate after your scenario is parsed.</p>
-        </article>
-      </div>
-        </div>
-      </details>
-    </section>
-
-    <section class="site-section technical-section">
-      <details class="demo-accordion" id="technicalAccordion">
-        <summary>
-          <span class="demo-accordion-title">Technical explanation</span>
-          <span class="demo-accordion-hint">Parsing, scoring, TAPL, and ranking details</span>
-        </summary>
-        <div class="demo-accordion-body">
-      <article class="insight-card technical-card">
-        <div id="technicalExplanation" class="technical-explanation">
-          Run a scenario to see parsing, candidate filtering, scoring, TAPL, and ranking details.
-        </div>
-      </article>
-        </div>
-      </details>
-    </section>
-
-    <section class="site-section api-layout">
-      <details class="demo-accordion" id="apiAccordion">
-        <summary>
-          <span class="demo-accordion-title">Developer view</span>
-          <span class="demo-accordion-hint">API request and response JSON</span>
-        </summary>
-        <div class="demo-accordion-body">
-      <div class="code-grid">
-        <article>
-          <h3>Request</h3>
-          <pre id="scenarioPayloadPreview"></pre>
-        </article>
-        <article>
-          <h3>Response</h3>
-          <pre id="scenarioResponsePreview">Run a scenario to see the response.</pre>
-        </article>
-      </div>
-        </div>
-      </details>
-    </section>
-
-    <section class="site-section travel-benchmark-section">
+    <section class="site-section travel-benchmark-section scenario-story-benchmark">
       <details class="demo-accordion" id="benchmarkAccordion">
         <summary>
           <span class="demo-accordion-title">Travel benchmark</span>
-          <span class="demo-accordion-hint">Score matrix for all 11 trained scenarios</span>
+          <span class="demo-accordion-hint">Quick view — click a row to try that scenario</span>
         </summary>
         <div class="demo-accordion-body">
-      <p class="empathy-section-lead benchmark-lead">Pre-tuned profiles with distinct EDS, outcome, TAPL trust/fatigue, and rank scores. Click a row to load that scenario.</p>
+      <p class="empathy-section-lead benchmark-lead">Pre-tuned profiles with distinct scores. Click a row to load and run that scenario.</p>
       <div id="travelBenchmarkMeta" class="benchmark-meta">Loading benchmark scores…</div>
       <div class="benchmark-toolbar">
-        <button type="button" id="benchmarkToggleMetrics" class="benchmark-toggle-btn" aria-pressed="false">Show all metrics</button>
+        <button type="button" id="benchmarkToggleMetrics" class="benchmark-toggle-btn" aria-pressed="false">View full 11-scenario matrix</button>
       </div>
       <div class="benchmark-table-wrap" tabindex="0" aria-label="Travel scenario score matrix">
-        <table id="travelBenchmarkTable" class="benchmark-score-table benchmark-score-table--compact">
+        <table id="travelBenchmarkTable" class="benchmark-score-table benchmark-score-table--compact benchmark-score-table--demo">
           <thead>
             <tr>
               <th>#</th>
@@ -231,7 +175,66 @@
         </div>
       </details>
     </section>
+
+    <section class="site-section demo-details-section">
+      <p class="demo-details-heading">Technical details</p>
+      <p class="demo-details-lead">Architecture panels, scoring breakdown, and raw API JSON for integrators.</p>
+
+      <details class="demo-accordion" id="architectureAccordion">
+        <summary>
+          <span class="demo-accordion-title">Architecture panels</span>
+          <span class="demo-accordion-hint">TKGE, EML, HAOE, and OSE from the last run</span>
+        </summary>
+        <div class="demo-accordion-body">
+      <div id="scenarioArchitecturePanels" class="architecture-grid">
+        <article class="architecture-card placeholder-card">
+          <span class="architecture-label">Waiting</span>
+          <h3>Run a scenario</h3>
+          <p>Architecture panels populate after your scenario is parsed.</p>
+        </article>
+      </div>
+        </div>
+      </details>
+
+      <details class="demo-accordion" id="technicalAccordion">
+        <summary>
+          <span class="demo-accordion-title">Technical explanation</span>
+          <span class="demo-accordion-hint">Parsing, scoring, trust policy, and ranking details</span>
+        </summary>
+        <div class="demo-accordion-body">
+      <article class="insight-card technical-card">
+        <div id="technicalExplanation" class="technical-explanation">
+          Run a scenario to see parsing, candidate filtering, scoring, TAPL, and ranking details.
+        </div>
+      </article>
+        </div>
+      </details>
+
+      <details class="demo-accordion" id="apiAccordion">
+        <summary>
+          <span class="demo-accordion-title">Developer view</span>
+          <span class="demo-accordion-hint">API request and response JSON</span>
+        </summary>
+        <div class="demo-accordion-body">
+      <div class="code-grid">
+        <article>
+          <h3>Request</h3>
+          <pre id="scenarioPayloadPreview"></pre>
+        </article>
+        <article>
+          <h3>Response</h3>
+          <pre id="scenarioResponsePreview">Run a scenario to see the response.</pre>
+        </article>
+      </div>
+        </div>
+      </details>
+    </section>
   </main>
+
+  <div class="scenario-mobile-bar" aria-hidden="true">
+    <button type="button" id="scenarioMobileRunBtn" class="scenario-mobile-run-btn">Recommend</button>
+  </div>
+
   <footer class="scenario-demo-footer">
     <p>
       <a href="https://edta-api.onrender.com/scenario-demo">Live demo</a>
@@ -241,6 +244,8 @@
       <a href="https://github.com/jeraldcs/edta-complete-api/blob/master/docs/EDTA_PUBLICATION_DOCUMENT.md" target="_blank" rel="noopener noreferrer">Architecture doc</a>
       ·
       <a href="/docs">OpenAPI</a>
+      ·
+      <button type="button" id="copyDemoLinkBtn" class="footer-link-btn">Copy demo link</button>
     </p>
   </footer>
   <!--EDTA_DEMO_BOOT-->
