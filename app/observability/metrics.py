@@ -51,6 +51,11 @@ FEEDBACK_EVENTS = Counter(
     "Feedback events recorded",
     ["event_type", "converted"],
 )
+WEBHOOK_DELIVERIES = Counter(
+    "edta_webhook_deliveries_total",
+    "Webhook delivery attempts",
+    ["event_type", "success"],
+)
 
 _ROUTE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^/v1/jobs/[^/]+$"), "/v1/jobs/{job_id}"),
@@ -91,6 +96,15 @@ def record_feedback(*, event_type: str, converted: bool) -> None:
     if not metrics_enabled():
         return
     FEEDBACK_EVENTS.labels(event_type=event_type, converted=str(converted).lower()).inc()
+
+
+def record_webhook_delivery(*, success: bool, event_type: str) -> None:
+    if not metrics_enabled():
+        return
+    WEBHOOK_DELIVERIES.labels(
+        event_type=event_type,
+        success=str(success).lower(),
+    ).inc()
 
 
 def render_metrics() -> tuple[bytes, str]:

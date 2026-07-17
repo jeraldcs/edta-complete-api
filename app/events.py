@@ -9,6 +9,8 @@ import httpx
 
 from app.config import settings
 from app.db import Database
+from app.observability.metrics import record_webhook_delivery
+from app.webhook_validation import WebhookValidationError, validate_webhook_target_url
 
 
 class EventBus:
@@ -24,6 +26,10 @@ class EventBus:
         return datetime.now(timezone.utc).isoformat()
 
     def register_webhook(self, target_url: str, event_types: list[str]) -> dict[str, Any]:
+        try:
+            validated_url = validate_webhook_target_url(target_url)
+        except WebhookValidationError as error:
+            raise ValueError(str(error)) from error
         webhook_id = str(uuid.uuid4())
         with self.db.transaction() as connection:
             connection.execute(
@@ -31,11 +37,11 @@ class EventBus:
                 INSERT INTO webhook_subscriptions (id, target_url, event_types_json, created_at, active)
                 VALUES (?, ?, ?, ?, 1)
                 """,
-                (webhook_id, target_url, Database.json_dumps(event_types), self._now()),
+                (webhook_id, validated_url, Database.json_dumps(event_types), self._now()),
             )
         return {
             "id": webhook_id,
-            "target_url": target_url,
+            "target_url": validated_url,
             "event_types": event_types,
             "active": True,
         }
@@ -103,10 +109,22 @@ class EventBus:
                 event_types = Database.json_loads(row["event_types_json"], [])
                 if event_types and event["event_type"] not in event_types:
                     continue
-                try:
-                    await client.post(row["target_url"], json=event)
-                except httpx.HTTPError:
-                    continue
+                delivered = await self._post_with_retry(client, row["target_url"], event)
+                record_webhook_delivery(success=delivered, event_type=event["event_type"])
+
+    @staticmethod
+    async def _post_with_retry(client: httpx.AsyncClient, target_url: str, event: dict[str, Any]) -> bool:
+        delays = (0.0, 0.5, 1.5)
+        for delay in delays:
+            if delay:
+                await asyncio.sleep(delay)
+            try:
+                response = await client.post(target_url, json=event)
+                if response.status_code < 500:
+                    return response.is_success
+            except httpx.HTTPError:
+                continue
+        return False
 
     async def stream_events(self, history_limit: int = 20):
         queue = self.subscribe()

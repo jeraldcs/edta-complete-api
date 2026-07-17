@@ -19,9 +19,8 @@ def test_feedback_persists_to_store(client, sample_recommend_payload, temp_data_
     assert response.json()["feedback_count"] == 1
 
     store = recommendation_handlers.handlers.services.feedback_store
-    assert store.store_path == temp_data_dir["feedback_file"]
     assert store.count() == 1
-    assert store.store_path.exists()
+    assert temp_data_dir["db_path"].exists()
 
 
 def test_api_key_required_when_configured(client, sample_recommend_payload, monkeypatch):

@@ -1,0 +1,26 @@
+[project]
+name = "edta-api"
+version = "2.4.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["app", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/observability/tracing.py"]
+
+[tool.coverage.report]
+fail_under = 55
+show_missing = true
+skip_covered = false

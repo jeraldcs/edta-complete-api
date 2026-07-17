@@ -178,6 +178,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.limit_per_minute = limit_per_minute
         self.hits: dict[str, list[float]] = {}
+        self._max_tracked_clients = 10_000
 
     async def dispatch(self, request: Request, call_next):
         if self.limit_per_minute <= 0:
@@ -199,4 +200,47 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         recent.append(now)
         self.hits[client_host] = recent
+        if len(self.hits) > self._max_tracked_clients:
+            self._prune_clients(window_start)
         return await call_next(request)
+
+    def _prune_clients(self, window_start: float) -> None:
+        stale = [
+            host
+            for host, stamps in self.hits.items()
+            if not any(stamp >= window_start for stamp in stamps)
+        ]
+        for host in stale:
+            self.hits.pop(host, None)
+
+
+_LEGACY_EXEMPT_PREFIXES = (
+    "/v1",
+    "/static",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/metrics",
+    "/live",
+    "/ready",
+    "/demo-api",
+    "/scenario-demo",
+    "/demo",
+    "/empathy-demo",
+    "/demo-config",
+)
+
+
+class LegacyDeprecationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if path in {"/", "/health"}:
+            return response
+        if any(path.startswith(prefix) for prefix in _LEGACY_EXEMPT_PREFIXES):
+            return response
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} or path.startswith("/"):
+            response.headers.setdefault("Deprecation", "true")
+            response.headers.setdefault("Sunset", "Sat, 01 Jan 2028 00:00:00 GMT")
+            response.headers.setdefault("Link", '</v1>; rel="successor-version"')
+        return response

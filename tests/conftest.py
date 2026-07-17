@@ -39,7 +39,7 @@ def temp_data_dir(tmp_path, monkeypatch):
     import app.container
     import app.feedback_store
     import app.graph_store
-    import app.self_distillation
+    import app.idempotency
     import app.services.recommendation_handlers as recommendation_handlers
     import app.tapl_audit
     from app.container import ServiceContainer
@@ -60,7 +60,8 @@ def temp_data_dir(tmp_path, monkeypatch):
         memory_path=str(legacy_memory),
         db_path=str(db_path),
     )
-    test_container.feedback_store = app.feedback_store.FeedbackStore(str(feedback_file))
+    test_container.feedback_store = app.feedback_store.FeedbackStore(str(feedback_file), database)
+    test_container.idempotency_store = app.idempotency.IdempotencyStore(database)
     test_container.engine.distillation = app.self_distillation.SelfDistillationStore(str(distilled_file))
     test_container.profile_service = ProfileLookupService(
         JsonFileProfileAdapter(app.config.settings.profile_lookup_file)

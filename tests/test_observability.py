@@ -118,6 +118,7 @@ def test_concurrent_recommend_requests(client: TestClient, sample_recommend_payl
 def test_demo_config_exposes_key_when_enabled(client, monkeypatch):
     monkeypatch.setenv("EDTA_API_KEY", "demo-secret-key")
     monkeypatch.setenv("EDTA_EXPOSE_DEMO_API_KEY", "true")
+    monkeypatch.setenv("EDTA_ENVIRONMENT", "development")
 
     import app.config
 
@@ -132,6 +133,7 @@ def test_demo_config_exposes_key_when_enabled(client, monkeypatch):
 def test_demo_config_hides_key_when_disabled(client, monkeypatch):
     monkeypatch.setenv("EDTA_API_KEY", "demo-secret-key")
     monkeypatch.setenv("EDTA_EXPOSE_DEMO_API_KEY", "false")
+    monkeypatch.setenv("EDTA_ENVIRONMENT", "development")
 
     import app.config
 

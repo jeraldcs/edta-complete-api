@@ -21,6 +21,7 @@ class Database:
         connection = sqlite3.connect(self.db_path, check_same_thread=False)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute("PRAGMA busy_timeout=5000")
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
@@ -173,6 +174,25 @@ class Database:
                     created_at TEXT NOT NULL,
                     active INTEGER NOT NULL DEFAULT 1
                 );
+
+                CREATE TABLE IF NOT EXISTS feedback_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_json TEXT NOT NULL,
+                    recorded_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_feedback_events_recorded
+                    ON feedback_events(recorded_at DESC);
+
+                CREATE TABLE IF NOT EXISTS idempotency_keys (
+                    idempotency_key TEXT PRIMARY KEY,
+                    response_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_idempotency_expires
+                    ON idempotency_keys(expires_at);
                 """
             )
 
