@@ -1,0 +1,11 @@
+{
+  "theme": "neutral",
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "basis"
+  },
+  "themeVariables": {
+    "fontSize": "14px",
+    "fontFamily": "Arial, Helvetica, sans-serif"
+  }
+}

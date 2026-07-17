@@ -1,0 +1,63 @@
+flowchart TB
+    subgraph API["API layer"]
+        MAIN["app/main.py"]
+        ROUTER["app/api/v1/router.py"]
+        PROXY["app/demo_proxy.py"]
+        HANDLERS["app/services/recommendation_handlers.py"]
+        SCHEMAS["app/models.py app/api/schemas.py"]
+    end
+
+    subgraph CORE["Core engine"]
+        ENGINE["RecommendationEngine recommender.py"]
+        HAOE["HybridAIOrchestrationEngine orchestration.py"]
+        RULES["RulesEngine rules_engine.py"]
+        ML["MLInferenceService inference/ml_service.py"]
+        SLM["SLMClient DistilledSLMProvider"]
+        LLM["LLMClient llm/llm_client.py"]
+        EXP["ExplanationRouter"]
+        EDS["EDSScoringEngine eds.py"]
+        DISTILL["SelfDistillationStore"]
+    end
+
+    subgraph MEMORY["Memory and graph"]
+        EML["ExperienceMemoryLayer"]
+        TKGE["ContextGraph context_graph.py"]
+        GSTORE["GraphStore"]
+        NLP["ScenarioNLPParser"]
+        PROFILE["ProfileLookupService"]
+        EMPATHY["EmpathyEngine empathy/service.py"]
+    end
+
+    subgraph ML_MODELS["Trained sklearn models models/*.joblib"]
+        M1["intent_model"]
+        M2["journey_model"]
+        M3["tapl_model"]
+        M4["outcome models"]
+        M5["final_ranker"]
+    end
+
+    subgraph CROSS["Cross-cutting"]
+        CONFIG["Settings app/config.py"]
+        SEC["require_api_key security.py"]
+        OBS["logging metrics tracing observability/"]
+        EVENTS["EventBus JobStore events.py"]
+        IDEM["IdempotencyStore"]
+    end
+
+    subgraph PERSIST["SQLite app/db.py"]
+        DB[("data/edta.db")]
+    end
+
+    MAIN --> ROUTER & PROXY & HANDLERS
+    ROUTER --> HANDLERS
+    PROXY --> HANDLERS
+    HANDLERS --> ENGINE & EML & TKGE & PROFILE & EMPATHY & EVENTS
+
+    ENGINE --> HAOE & RULES & ML & SLM & LLM & EXP & EDS & DISTILL
+    ML --> ML_MODELS
+    EML --> DB
+    GSTORE --> DB
+    EVENTS --> DB
+    IDEM --> DB
+    HANDLERS --> SEC
+    MAIN --> OBS

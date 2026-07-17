@@ -1,0 +1,36 @@
+flowchart LR
+    CAND["RecommendationCandidate from catalog"] --> EDS
+
+    subgraph EDS_BLOCK["EDS eds.py"]
+        I["intent_score"]
+        E["engagement_score"]
+        B["business_value_score"]
+        J["journey_momentum_score"]
+        C["context_relevance_score"]
+        R["risk_adjustment"]
+    end
+
+    EDS --> SEM["semantic_similarity"]
+    SEM --> CHF["channel_fit_model"]
+    CHF --> TAPL
+
+    subgraph TAPL_BLOCK["TAPL tapl_model tapl_policies.yaml"]
+        ACT["show soften delay suppress"]
+    end
+
+    TAPL --> OSE
+
+    subgraph OSE_BLOCK["Outcome simulation outcome_model"]
+        CP["conversion_probability"]
+        REV["revenue_impact"]
+        TR["trust_impact"]
+        FR["fatigue_risk"]
+        EOS["expected_outcome_score"]
+    end
+
+    OSE --> RNK["final_ranker_model"]
+    EMLCAL["EML calibration historical CVR"] --> OSE
+    RNK --> HYB["final_hybrid_score"]
+    EMP["Empathy match boost"] --> HYB
+    TAPL -->|"score multiplier cap"| HYB
+    HYB --> EXP["ExplanationRouter"]

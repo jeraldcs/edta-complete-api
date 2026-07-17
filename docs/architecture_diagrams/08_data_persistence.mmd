@@ -1,0 +1,28 @@
+flowchart TB
+    subgraph SQLite["SQLite data/edta.db app/db.py"]
+        EML_T["eml_subjects eml_preferences eml_history eml_outcomes"]
+        TKGE_T["tkge_snapshots"]
+        AUDIT["tapl_audit rules_audit"]
+        TEL["haoe_telemetry provider_telemetry"]
+        JOBS["async_jobs"]
+        WH["webhook_subscriptions"]
+        FB_T["feedback_events"]
+        IDEM_T["idempotency_keys"]
+    end
+
+    subgraph Files["File-based config and artifacts"]
+        YAML["config/*.yaml TAPL HAOE EML rules"]
+        MODELS["models/*.joblib sklearn artifacts"]
+        CAT["data/catalog/*.json candidates vehicles"]
+        PROFILES["data/customer_profiles.json"]
+        MASTER["data/scenario_training_master.csv"]
+        DIST_MEM["data/distilled_slm_memory.json"]
+    end
+
+    EML["ExperienceMemoryLayer"] --> EML_T
+    GSTORE["GraphStore"] --> TKGE_T
+    FEEDBACK["FeedbackStore"] --> FB_T
+    EVENTS["EventBus JobStore"] --> WH & JOBS
+    IDEM["IdempotencyStore"] --> IDEM_T
+    ENGINE["RecommendationEngine"] --> MODELS & YAML & DIST_MEM
+    HANDLERS["Handlers"] --> CAT & PROFILES

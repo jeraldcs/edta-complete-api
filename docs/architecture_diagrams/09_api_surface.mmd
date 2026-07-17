@@ -1,0 +1,33 @@
+flowchart LR
+    subgraph Public["No auth required"]
+        HEALTH["/ /health /live /ready"]
+        DEMO_PAGE["/scenario-demo"]
+        DEMO_CFG["/demo-config"]
+        STATIC["/static/*"]
+    end
+
+    subgraph Auth["X-API-Key required writes"]
+        REC["POST /v1/recommend"]
+        SCEN["POST /v1/recommend-from-scenario"]
+        SIM["POST /v1/simulate"]
+        FB["POST /v1/feedback"]
+        BATCH["POST /v1/recommend/batch"]
+        WH["POST /v1/webhooks"]
+    end
+
+    subgraph AuthRead["X-API-Key required reads"]
+        MEM["GET /v1/experience-memory"]
+        GRAPH["GET /v1/context-graph"]
+        JOB["GET /v1/jobs/id"]
+        SSE["GET /v1/events/stream"]
+        HAOE_ST["GET /v1/orchestration-status"]
+    end
+
+    subgraph DemoProxy["Same-origin demo proxy no client key"]
+        DP["/demo-api/recommend-from-scenario feedback benchmark"]
+    end
+
+    DEMO_PAGE --> DemoProxy
+    DemoProxy --> HANDLERS["RecommendationHandlers"]
+    Auth --> HANDLERS
+    AuthRead --> HANDLERS

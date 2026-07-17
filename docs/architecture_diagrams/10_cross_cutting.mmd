@@ -1,0 +1,22 @@
+flowchart TB
+    REQ["HTTP request"] --> MW
+
+    subgraph MW_BLOCK["Middleware middleware/http.py"]
+        RC["RequestContextMiddleware X-Request-ID"]
+        AL["AccessLogMiddleware structured JSON"]
+        RL["RateLimitMiddleware per-IP"]
+        SH["SecurityHeadersMiddleware HSTS CSP demo"]
+        DEP["LegacyDeprecationMiddleware Sunset legacy"]
+    end
+
+    MW --> HANDLER["Route handler"]
+    HANDLER --> PROBLEM["Problem+JSON errors"]
+
+    HANDLER --> METRICS["Prometheus /metrics"]
+    HANDLER --> AUDIT["log_recommendation_audit"]
+    HANDLER --> EB["EventBus.publish"]
+
+    EB --> SSE["SSE /v1/events/stream"]
+    EB --> WH_OUT["Webhook POST HTTPS SSRF validated retry"]
+
+    AUTH["require_api_key compare_digest"] --> HANDLER

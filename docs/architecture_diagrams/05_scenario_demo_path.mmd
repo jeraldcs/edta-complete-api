@@ -1,0 +1,21 @@
+flowchart LR
+    ST["scenario_text"] --> NLP["ScenarioNLPParser scenario_nlp.py"]
+    NLP --> CTX["CustomerContext parser_confidence"]
+    CTX --> ANON["scenario_anonymous_id isolates EML TKGE"]
+    ANON --> PROF["ProfileLookupService"]
+    PROF --> EML["EML enrich"]
+    EML --> EMP["EmpathyEngine hidden needs TCO constraints"]
+    EMP --> CAT["Merge vehicle catalog vehicles.json"]
+    CAT --> ENG["RecommendationEngine.recommend"]
+    ENG --> OUT["Response architecture panels TKGE EML HAOE OSE"]
+
+    subgraph DemoUI["Browser /scenario-demo"]
+        JS["scenario_app.js"]
+        DAPI["demo-api.js"]
+    end
+
+    JS --> DAPI
+    DAPI -->|"production /demo-api"| PROXY["demo_proxy.py server auth"]
+    DAPI -->|"local dev key or proxy"| API["FastAPI handlers"]
+    PROXY --> API
+    API --> ST

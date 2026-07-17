@@ -28,12 +28,52 @@ const DEMO_SCENARIOS = {
     label: "High fatigue",
     text: "Known customer cust-789 is booking a family SUV rental at SFO. Fatigue count is 8 and she has seen many promotional ads today. Personalization consent is true.",
   },
+  // Comparison chips: distinct texts so detectScenarioKey stays unique; same Recommend API as other chips.
+  compare_rules: {
+    label: "Rules-era upsell",
+    text: "Comparison demo — rules-era booking path: preferred member cust-789 searched SUV availability at SFO and started booking a family rental. Personalization consent is true. Traditional rules would always fire an SUV upgrade; EDTA also ranks a fit vehicle but returns TAPL, EDS, and explanation.",
+  },
+  compare_ranker: {
+    label: "ML ranker era",
+    text: "Comparison demo — monolithic ranker contrast: planning a long family vacation with five travelers, three children, suitcases, a stroller, and sports gear. A click-optimized ranker might over-weight premium similarity; EDTA blends empathy constraints and expected outcome, not similarity alone.",
+  },
+  compare_llm: {
+    label: "LLM bolt-on risk",
+    text: "Comparison demo — ambiguous chatbot request: I need something comfortable for a trip next week, not sure which car. Traditional LLM bolt-ons pick an offer with opaque cost; EDTA exposes inference tier and still applies TAPL governance.",
+  },
+  compare_edta: {
+    label: "EDTA governed",
+    text: "Comparison demo — EDTA governed baseline: cust-789 preferred loyalty member booking a family SUV rental at SFO after checking availability. Personalization consent is true. Show trust-aware ranking with empathy fit, outcome simulation, and auditable explanation.",
+  },
+};
+
+const COMPARE_NARRATIVES = {
+  compare_rules: {
+    title: "Traditional vs EDTA — Rules-era",
+    traditional: "If/then: SUV search → always show upgrade. Fast and auditable, but no EDS/TAPL story in the response.",
+    edta: "Same booking intent, plus TAPL action, EDS breakdown, empathy fit, and explanation in the API response.",
+  },
+  compare_ranker: {
+    title: "Traditional vs EDTA — ML ranker era",
+    traditional: "One model score (often similarity/CTR) decides the offer; journey and constraints are secondary.",
+    edta: "Empathy constraints + OSE outcome scores compete with semantic similarity — check Outcome vs Semantic in the meters.",
+  },
+  compare_llm: {
+    title: "Traditional vs EDTA — LLM bolt-on risk",
+    traditional: "Ambiguous text → LLM picks an offer; cost, tier, and governance are hard to audit.",
+    edta: "Inference tier is visible; TAPL still governs the final action; LLM remains optional and budget-gated.",
+  },
+  compare_edta: {
+    title: "Traditional vs EDTA — EDTA governed",
+    traditional: "Traditional stacks stop at candidate ID + score.",
+    edta: "Full stack: consent-aware TAPL, EML trust, empathy profile, OSE outcome, and architecture panels.",
+  },
 };
 
 const TRY_NEXT = {
   loyalty: [
     { key: "no_consent", label: "Next: No consent" },
-    { key: "winter", label: "Try Winter Denver" },
+    { key: "compare_rules", label: "Compare vs traditional" },
   ],
   winter: [
     { key: "family_vacation", label: "Next: Family vacation" },
@@ -41,7 +81,7 @@ const TRY_NEXT = {
   ],
   family_vacation: [
     { key: "business", label: "Next: Business executive" },
-    { key: "winter", label: "Try Winter Denver" },
+    { key: "compare_ranker", label: "Compare ML ranker era" },
   ],
   business: [
     { key: "loyalty", label: "Next: Family loyalty" },
@@ -54,6 +94,22 @@ const TRY_NEXT = {
   fatigue: [
     { key: "no_consent", label: "Compare No consent" },
     { key: "loyalty", label: "Back to loyalty baseline" },
+  ],
+  compare_rules: [
+    { key: "compare_ranker", label: "Next: ML ranker era" },
+    { key: "compare_edta", label: "See EDTA governed" },
+  ],
+  compare_ranker: [
+    { key: "compare_llm", label: "Next: LLM bolt-on risk" },
+    { key: "compare_edta", label: "See EDTA governed" },
+  ],
+  compare_llm: [
+    { key: "compare_edta", label: "Next: EDTA governed" },
+    { key: "no_consent", label: "Try No consent" },
+  ],
+  compare_edta: [
+    { key: "compare_rules", label: "Replay Rules-era" },
+    { key: "fatigue", label: "Try High fatigue" },
   ],
 };
 
@@ -486,6 +542,28 @@ function renderHeroContextStrip(summary) {
   `;
 }
 
+function renderCompareNarrative(key) {
+  const narrative = COMPARE_NARRATIVES[key];
+  if (!narrative) {
+    return "";
+  }
+  return `
+    <aside class="compare-narrative-strip" aria-label="Traditional versus EDTA comparison">
+      <span class="compare-narrative-title">${escapeHtml(narrative.title)}</span>
+      <div class="compare-narrative-grid">
+        <div class="compare-narrative-col compare-narrative-traditional">
+          <span class="compare-narrative-label">Traditional</span>
+          <p>${escapeHtml(narrative.traditional)}</p>
+        </div>
+        <div class="compare-narrative-col compare-narrative-edta">
+          <span class="compare-narrative-label">EDTA</span>
+          <p>${escapeHtml(narrative.edta)}</p>
+        </div>
+      </div>
+    </aside>
+  `;
+}
+
 function renderGovernanceDiff(previous, current) {
   if (!previous || !current) {
     return "";
@@ -593,7 +671,15 @@ function renderRecommendation(data) {
     profile.profile_id ? `<span class="hero-badge hero-badge-profile">${escapeHtml(profile.profile_id.replaceAll("_", " "))}</span>` : "",
   ].filter(Boolean).join("");
 
+  const compareKey = activeScenarioKey && COMPARE_NARRATIVES[activeScenarioKey]
+    ? activeScenarioKey
+    : detectScenarioKey(summary.scenario_text || lastParsedScenarioText || "");
+  const compareHtml = renderCompareNarrative(
+    compareKey && COMPARE_NARRATIVES[compareKey] ? compareKey : null,
+  );
+
   scenarioRecommendation.innerHTML = `
+    ${compareHtml}
     ${diffHtml}
     ${renderHeroContextStrip(summary)}
     <div class="hero-result-head">

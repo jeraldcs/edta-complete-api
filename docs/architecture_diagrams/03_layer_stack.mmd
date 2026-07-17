@@ -1,0 +1,52 @@
+flowchart TB
+    subgraph INPUT["Input and enrichment"]
+        CTX["CustomerContext structured or parsed"]
+        NLP["Scenario NLP free-text to channel intent journey"]
+        PROF["Profile lookup customer_id to CRM attributes"]
+    end
+
+    subgraph MEM["Memory and time"]
+        EML["EML trust fatigue preferences outcomes"]
+        TKGE["TKGE temporal graph journey sequence inferred intent"]
+    end
+
+    subgraph ORCH["Orchestration"]
+        HAOE["HAOE pick Rules SLM ML LLM tier"]
+    end
+
+    subgraph INFER["Inference outputs"]
+        INTENT["Intent prediction"]
+        JOURNEY["Journey stage prediction"]
+    end
+
+    subgraph SCORE["Per-candidate scoring"]
+        EDS["EDS Experience DNA Score"]
+        SEM["Semantic similarity"]
+        CHF["Channel fit model"]
+        TAPL["TAPL show soften delay suppress"]
+        OSE["OSE conversion revenue trust compliance fatigue"]
+        RNK["Final ranker hybrid score"]
+        EMP["Empathy boost travel vertical"]
+    end
+
+    subgraph OUT["Output and learning"]
+        EXP["Explanation router local SLM LLM"]
+        RESP["RankedRecommendation request_summary"]
+        FB["Feedback to EML and TKGE update"]
+        DIST["Self-distillation memory"]
+    end
+
+    CTX --> NLP & PROF
+    NLP --> TKGE
+    PROF --> EML
+    TKGE --> HAOE
+    EML --> HAOE
+    HAOE --> INTENT & JOURNEY
+    INTENT --> EDS
+    JOURNEY --> EDS
+    EDS --> SEM --> CHF --> TAPL --> OSE --> RNK
+    EMP --> RNK
+    RNK --> EXP --> RESP
+    RESP --> FB
+    FB --> EML & TKGE
+    HAOE --> DIST

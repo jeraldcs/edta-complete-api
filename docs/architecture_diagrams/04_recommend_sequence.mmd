@@ -1,0 +1,48 @@
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as FastAPI middleware
+    participant H as RecommendationHandlers
+    participant P as ProfileLookupService
+    participant EML as ExperienceMemoryLayer
+    participant GS as GraphStore
+    participant R as RecommendationEngine
+    participant O as HAOE
+    participant SC as Scoring EDS TAPL OSE Ranker
+    participant EB as EventBus
+
+    C->>API: POST /v1/recommend plus X-API-Key
+    API->>API: auth rate limit request_id
+    API->>H: recommend request
+
+    H->>P: enrich_context customer_id
+    P-->>H: enriched CustomerContext
+
+    H->>EML: enrich_context get_calibration
+    EML-->>H: memory_before snapshot
+
+    H->>GS: load prior TKGE snapshot
+    H->>R: recommend context candidates limit
+
+    R->>O: choose_route inference_mode confidence
+    O-->>R: tier rules slm ml llm
+
+    alt Rules tier
+        R->>R: RulesEngine.infer_from_context
+    else SLM tier
+        R->>R: DistilledSLM SLMClient
+    else ML tier
+        R->>R: MLInferenceService sklearn
+    else LLM tier
+        R->>R: LLMClient enrich optional
+    end
+
+    loop Each candidate
+        R->>SC: EDS TAPL OSE final_hybrid_score
+    end
+
+    R-->>H: ranked recommendations
+    H->>EML: record_recommendations
+    H->>GS: save TKGE snapshot
+    H->>EB: publish recommendation.created
+    H-->>C: RecommendationResponseV1

@@ -1,0 +1,30 @@
+flowchart TD
+    START["Request use_ai_models use_llm use_slm inference_mode"] --> FORCE{inference_mode forced?}
+
+    FORCE -->|rules slm ml llm| TIER["Use forced tier benchmark mode"]
+    FORCE -->|auto| AI_OFF{use_ai_models?}
+
+    AI_OFF -->|false| RULES["1 Rules tier RulesEngine YAML packs"]
+    AI_OFF -->|true| PARSER{parser rules confidence high?}
+
+    PARSER -->|yes| RULES
+    PARSER -->|no| SLM_CHECK{SLM enabled distilled pattern?}
+
+    SLM_CHECK -->|yes| SLM["2 SLM tier distilled memory remote SLM"]
+    SLM_CHECK -->|no| ML_CHECK{ML models available?}
+
+    ML_CHECK -->|yes| ML["3 ML tier sklearn classifiers"]
+    ML_CHECK -->|no| LLM_CHECK{LLM enabled budget OK circuit closed?}
+
+    LLM_CHECK -->|yes ambiguous| LLM["4 LLM tier OpenAI teacher"]
+    LLM_CHECK -->|no| ML
+
+    RULES & SLM & ML & LLM --> DISTILL["SelfDistillationStore.learn"]
+    DISTILL --> OUT["InferenceResult intent journey tier metadata"]
+
+    subgraph Guards["HAOE guards"]
+        CB["LLM circuit breaker"]
+        BUDGET["Session cost budget"]
+    end
+
+    LLM -.-> CB & BUDGET

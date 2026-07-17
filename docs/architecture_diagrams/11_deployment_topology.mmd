@@ -1,0 +1,21 @@
+flowchart TB
+    GH["GitHub jeraldcs/edta-complete-api"] -->|push master| RENDER["Render Web Service render.yaml"]
+
+    subgraph Build["Docker build"]
+        TRAIN["scripts/train_all_models.py"]
+        IMG["python 3.12-slim image"]
+    end
+
+    RENDER --> Build
+    Build --> RUN["uvicorn app.main:app PORT from Render"]
+
+    subgraph Runtime["Runtime env"]
+        KEY["EDTA_API_KEY generated"]
+        PROD["EDTA_ENVIRONMENT production"]
+        CORS["EDTA_CORS_ORIGINS"]
+        OPENAI["OPENAI_API_KEY optional"]
+    end
+
+    RUN --> Runtime
+    USER["Browser"] -->|HTTPS| RUN
+    USER -->|scenario-demo| DEMO["Demo UI demo-api proxy"]

@@ -1,0 +1,41 @@
+flowchart TB
+    subgraph Clients["Clients"]
+        WEB["Web / mobile apps"]
+        CHAT["Chatbot / voice"]
+        IOT["IoT / wearable / connected car"]
+        PARTNER["Partner BFF / integrations"]
+        DEMO["Browser demo /scenario-demo"]
+        SWAGGER["Swagger / OpenAPI /docs"]
+    end
+
+    subgraph EDTA["EDTA API — FastAPI app/main.py"]
+        MW["Middleware: CORS, rate limit, security headers, access log"]
+        V1["/v1/* canonical API"]
+        LEG["Legacy routes /recommend /feedback"]
+        PROXY["/demo-api/* server-side proxy"]
+        STATIC["/static/* demo assets"]
+    end
+
+    subgraph External["Optional external"]
+        OPENAI["OpenAI / compatible LLM"]
+        SLM_EP["Optional SLM endpoint Ollama vLLM"]
+        CDP["CRM / CDP profile service JSON adapter today"]
+    end
+
+    WEB --> V1
+    CHAT --> V1
+    IOT --> V1
+    PARTNER --> V1
+    DEMO --> PROXY
+    DEMO --> STATIC
+    SWAGGER --> V1
+
+    V1 --> MW
+    LEG --> MW
+    PROXY --> MW
+    MW --> HANDLERS["RecommendationHandlers recommendation_handlers.py"]
+
+    HANDLERS --> CDP
+    HANDLERS --> ENGINE["RecommendationEngine"]
+    ENGINE --> OPENAI
+    ENGINE --> SLM_EP
