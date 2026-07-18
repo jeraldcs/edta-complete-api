@@ -6,7 +6,9 @@
 |-------|--------|
 | **Author** | Jerald Selvaraj |
 | **Purpose** | Architecture reference, technical review, and conference presentation |
-| **Working title** | *Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations* |
+| **Working title (InfoQ article)** | *Governed Personalization: Why Trust Must Change the Rank, Not Just the Log* |
+| **Conference talk** | *Why Did We Show This? Designing Auditable Recommendation Systems* |
+| **Technical title** | *Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking* |
 | **Live demo** | https://edta-api.onrender.com/scenario-demo |
 | **GitHub** | https://github.com/jeraldcs/edta-complete-api |
 | **Companion draft** | `docs/edta_llm_personalization_article_draft.md` |
@@ -694,7 +696,7 @@ Use this outline for a webinar or conference talk:
 
 | Slide | Title | Content |
 |-------|-------|---------|
-| 1 | Title | Governed Personalization with EDTA — author, demo URL |
+| 1 | Title | Why Did We Show This? Designing Auditable Recommendation Systems — author, demo URL |
 | 2 | The problem | Opaque rankers, LLM cost, trust as logging |
 | 3 | Design principle | Pipeline not model; governance first |
 | 4 | System context | Channels → API → memory → tiers |

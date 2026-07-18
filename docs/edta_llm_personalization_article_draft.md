@@ -2,9 +2,10 @@
 
 ## Article Draft
 
-**Working title:** Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations  
-**Alternative title:** Beyond LLM-First Recommendations: Cost-Aware, Auditable Personalization with Rules, SLM, ML, and Optional LLM  
-**Previous title:** Architecting Explainable, Trust-Aware Personalization with Local AI Models and Optional LLM Enrichment  
+**Working title (InfoQ article):** Governed Personalization: Why Trust Must Change the Rank, Not Just the Log
+**Alternative / technical title:** Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking
+**Conference talk title:** Why Did We Show This? Designing Auditable Recommendation Systems
+**Previous titles:** Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations · Architecting Explainable, Trust-Aware Personalization with Local AI Models and Optional LLM Enrichment
 **Author:** Jerald Selvaraj  
 **Status:** Draft v2 (positioning refresh)  
 **Live demo:** https://edta-api.onrender.com/scenario-demo  

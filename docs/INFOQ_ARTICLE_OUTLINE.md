@@ -1,6 +1,8 @@
 # InfoQ Article Outline (~3,000 words)
 
-**Title:** Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations  
+**Title:** Governed Personalization: Why Trust Must Change the Rank, Not Just the Log  
+**Alternative / technical:** Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking  
+**Conference talk:** Why Did We Show This? Designing Auditable Recommendation Systems  
 **Author:** Jerald Selvaraj  
 **Target length:** 2,800–3,200 words (excluding code blocks and figure captions)  
 **Hero vertical:** Travel / car rental  

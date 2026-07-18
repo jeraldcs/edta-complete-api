@@ -12,11 +12,14 @@ Use these sections in the article draft (`edta_llm_personalization_article_draft
 
 > Enterprise teams are adopting LLMs for personalization faster than they are adopting **governance** for personalization. The result is relevant but risky recommendations: opaque scores, uncontrolled token cost, and weak answers to "why did we show this?" EDTA (Experience-Driven Targeting Architecture) is a reference implementation that treats personalization as a **governed decision pipeline** — not a single model. It combines **Rules, distilled SLM memory, classical ML, and optional LLM teachers** under a **Hybrid AI Orchestration Engine (HAOE)** with **Trust-Aware Personalization Layer (TAPL)**, explainable scoring (EDS), and auditable API responses. The LLM enriches and explains; it does not own consent, compliance, fatigue, or final trust governance.
 
-**Working title (refined):**  
-*Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations*
+**Working title (InfoQ article):**  
+*Governed Personalization: Why Trust Must Change the Rank, Not Just the Log*
 
-**Alternative:**  
-*Beyond LLM-First Recommendations: Cost-Aware, Auditable Personalization with Rules, SLM, ML, and Optional LLM*
+**Alternative / technical:**  
+*Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking*
+
+**Conference talk:**  
+*Why Did We Show This? Designing Auditable Recommendation Systems*
 
 ---
 

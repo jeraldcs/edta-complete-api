@@ -639,11 +639,13 @@ def section_publication(doc: Document) -> None:
     for name, desc in pubs:
         add_bullet(doc, desc, bold_prefix=f"{name}: ")
 
-    doc.add_paragraph("Suggested working title for publication:", style="Heading 2")
-    doc.add_paragraph(
-        "Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations",
-        style="Doc Subtitle",
-    )
+    doc.add_paragraph("Suggested titles for publication and talks:", style="Heading 2")
+    for label, title in [
+        ("InfoQ article", "Governed Personalization: Why Trust Must Change the Rank, Not Just the Log"),
+        ("Conference talk", "Why Did We Show This? Designing Auditable Recommendation Systems"),
+        ("Technical / GitHub", "Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking"),
+    ]:
+        add_bullet(doc, title, bold_prefix=f"{label}: ")
 
 
 def section_resources(doc: Document) -> None:

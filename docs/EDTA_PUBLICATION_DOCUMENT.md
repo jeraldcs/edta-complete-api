@@ -1,6 +1,9 @@
 # EDTA — Publication Document
 
-## Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations
+## Governed Personalization: Why Trust Must Change the Rank, Not Just the Log
+
+**Conference talk:** Why Did We Show This? Designing Auditable Recommendation Systems  
+**Technical title:** Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking
 
 **Author:** Jerald Selvaraj  
 **Contact:** jerald.cs@gmail.com  

@@ -5,7 +5,7 @@ Use this as the body of your submission email. InfoQ accepts article proposals v
 ---
 
 **To:** InfoQ Editors (Articles — Architecture / AI / Software Design)  
-**Subject:** Article proposal — Governed Personalization: Four-Tier Architecture for Explainable, Trust-Aware Recommendations  
+**Subject:** Article proposal — Governed Personalization: Why Trust Must Change the Rank, Not Just the Log  
 **Author:** Jerald Selvaraj · jerald.cs@gmail.com
 
 ---
@@ -28,11 +28,14 @@ That pattern breaks down across web, mobile, chatbot, IoT, and partner channels 
 
 ## The proposal
 
-**Working title:**  
-*Governed Personalization: A Four-Tier Architecture for Explainable, Trust-Aware Recommendations*
+**Working title (InfoQ article):**  
+*Governed Personalization: Why Trust Must Change the Rank, Not Just the Log*
 
-**Alternative title:**  
-*Beyond LLM-First Recommendations: Cost-Aware, Auditable Personalization with Rules, SLM, ML, and Optional LLM*
+**Alternative / technical title:**  
+*Beyond LLM-First Recommendations: A Four-Tier Architecture for Trust-Aware Ranking*
+
+**Conference talk title:**  
+*Why Did We Show This? Designing Auditable Recommendation Systems*
 
 I present **EDTA (Experience-Driven Targeting Architecture)** — an open-source reference implementation (FastAPI, Python) that decomposes personalization into explicit modules:
 
@@ -83,6 +86,9 @@ This is an **implementation-oriented reference architecture**, not a Fortune 500
 - Detailed architecture document: `docs/EDTA_ARCHITECTURE_DOCUMENT.md`
 - Benchmark methodology: `docs/BENCHMARKS.md`
 - Article draft (extended): `docs/edta_llm_personalization_article_draft.md`
+- Top 10 FAQ: `docs/FAQ.md`
+- Conference deck (20 slides): `docs/EDTA_INFOQ_PRESENTATION_latest.pptx` (notes: `docs/EDTA_INFOQ_PRESENTATION.md`)
+- Traditional vs EDTA exhibit: `docs/TRADITIONAL_VS_EDTA.md`
 
 Thank you for considering this proposal. I am happy to adjust scope, length, or vertical emphasis to fit InfoQ’s editorial guidelines.
 
