@@ -179,6 +179,13 @@ class RecommendationHandlers:
             candidate for candidate in DEFAULT_CANDIDATES if candidate.channel == enriched_context.channel
         ]
 
+        detected_domain = str(
+            nlp_summary.get("detected_domain")
+            or (enriched_context.business_context or {}).get("detected_domain")
+            or ""
+        ).lower()
+        travel_like = detected_domain in {"travel", "car_rental", "vehicle"}
+
         if empathy_bundle and empathy_bundle.active:
             vehicle_pool = vehicle_candidates()
             candidates = self.services.empathy_engine.merge_candidate_pools(base_candidates, vehicle_pool)
@@ -194,6 +201,18 @@ class RecommendationHandlers:
                     }
                     enriched_context = enriched_context.model_copy(update={"business_context": business_context})
                 return enriched_context, candidates
+
+        # Free-text travel on the web demo should rank vehicles, not generic hotel/web offers.
+        if travel_like and enriched_context.channel == Channel.web:
+            vehicle_pool = vehicle_candidates()
+            if vehicle_pool:
+                business_context = dict(enriched_context.business_context)
+                business_context["demo_channel_fallback"] = True
+                nlp_summary["travel_vehicle_catalog"] = {
+                    "reason": "Travel-domain web scenario uses vehicle catalog instead of generic web offers.",
+                }
+                enriched_context = enriched_context.model_copy(update={"business_context": business_context})
+                return enriched_context, vehicle_pool
 
         if base_candidates:
             return enriched_context, base_candidates

@@ -116,6 +116,38 @@ def test_hotel_scenario_includes_empathy_vehicle_recommendation(client: TestClie
     assert data["request_summary"]["empathy"]["insights_available"] is True
 
 
+def test_snowstorm_drive_scenario_recommends_vehicle_not_hotel(client: TestClient):
+    response = client.post(
+        "/recommend-from-scenario",
+        json={
+            "scenario_text": (
+                "I need to drive 300 miles during an active snowstorm with heavy snowfall, "
+                "poor visibility, icy roads, and strong winds. Safety, traction, and stability "
+                "are my highest priorities."
+            ),
+            "limit": 3,
+            "use_ai_models": True,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    summary = data["request_summary"]
+    assert summary["nlp"]["detected_domain"] == "travel"
+    top_id = data["recommendations"][0]["candidate"]["id"]
+    assert not top_id.startswith("hotel_"), top_id
+    assert top_id in {
+        "awd_suv",
+        "premium_suv",
+        "family_friendly_suv",
+        "cargo_suv",
+        "large_family_suv",
+        "standard_sedan",
+        "hybrid_midsize",
+    }
+    vehicle = (summary.get("empathy") or {}).get("vehicle_recommendation") or {}
+    assert vehicle.get("candidate_id") in {"awd_suv", "premium_suv"}
+
+
 def test_recommend_from_scenario_exposes_slm_status(client: TestClient):
     response = client.post(
         "/recommend-from-scenario",

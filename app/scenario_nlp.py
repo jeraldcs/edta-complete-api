@@ -26,7 +26,12 @@ class ScenarioNLPParser:
             "lodging": {"hotel", "room", "stay", "lodging", "reservation", "booking", "availability"},
             "banking": {"bank", "banking", "credit", "card", "loan", "mortgage", "finance", "financial", "rewards", "rate", "application", "eligibility"},
             "restaurant": {"restaurant", "restaurent", "restuarent", "table", "dining", "food", "cuisine", "menu", "dish", "meal", "reservation", "booking", "barcode", "qr"},
-            "travel": {"travel", "rental", "airport", "suv", "vehicle", "car", "booking", "reservation", "trip", "family"},
+            "travel": {
+                "travel", "rental", "airport", "suv", "vehicle", "car", "booking", "reservation",
+                "trip", "family", "drive", "driving", "road", "roads", "roadtrip", "highway",
+                "mile", "miles", "winter", "snow", "snowstorm", "snowfall", "icy", "traction",
+                "awd", "4wd", "allwheel", "sedan", "minivan", "pickup", "truck",
+            },
             "iot": {"iot", "device", "sensor", "battery", "firmware", "maintenance", "alert"},
             "wearable": {"wearable", "watch", "smartwatch", "wellness", "reminder", "notification"},
             "support": {"support", "help", "issue", "problem", "service", "case"},
@@ -114,7 +119,7 @@ class ScenarioNLPParser:
         text = scenario_text.strip()
         lower = text.lower()
         keywords = self._extract_keywords(text)
-        domain = self._infer_domain(keywords)
+        domain = self._infer_domain(keywords, lower)
 
         channel = self._infer_channel(lower)
         intent = self._infer_intent(lower, keywords, domain)
@@ -374,6 +379,8 @@ class ScenarioNLPParser:
                 context["page_type"] = "banking_product"
             elif domain == "restaurant":
                 context["page_type"] = "restaurant_qr_menu" if "barcode" in keywords or "qr" in keywords else "restaurant_menu" if "menu" in keywords else "restaurant_reservation"
+            elif domain == "travel":
+                context["page_type"] = "vehicle_detail"
             else:
                 context["page_type"] = "vehicle_detail" if "vehicle" in lower or "suv" in lower else "landing_page"
         if channel == Channel.chatbot:
@@ -412,12 +419,32 @@ class ScenarioNLPParser:
                 normalized.append(token)
         return normalized[:24]
 
-    def _infer_domain(self, keywords: list[str]) -> str:
+    def _infer_domain(self, keywords: list[str], lower: str | None = None) -> str:
         keyword_set = set(keywords)
         scores = {
             domain: len(keyword_set.intersection(terms))
             for domain, terms in self.domain_terms.items()
         }
+        # Phrase cues catch travel asks that omit explicit "car"/"rental" tokens.
+        text = (lower or " ".join(keywords)).lower()
+        travel_phrases = (
+            "drive",
+            "driving",
+            "road trip",
+            "roadtrip",
+            "snowstorm",
+            "snowfall",
+            "icy road",
+            "icy roads",
+            "winter weather",
+            "all-wheel",
+            "all wheel",
+            "need a vehicle",
+            "need a car",
+            "rental car",
+        )
+        if any(phrase in text for phrase in travel_phrases):
+            scores["travel"] = scores.get("travel", 0) + 2
         best_domain, best_score = max(scores.items(), key=lambda item: item[1])
         return best_domain if best_score > 0 else "general"
 
