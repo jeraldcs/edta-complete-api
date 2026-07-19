@@ -87,8 +87,6 @@ class EmpathyEngine:
         if enrichment.route.distance_miles and not trip.distance_miles:
             trip = trip.model_copy(update={"distance_miles": enrichment.route.distance_miles})
 
-        ranking_active = self.should_rank_with_empathy(profile, include_empathy=include_empathy)
-
         specs = vehicle_specs_by_id()
         profile_vehicle = self.scenario_profiles.preferred_vehicle(scenario_text)
         preferred_vehicle = (
@@ -108,6 +106,17 @@ class EmpathyEngine:
                     source="enrichment",
                 )
             )
+
+        # Weather/route-derived constraints (e.g. awd_preferred) should activate vehicle ranking
+        # for travel-like free text even when persona tags were not extracted.
+        domain = str((context.business_context or {}).get("detected_domain") or "").lower()
+        travel_like = domain in {"travel", "car_rental", "vehicle", "general"}
+        ranking_active = self.should_rank_with_empathy(
+            profile,
+            include_empathy=include_empathy or (
+                bool(enrichment.derived_constraints) and travel_like and context.channel == Channel.web
+            ),
+        )
 
         specs = vehicle_specs_by_id()
         matches = self.constraint_matcher.score_all(specs, all_constraints) if all_constraints else {}
