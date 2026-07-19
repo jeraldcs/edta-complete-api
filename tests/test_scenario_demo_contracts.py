@@ -116,6 +116,15 @@ def test_hotel_scenario_includes_empathy_vehicle_recommendation(client: TestClie
     assert data["request_summary"]["empathy"]["insights_available"] is True
 
 
+def test_trip_extractor_parses_plural_miles():
+    from app.empathy.hidden_needs import TripExtractor
+
+    trip = TripExtractor().extract(
+        "I need to drive 300 miles during an active snowstorm with icy roads."
+    )
+    assert trip.distance_miles == 300
+
+
 def test_snowstorm_drive_scenario_recommends_vehicle_not_hotel(client: TestClient):
     response = client.post(
         "/recommend-from-scenario",
