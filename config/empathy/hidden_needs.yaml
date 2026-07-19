@@ -78,6 +78,39 @@ patterns:
       - strong_engine
     persona: mountain_travel
 
+  desert_heat:
+    triggers:
+      - arizona
+      - nevada
+      - desert
+      - "110"
+      - extreme heat
+      - cooling performance
+      - cooling
+      - scorching
+    constraints:
+      - fuel_efficiency
+      - cabin_comfort
+    persona: desert_summer_travel
+
+  fuel_efficiency_focus:
+    triggers:
+      - fuel efficiency
+      - fuel-efficient
+      - fuel economy
+      - mpg
+    constraints:
+      - fuel_efficiency
+    persona: efficiency_seeker
+
+  cabin_comfort_focus:
+    triggers:
+      - cabin comfort
+      - cooling performance
+    constraints:
+      - cabin_comfort
+    persona: comfort_seeker
+
 constraint_weights:
   low_step_in: 0.15
   isofix_anchors: 0.12
@@ -91,3 +124,6 @@ constraint_weights:
   cargo_volume: 0.12
   awd_preferred: 0.15
   strong_engine: 0.08
+  fuel_efficiency: 0.14
+  luxury_comfort: 0.12
+  cabin_comfort: 0.12

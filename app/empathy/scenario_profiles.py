@@ -20,6 +20,7 @@ class ScenarioProfileMatcher:
         "luxury_comfort": 0.12,
         "premium_audio": 0.08,
         "fuel_efficiency": 0.12,
+        "cabin_comfort": 0.12,
         "ev_powertrain": 0.18,
         "cargo_volume": 0.12,
         "beginner_easy": 0.14,
@@ -37,6 +38,7 @@ class ScenarioProfileMatcher:
         "first_time_driver": "Economy Compact",
         "rental_travel": "Midsize / SUV Rental",
         "wet_weather_travel": "AWD SUV",
+        "desert_summer_travel": "Hybrid / Efficient Midsize",
     }
 
     PERSONA_SCORING_HINTS = {
@@ -50,6 +52,7 @@ class ScenarioProfileMatcher:
         "first_time_driver": {"trust_score": 0.41, "fatigue_count": 6},
         "rental_travel": {"trust_score": 0.62, "fatigue_count": 3},
         "wet_weather_travel": {"trust_score": 0.71, "fatigue_count": 2},
+        "desert_summer_travel": {"trust_score": 0.74, "fatigue_count": 2},
     }
 
     def __init__(self, config_path: str | Path | None = None):
@@ -69,10 +72,10 @@ class ScenarioProfileMatcher:
         best: tuple[int, str, dict[str, Any]] | None = None
 
         for profile_id, profile in self.profiles.items():
-            required = [keyword.lower() for keyword in profile.get("required_keywords") or []]
+            required = [str(keyword).lower() for keyword in profile.get("required_keywords") or []]
             if required and not all(keyword in text for keyword in required):
                 continue
-            optional = [keyword.lower() for keyword in profile.get("optional_keywords") or []]
+            optional = [str(keyword).lower() for keyword in profile.get("optional_keywords") or []]
             optional_hits = sum(1 for keyword in optional if keyword in text)
             score = len(required) * 12 + optional_hits
             if profile.get("objective", "").lower()[:24] in text:

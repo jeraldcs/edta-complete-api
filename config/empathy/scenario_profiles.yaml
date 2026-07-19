@@ -248,6 +248,32 @@ profiles:
       trust_score: 0.62
       fatigue_count: 3
 
+  desert_summer_southwest:
+    objective: "Efficient comfortable vehicle for hot Southwest highway travel."
+    required_keywords:
+      - arizona
+    optional_keywords:
+      - nevada
+      - summer
+      - "110"
+      - cooling
+      - fuel efficiency
+      - cabin comfort
+      - 900-mile
+      - reliability
+      - desert
+    persona: desert_summer_travel
+    preferred_vehicle: hybrid_midsize
+    default_miles: 900
+    default_rental_days: 4
+    pitch: "Hybrid midsize for 900-mile Arizona/Nevada summer heat — fuel efficiency, cabin comfort, and reliable highway cooling without desert range anxiety."
+    constraints:
+      - fuel_efficiency
+      - cabin_comfort
+    scoring:
+      trust_score: 0.74
+      fatigue_count: 2
+
   wet_weather_hurricane:
     objective: "Wet-weather safety recommendation."
     required_keywords:

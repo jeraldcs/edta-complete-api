@@ -17,6 +17,9 @@ class HiddenNeedsExtractor:
         "couple_leisure": "Any Economy car",
         "college_move": "Midsize SUV",
         "mountain_travel": "Any SUV",
+        "desert_summer_travel": "Any Midsize / SUV",
+        "efficiency_seeker": "Any Economy car",
+        "comfort_seeker": "Any Midsize Sedan",
     }
 
     def __init__(self, config_path: str | Path | None = None):
@@ -31,9 +34,9 @@ class HiddenNeedsExtractor:
             return yaml.safe_load(handle) or {}
 
     @staticmethod
-    def _trigger_matches(trigger: str, text: str) -> bool:
+    def _trigger_matches(trigger: str | int | float, text: str) -> bool:
         """Match whole words/phrases only — avoid false hits like 'son' in 'personalization'."""
-        normalized = trigger.strip().lower()
+        normalized = str(trigger).strip().lower()
         if not normalized:
             return False
         parts = [re.escape(part) for part in re.split(r"\s+", normalized) if part]
@@ -96,6 +99,10 @@ class TripExtractor:
     DESTINATION_HINTS = {
         "denver": "Denver, CO",
         "colorado": "Colorado",
+        "arizona": "Arizona",
+        "nevada": "Nevada",
+        "phoenix": "Phoenix, AZ",
+        "las vegas": "Las Vegas, NV",
         "pacific coast": "Pacific Coast Highway",
         "pch": "Pacific Coast Highway",
         "yosemite": "Yosemite National Park, CA",

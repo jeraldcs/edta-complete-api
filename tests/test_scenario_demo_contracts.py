@@ -116,6 +116,40 @@ def test_hotel_scenario_includes_empathy_vehicle_recommendation(client: TestClie
     assert data["request_summary"]["empathy"]["insights_available"] is True
 
 
+def test_desert_summer_scenario_activates_empathy_and_prefers_efficient_vehicle(client: TestClient):
+    response = client.post(
+        "/recommend-from-scenario",
+        json={
+            "scenario_text": (
+                "I am planning a 900-mile road trip through Arizona and Nevada during summer "
+                "where temperatures may exceed 110°F. Reliability, cooling performance, fuel "
+                "efficiency, and cabin comfort are important."
+            ),
+            "limit": 3,
+            "use_ai_models": True,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    summary = data["request_summary"]
+    empathy = summary["empathy"]
+    assert empathy["active"] is True
+    assert empathy["enrichment"]["weather"]["forecast"] == "extreme_heat"
+    assert empathy["trip"]["distance_miles"] == 900
+    constraint_ids = {
+        item["constraint_id"]
+        for item in (empathy.get("hidden_needs") or {}).get("implicit_constraints") or []
+    }
+    derived = set((empathy.get("enrichment") or {}).get("derived_constraints") or [])
+    assert "fuel_efficiency" in constraint_ids.union(derived)
+    assert "cabin_comfort" in constraint_ids.union(derived)
+    top_id = data["recommendations"][0]["candidate"]["id"]
+    assert top_id in {"hybrid_midsize", "electric_midsize"}
+    vehicle = empathy.get("vehicle_recommendation") or {}
+    assert vehicle.get("candidate_id") in {"hybrid_midsize", "electric_midsize"}
+    assert float(vehicle.get("match_score") or 0) > 0
+
+
 def test_trip_extractor_parses_plural_miles():
     from app.empathy.hidden_needs import TripExtractor
 
