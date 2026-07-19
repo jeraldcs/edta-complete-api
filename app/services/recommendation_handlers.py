@@ -427,6 +427,10 @@ class RecommendationHandlers:
                 provider_telemetry=self.services.provider_telemetry.summary(),
                 explanation_routing=self.services.engine.explanation_router.status(),
                 llm_enabled=self.services.llm_client.enabled,
+                llm_status={
+                    "recommendation_engine": self.services.engine.llm.status(),
+                    "slm_engine": self.services.engine.slm.status(),
+                },
                 self_distillation=self.services.engine.distillation.status(),
                 haoe=self.services.engine.orchestrator.status(),
                 ose_calibration=calibration,

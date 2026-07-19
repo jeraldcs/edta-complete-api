@@ -45,6 +45,25 @@ const DEMO_SCENARIOS = {
     label: "EDTA governed",
     text: "Comparison demo — EDTA governed baseline: cust-789 preferred loyalty member booking a family SUV rental at SFO after checking availability. Personalization consent is true. Show trust-aware ranking with empathy fit, outcome simulation, and auditable explanation.",
   },
+  hosted_slm: {
+    label: "Hosted SLM",
+    text: "Hosted SLM demo — I need something comfortable for a trip next week, not sure which car. Maybe family-friendly? Budget is flexible but I care about safety.",
+    options: {
+      inference_mode: "slm",
+      use_slm: true,
+      use_llm_explanation: true,
+    },
+  },
+  rules_vs_slm: {
+    label: "Rules vs SLM",
+    text: "Rules vs hosted SLM demo — I need something comfortable for a trip next week, not sure which car. Maybe family-friendly? Budget is flexible but I care about safety.",
+    options: {
+      inference_mode: "slm",
+      use_slm: true,
+      use_llm_explanation: true,
+      compare_rules_vs_slm: true,
+    },
+  },
 };
 
 const COMPARE_NARRATIVES = {
@@ -111,10 +130,19 @@ const TRY_NEXT = {
     { key: "compare_rules", label: "Replay Rules-era" },
     { key: "fatigue", label: "Try High fatigue" },
   ],
+  hosted_slm: [
+    { key: "no_consent", label: "Next: No consent (TAPL still wins)" },
+    { key: "fatigue", label: "Next: High fatigue" },
+  ],
+  rules_vs_slm: [
+    { key: "hosted_slm", label: "Replay Hosted SLM" },
+    { key: "no_consent", label: "Next: No consent" },
+  ],
 };
 
 let previousRunSnapshot = null;
 let lastTaplAction = null;
+let lastRulesVsSlmCompare = null;
 
 let scenarioText = null;
 let scenarioRunBtn = null;
@@ -151,14 +179,23 @@ function num(value) {
   return Number(value || 0).toFixed(2);
 }
 
-function buildPayload() {
+function activeScenarioOptions() {
+  const key = activeScenarioKey || detectScenarioKey(scenarioText?.value || "");
+  return (key && DEMO_SCENARIOS[key]?.options) || {};
+}
+
+function buildPayload(overrides = {}) {
+  const options = activeScenarioOptions();
   return {
     scenario_text: (scenarioText?.value || "").trim(),
     limit: 3,
     use_ai_models: true,
     use_llm: false,
-    use_llm_explanation: false,
+    use_slm: Boolean(options.use_slm),
+    use_llm_explanation: Boolean(options.use_llm_explanation),
+    inference_mode: options.inference_mode || "auto",
     rental_days: 3,
+    ...overrides,
   };
 }
 
@@ -564,6 +601,98 @@ function renderCompareNarrative(key) {
   `;
 }
 
+function isHostedSlmResponse(summary) {
+  return (summary?.inference?.sub_source || "") === "slm_endpoint";
+}
+
+function inferenceBadgeHtml(summary) {
+  const inference = summary?.inference || {};
+  const sub = inference.sub_source || "";
+  const slmEngine = summary?.llm_status?.slm_engine || {};
+  const model = slmEngine.model || slmEngine.remote?.model || "";
+  if (sub === "slm_endpoint") {
+    return `<span class="hero-badge hero-badge-slm">Hosted SLM${model ? ` · ${escapeHtml(model)}` : ""}</span>`;
+  }
+  if (sub === "rules_fallback" || summary?.inference_mode === "rules" || inference.tier === "rules") {
+    return `<span class="hero-badge hero-badge-rules">Rules tier</span>`;
+  }
+  if (sub === "distilled_pattern") {
+    return `<span class="hero-badge hero-badge-slm">Distilled SLM</span>`;
+  }
+  return "";
+}
+
+function captureInferenceCompareSnapshot(data) {
+  const rec = data?.recommendations?.[0];
+  if (!rec) {
+    return null;
+  }
+  const summary = data.request_summary || {};
+  const inference = summary.inference || {};
+  const context = summary.parsed_context || {};
+  return {
+    intent: context.current_intent || inference.intent?.label || rec.ai_score?.intent?.label || "unknown",
+    journey: context.journey_stage || inference.journey_stage?.label || "unknown",
+    subSource: inference.sub_source || inference.tier || "unknown",
+    vehicle: rec.candidate?.id || "",
+    explanationSource: rec.explanation_source || "local",
+    finalScore: Number(rec.ai_score?.final_hybrid_score || 0),
+    taplAction: rec.ai_score?.tapl?.action || "show",
+  };
+}
+
+function renderRulesVsSlmStrip(compare) {
+  if (!compare?.rules || !compare?.slm) {
+    return "";
+  }
+  const rules = compare.rules;
+  const slm = compare.slm;
+  return `
+    <aside class="slm-compare-strip" aria-label="Rules versus hosted SLM comparison">
+      <span class="slm-compare-title">Rules vs Hosted SLM</span>
+      <div class="slm-compare-grid">
+        <div class="slm-compare-col">
+          <span class="slm-compare-label">Rules</span>
+          <p><strong>Intent</strong> ${escapeHtml(pretty(rules.intent))}</p>
+          <p><strong>Source</strong> ${escapeHtml(pretty(rules.subSource))}</p>
+          <p><strong>Vehicle</strong> ${escapeHtml(pretty(rules.vehicle))}</p>
+          <p><strong>Explanation</strong> ${escapeHtml(pretty(rules.explanationSource))}</p>
+          <p><strong>TAPL</strong> ${escapeHtml(taplPlainLabel(rules.taplAction))}</p>
+        </div>
+        <div class="slm-compare-col slm-compare-hosted">
+          <span class="slm-compare-label">Hosted SLM</span>
+          <p><strong>Intent</strong> ${escapeHtml(pretty(slm.intent))}</p>
+          <p><strong>Source</strong> ${escapeHtml(pretty(slm.subSource))}</p>
+          <p><strong>Vehicle</strong> ${escapeHtml(pretty(slm.vehicle))}</p>
+          <p><strong>Explanation</strong> ${escapeHtml(pretty(slm.explanationSource))}</p>
+          <p><strong>TAPL</strong> ${escapeHtml(taplPlainLabel(slm.taplAction))}</p>
+        </div>
+      </div>
+      <p class="slm-compare-note">Same scenario text on both legs. Enrichment can change intent parsing; TAPL still owns consent and fatigue.</p>
+    </aside>
+  `;
+}
+
+function renderGovernancePunchline(scenarioKey, summary) {
+  if (!["hosted_slm", "rules_vs_slm"].includes(scenarioKey)) {
+    return "";
+  }
+  if (!isHostedSlmResponse(summary)) {
+    return `
+      <aside class="governance-punchline governance-punchline-soft" aria-label="Hosted SLM status">
+        <span class="governance-punchline-title">Hosted SLM not confirmed on this run</span>
+        <p>Check Technical details for <code>inference.sub_source</code>. If you see <code>rules_fallback</code>, remote SLM is disabled or unavailable — TAPL still applies.</p>
+      </aside>
+    `;
+  }
+  return `
+    <aside class="governance-punchline" aria-label="Governance still applies after SLM">
+      <span class="governance-punchline-title">SLM enriched the ask — TAPL still owns the offer</span>
+      <p>Hosted SLM helped parse intent and explain the pick. Try <strong>No consent</strong> or <strong>High fatigue</strong> next: enrichment does not override trust policy.</p>
+    </aside>
+  `;
+}
+
 function renderGovernanceDiff(previous, current) {
   if (!previous || !current) {
     return "";
@@ -666,20 +795,25 @@ function renderRecommendation(data) {
     return;
   }
 
+  const scenarioKey = activeScenarioKey
+    || detectScenarioKey(summary.scenario_text || lastParsedScenarioText || "");
   const badges = [
+    inferenceBadgeHtml(summary),
     empathyInsights ? `<span class="hero-badge hero-badge-empathy">Empathy-aware</span>` : "",
     profile.profile_id ? `<span class="hero-badge hero-badge-profile">${escapeHtml(profile.profile_id.replaceAll("_", " "))}</span>` : "",
   ].filter(Boolean).join("");
 
-  const compareKey = activeScenarioKey && COMPARE_NARRATIVES[activeScenarioKey]
-    ? activeScenarioKey
-    : detectScenarioKey(summary.scenario_text || lastParsedScenarioText || "");
-  const compareHtml = renderCompareNarrative(
-    compareKey && COMPARE_NARRATIVES[compareKey] ? compareKey : null,
-  );
+  const compareKey = scenarioKey && COMPARE_NARRATIVES[scenarioKey] ? scenarioKey : null;
+  const compareHtml = renderCompareNarrative(compareKey);
+  const rulesVsSlmHtml = scenarioKey === "rules_vs_slm"
+    ? renderRulesVsSlmStrip(lastRulesVsSlmCompare)
+    : "";
+  const punchlineHtml = renderGovernancePunchline(scenarioKey, summary);
 
   scenarioRecommendation.innerHTML = `
     ${compareHtml}
+    ${rulesVsSlmHtml}
+    ${punchlineHtml}
     ${diffHtml}
     ${renderHeroContextStrip(summary)}
     <div class="hero-result-head">
@@ -725,7 +859,7 @@ function renderRecommendation(data) {
     </div>
   `;
 
-  renderTryNextSuggestions(activeScenarioKey || detectScenarioKey(summary.scenario_text || ""));
+  renderTryNextSuggestions(scenarioKey);
   renderEmpathyPanels(summary, rec);
   pulseOfferCard();
 }
@@ -814,6 +948,8 @@ function renderTechnicalExplanation(data) {
           <div><dt>Base rank score</dt><dd>${num(ai.ai_rank_score)}</dd></div>
           <div><dt>Final rank score</dt><dd>${num(ai.final_hybrid_score)}</dd></div>
           <div><dt>Explanation source</dt><dd>${escapeHtml(pretty(rec.explanation_source || "local"))}</dd></div>
+          <div><dt>Inference tier</dt><dd>${escapeHtml(pretty(summary.inference?.tier || "n/a"))}</dd></div>
+          <div><dt>Inference source</dt><dd>${escapeHtml(pretty(summary.inference?.sub_source || "n/a"))}</dd></div>
         </dl>
       </article>
       <article>
@@ -829,7 +965,48 @@ function renderTechnicalExplanation(data) {
         </dl>
       </article>
       ${empathyArticle}
+      ${renderSlmTelemetryArticle(summary, rec)}
     </div>
+  `;
+}
+
+function renderSlmTelemetryArticle(summary, rec) {
+  const inference = summary.inference || {};
+  const telemetry = summary.provider_telemetry || {};
+  const slm = summary.llm_status?.slm_engine || {};
+  const remote = slm.remote || {};
+  const operations = telemetry.operations || {};
+  const hasSlmSignal = Boolean(
+    inference.sub_source
+    || slm.enabled
+    || telemetry.call_count
+    || summary.use_llm_explanation
+    || summary.inference_mode === "slm",
+  );
+  if (!hasSlmSignal) {
+    return "";
+  }
+  const opLines = Object.entries(operations)
+    .filter(([name]) => String(name).startsWith("slm_") || String(name).includes("slm"))
+    .map(([name, count]) => `${name}: ${count}`)
+    .join(", ");
+  return `
+      <article class="technical-span-full">
+        <span>6. Hosted SLM telemetry</span>
+        <p>Remote SLM enrich/explain calls for this process (cumulative) plus current-request inference status.</p>
+        <dl>
+          <div><dt>Inference source</dt><dd>${escapeHtml(pretty(inference.sub_source || "n/a"))}</dd></div>
+          <div><dt>SLM enabled</dt><dd>${slm.enabled ? "yes" : "no"}</dd></div>
+          <div><dt>SLM model</dt><dd>${escapeHtml(slm.model || remote.model || "n/a")}</dd></div>
+          <div><dt>SLM last status</dt><dd>${escapeHtml(pretty(slm.last_status || "n/a"))}</dd></div>
+          <div><dt>Provider calls</dt><dd>${escapeHtml(String(telemetry.call_count ?? 0))}</dd></div>
+          <div><dt>Input tokens</dt><dd>${escapeHtml(String(telemetry.input_tokens ?? 0))}</dd></div>
+          <div><dt>Output tokens</dt><dd>${escapeHtml(String(telemetry.output_tokens ?? 0))}</dd></div>
+          <div><dt>SLM operations</dt><dd>${escapeHtml(opLines || "none yet")}</dd></div>
+          <div><dt>Explanation source</dt><dd>${escapeHtml(pretty(rec.explanation_source || "local"))}</dd></div>
+          <div><dt>Explanation routing</dt><dd>${escapeHtml(pretty(summary.explanation_routing?.prefer_slm_first ? "prefer SLM first" : "default"))}</dd></div>
+        </dl>
+      </article>
   `;
 }
 
@@ -893,6 +1070,45 @@ async function ensureDemoReady() {
   }
 }
 
+async function fetchScenarioRecommendation(payload) {
+  const response = await window.DemoApi.fetch("/recommend-from-scenario", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    onProgress: setColdStartMessage,
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(formatApiError(response.status, body));
+  }
+  const data = JSON.parse(body);
+  if (!data.recommendations?.length) {
+    throw new Error("The API returned no recommendations for this scenario.");
+  }
+  return data;
+}
+
+async function runRulesVsSlmCompare(basePayload) {
+  const [rulesData, slmData] = await Promise.all([
+    fetchScenarioRecommendation({
+      ...basePayload,
+      inference_mode: "rules",
+      use_slm: false,
+      use_llm_explanation: false,
+    }),
+    fetchScenarioRecommendation({
+      ...basePayload,
+      inference_mode: "slm",
+      use_slm: true,
+      use_llm_explanation: true,
+    }),
+  ]);
+  lastRulesVsSlmCompare = {
+    rules: captureInferenceCompareSnapshot(rulesData),
+    slm: captureInferenceCompareSnapshot(slmData),
+  };
+  return slmData;
+}
+
 async function runScenario() {
   const validationError = validateScenarioText(scenarioText?.value || "");
   if (validationError) {
@@ -901,6 +1117,7 @@ async function runScenario() {
   }
 
   const payload = buildPayload();
+  const options = activeScenarioOptions();
   updatePayloadPreview();
   setRunError("");
   setColdStartMessage("");
@@ -909,23 +1126,20 @@ async function runScenario() {
 
   try {
     await ensureDemoReady();
-    const response = await window.DemoApi.fetch("/recommend-from-scenario", {
-      method: "POST",
-      body: JSON.stringify(payload),
-      onProgress: setColdStartMessage,
-    });
-    const body = await response.text();
-    if (!response.ok) {
-      throw new Error(formatApiError(response.status, body));
+    let data;
+    if (options.compare_rules_vs_slm) {
+      data = await runRulesVsSlmCompare(payload);
+    } else {
+      lastRulesVsSlmCompare = null;
+      data = await fetchScenarioRecommendation(payload);
     }
-    const data = JSON.parse(body);
     lastScenarioData = data;
     lastParsedScenarioText = payload.scenario_text;
     if (responsePreview) {
-      responsePreview.textContent = JSON.stringify(data, null, 2);
-    }
-    if (!data.recommendations?.length) {
-      throw new Error("The API returned no recommendations for this scenario.");
+      const previewPayload = options.compare_rules_vs_slm
+        ? { primary: data, rules_vs_slm: lastRulesVsSlmCompare }
+        : data;
+      responsePreview.textContent = JSON.stringify(previewPayload, null, 2);
     }
     renderRecommendation(data);
     renderRuntimeInsights(data);
