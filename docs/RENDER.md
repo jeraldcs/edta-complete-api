@@ -31,6 +31,8 @@ https://<your-service>.onrender.com/docs
    - `EDTA_CORS_ORIGINS` → `https://<your-service>.onrender.com`  
      (update after first deploy when you know the URL, then redeploy)
    - `OPENAI_API_KEY` → optional, for LLM features
+   - Optional public SLM (recommended for P0): `SLM_BASE_URL`, `SLM_API_KEY`, `SLM_MODEL`  
+     See **`docs/SLM_PUBLIC_HOSTING.md`** (Groq / Together — do **not** run Ollama inside free Render)
 5. Click **Apply** and wait for the Docker build (~5–10 minutes; includes model training)
 
 ## Option B — Manual web service
@@ -49,8 +51,15 @@ https://<your-service>.onrender.com/docs
 | `EDTA_CORS_ORIGINS` | `https://your-app.onrender.com` |
 | `EDTA_LOG_FORMAT` | `json` |
 | `OPENAI_API_KEY` | optional |
+| `SLM_BASE_URL` | optional — e.g. `https://api.groq.com/openai/v1` |
+| `SLM_API_KEY` | optional — provider secret (never commit) |
+| `SLM_MODEL` | optional — e.g. `llama-3.1-8b-instant` |
 
 Render sets `PORT` automatically — the entrypoint uses `${PORT:-8000}`.
+
+### Public SLM (P0) without upgrading Render
+
+Free Render **cannot** host Ollama/HF weights (512 MB). Keep EDTA on Render and point `SLM_*` at Groq, Together, or an HF Inference Endpoint. Full steps: [`docs/SLM_PUBLIC_HOSTING.md`](SLM_PUBLIC_HOSTING.md).
 
 ## Using the API key
 

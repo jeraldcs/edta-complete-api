@@ -167,3 +167,4 @@ HAOE keeps **Rules / SLM / ML** as the default path and uses the LLM as an **opt
 | Architecture PDF | `docs/edta_architecture_diagrams_full.pdf` |
 | Showcase Word | `docs/EDTA_COMPLETE_SHOWCASE_updated.docx` |
 | Traditional vs EDTA | `docs/TRADITIONAL_VS_EDTA.md` |
+| Public SLM hosting (Groq/Together) | `docs/SLM_PUBLIC_HOSTING.md` |
