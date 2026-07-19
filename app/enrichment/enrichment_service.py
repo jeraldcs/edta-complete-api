@@ -70,19 +70,36 @@ class EnrichmentService:
                     source="stub",
                     note=payload.get("note", ""),
                 )
-        if any(word in text for word in ("snow", "winter", "blizzard")):
+        if any(word in text for word in ("snow", "winter", "blizzard", "snowfall", "snowstorm", "icy")):
             return WeatherSnapshot(
                 forecast="snow",
                 wind_mph=20.0,
                 source="keyword",
                 note="Winter weather mentioned in scenario.",
             )
-        if any(word in text for word in ("rain", "storm")):
+        if any(word in text for word in ("rain", "storm")) and "snowstorm" not in text:
             return WeatherSnapshot(
                 forecast="heavy_rain",
                 wind_mph=15.0,
                 source="keyword",
                 note="Rainy conditions mentioned in scenario.",
+            )
+        heat_tokens = (
+            "110",
+            "extreme heat",
+            "desert",
+            "scorching",
+            "cooling performance",
+            "heatwave",
+            "heat wave",
+        )
+        southwest = any(token in text for token in ("arizona", "nevada", "phoenix", "las vegas"))
+        if any(token in text for token in heat_tokens) or ("summer" in text and southwest):
+            return WeatherSnapshot(
+                forecast="extreme_heat",
+                wind_mph=12.0,
+                source="keyword",
+                note="Extreme summer heat mentioned in scenario.",
             )
         return WeatherSnapshot(forecast="clear", wind_mph=5.0, source="default")
 
@@ -130,6 +147,10 @@ class EnrichmentService:
             derived.extend(["awd_preferred", "strong_engine"])
         if weather.forecast in {"snow", "heavy_rain", "high_wind"}:
             derived.append("awd_preferred")
+        if weather.forecast == "extreme_heat":
+            derived.extend(["fuel_efficiency", "cabin_comfort"])
+            if route.distance_miles and float(route.distance_miles) >= 700:
+                derived.append("fuel_efficiency")
         return sorted(set(derived))
 
     def _gas_price(self, destination_key: str) -> float:
@@ -151,6 +172,11 @@ class EnrichmentService:
             notes.append(
                 f"We upgraded your recommendation to an AWD SUV because "
                 f"{weather.forecast.replace('_', ' ')} is forecasted along your route."
+            )
+        if weather and weather.forecast == "extreme_heat":
+            notes.append(
+                "Extreme heat along your route — prioritizing fuel efficiency and cabin comfort "
+                "for long Southwest highway miles."
             )
         route = enrichment.route
         if route and route.steep_grade:

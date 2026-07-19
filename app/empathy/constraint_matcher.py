@@ -24,6 +24,9 @@ class ConstraintMatcher:
         "ev_powertrain": lambda spec: (spec.get("fuel_type") or "").lower() == "ev",
         "luxury_comfort": lambda spec: bool(spec.get("premium_audio"))
         and float(spec.get("rear_legroom_score") or 0) >= 0.60,
+        "cabin_comfort": lambda spec: float(spec.get("rear_legroom_score") or 0) >= 0.55
+        or bool(spec.get("premium_audio"))
+        or bool(spec.get("has_panoramic_roof")),
         "beginner_easy": lambda spec: float(spec.get("step_in_height_cm") or 999) <= 45
         and float(spec.get("handling_score") or 1) <= 0.55,
         "wet_weather_grip": lambda spec: bool(spec.get("awd"))

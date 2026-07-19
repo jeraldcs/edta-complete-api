@@ -25,22 +25,31 @@ class EmpathyEngine:
         "couple_leisure": "Panoramic roof, premium sound, and sleek handling for your coastal road trip.",
         "college_move": "Fold-flat rear seats, wide tailgate, and cargo space for the dorm move.",
         "mountain_travel": "AWD and engine power suited for mountain climbs and Sierra Nevada routes.",
+        "desert_summer_travel": "Fuel efficiency and cabin comfort for extreme-heat Southwest highway trips.",
+        "efficiency_seeker": "Hybrid or EV efficiency for long highway miles and lower fuel cost.",
+        "comfort_seeker": "Cabin comfort prioritized for long-distance highway travel.",
     }
 
     PERSONA_VEHICLE_PRIORITY = (
         "toddler_family",
         "elderly_passenger",
+        "desert_summer_travel",
         "mountain_travel",
         "college_move",
         "couple_leisure",
+        "efficiency_seeker",
+        "comfort_seeker",
     )
 
     PERSONA_VEHICLE_MAP = {
         "toddler_family": "family_friendly_suv",
         "elderly_passenger": "family_friendly_suv",
+        "desert_summer_travel": "hybrid_midsize",
         "mountain_travel": "awd_suv",
         "college_move": "cargo_suv",
         "couple_leisure": "convertible_premium",
+        "efficiency_seeker": "hybrid_midsize",
+        "comfort_seeker": "luxury_sedan",
     }
 
     def __init__(self):
@@ -96,16 +105,19 @@ class EmpathyEngine:
         )
         scenario_profile_meta = self.scenario_profiles.profile_public(scenario_text)
 
-        all_constraints = list(profile.implicit_constraints)
+        existing_constraints = {
+            item.constraint_id: item for item in profile.implicit_constraints
+        }
         for constraint_id in enrichment.derived_constraints:
-            all_constraints.append(
-                ImplicitConstraint(
-                    constraint_id=constraint_id,
-                    weight=0.12,
-                    reason="Derived from weather/route enrichment",
-                    source="enrichment",
-                )
+            if constraint_id in existing_constraints:
+                continue
+            existing_constraints[constraint_id] = ImplicitConstraint(
+                constraint_id=constraint_id,
+                weight=0.12,
+                reason="Derived from weather/route enrichment",
+                source="enrichment",
             )
+        all_constraints = list(existing_constraints.values())
 
         # Weather/route-derived constraints (e.g. awd_preferred) should activate vehicle ranking
         # for travel-like free text even when persona tags were not extracted.
@@ -205,8 +217,10 @@ class EmpathyEngine:
         keyword_defaults = (
             (("grandmother", "toddler", "family", "child", "elderly"), "family_friendly_suv"),
             (("dorm", "move", "cargo", "boxes", "furniture"), "cargo_suv"),
+            (("arizona", "nevada", "desert", "110", "cooling"), "hybrid_midsize"),
             (("denver", "mountain", "winter", "snow", "awd"), "awd_suv"),
             (("coast", "scenic", "convertible", "partner", "pch"), "convertible_premium"),
+            (("fuel efficiency", "hybrid", "mpg"), "hybrid_midsize"),
             (("suv", "airport", "rental", "vehicle", "car"), "standard_sedan"),
         )
         for keywords, candidate_id in keyword_defaults:
