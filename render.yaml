@@ -32,10 +32,17 @@ services:
         value: gpt-4o-mini
       - key: SLM_ENABLED
         value: true
-      # SLM runs pattern-only on Render free tier by default (no SLM_BASE_URL required).
-      # Optional: point SLM_BASE_URL at Ollama/vLLM for a local small-model endpoint.
+      # SLM runs pattern-only on Render free by default (no SLM_BASE_URL).
+      # For a public remote SLM (Groq/Together/HF Endpoint), set these in the Render UI
+      # as secrets — see docs/SLM_PUBLIC_HOSTING.md. Do not commit API keys.
+      - key: SLM_BASE_URL
+        sync: false
+      - key: SLM_API_KEY
+        sync: false
       - key: SLM_MODEL
         value: edta-local-slm
+      - key: SLM_REQUEST_TIMEOUT
+        value: "20"
       - key: INFERENCE_PROVIDERS_FILE
         value: config/inference_providers.yaml
       - key: LLM_REQUEST_TIMEOUT
