@@ -87,7 +87,8 @@ class TripExtractor:
     """Extract trip hints from scenario text and optional overrides."""
 
     MILE_PATTERN = re.compile(
-        r"(\d{1,3}(?:,\d{3})+|\d{2,4})\s*(?:-?\s*)?(?:mile|mi)\b",
+        # Match "300 miles", "500-mile", "1,200 mi" (plural miles must be allowed).
+        r"(\d{1,3}(?:,\d{3})+|\d{2,4})\s*(?:-?\s*)?(?:miles?|mi)\b",
         re.I,
     )
     HOUR_PATTERN = re.compile(r"(\d{1,2})\s*(?:-?\s*)?(?:hour|hr)\b", re.I)

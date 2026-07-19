@@ -441,29 +441,48 @@ function renderEmpathyPanels(summary, topRec) {
   empathyResultsSection.setAttribute("aria-hidden", "false");
 
   const profile = empathy.hidden_needs || {};
-  const constraints = profile.implicit_constraints || [];
+  const enrichment = summary.enrichment || empathy.enrichment || {};
+  const constraints = [...(profile.implicit_constraints || [])];
+  const seenConstraintIds = new Set(
+    constraints.map((item) => item.constraint_id).filter(Boolean),
+  );
+  for (const constraintId of enrichment.derived_constraints || []) {
+    if (!constraintId || seenConstraintIds.has(constraintId)) {
+      continue;
+    }
+    seenConstraintIds.add(constraintId);
+    constraints.push({
+      constraint_id: constraintId,
+      reason: "Derived from weather/route enrichment",
+      source: "enrichment",
+    });
+  }
   const constraintRows = constraints.map(item => `
     <li><strong>${escapeHtml(item.constraint_id.replaceAll("_", " "))}</strong>
-    — ${escapeHtml(item.reason || "")}</li>
+    — ${escapeHtml(item.reason || "")}${item.source === "enrichment" ? " <em>(enrichment)</em>" : ""}</li>
   `).join("");
+  const vehicle = empathyVehicleRecommendation(summary) || {};
+  const personaLabel = (profile.persona_tags || []).join(", ")
+    || (constraints.length ? "Weather / route driven" : "None");
 
   if (scenarioEmpathyHiddenNeeds) {
     scenarioEmpathyHiddenNeeds.innerHTML = `
       <dl class="empathy-facts">
-        <div><dt>Persona</dt><dd>${escapeHtml((profile.persona_tags || []).join(", ") || "None")}</dd></div>
+        <div><dt>Persona</dt><dd>${escapeHtml(personaLabel)}</dd></div>
         <div><dt>Standard filter would match</dt><dd>${escapeHtml(profile.standard_filter_match || "Generic category")}</dd></div>
-        <div><dt>Confidence</dt><dd>${Math.round(Number(profile.confidence || 0) * 100)}%</dd></div>
-        <div><dt>Evidence</dt><dd>${escapeHtml((profile.evidence_phrases || []).join(", ") || "—")}</dd></div>
+        <div><dt>Confidence</dt><dd>${Math.round(Number(profile.confidence || vehicle.match_score || 0) * 100)}%</dd></div>
+        <div><dt>Evidence</dt><dd>${escapeHtml((profile.evidence_phrases || []).join(", ") || (enrichment.weather?.note || "—"))}</dd></div>
+        <div><dt>Empathy vehicle</dt><dd>${escapeHtml((vehicle.title || vehicle.candidate_id || "—").toString().replaceAll("_", " "))}</dd></div>
       </dl>
       <h3 class="empathy-subtitle">Implicit constraints</h3>
       <ul class="empathy-constraint-list">${constraintRows || "<li>No constraints extracted.</li>"}</ul>
     `;
   }
 
-  const enrichment = summary.enrichment || empathy.enrichment || {};
   const weather = enrichment.weather || {};
   const route = enrichment.route || {};
   const stops = (empathy.trip?.stops || []).join(" -> ");
+  const tripMiles = empathy.trip?.distance_miles ?? route.distance_miles;
   if (scenarioEmpathyEnrichment) {
     scenarioEmpathyEnrichment.innerHTML = `
       <dl class="empathy-facts">
@@ -474,7 +493,7 @@ function renderEmpathyPanels(summary, topRec) {
         <div><dt>Weather note</dt><dd>${escapeHtml(weather.note || "—")}</dd></div>
         <div><dt>Max elevation</dt><dd>${escapeHtml(route.max_elevation_ft ?? 0)} ft</dd></div>
         <div><dt>Steep grade</dt><dd>${route.steep_grade ? "Yes" : "No"}</dd></div>
-        <div><dt>Route distance</dt><dd>${escapeHtml(route.distance_miles ?? empathy.trip?.distance_miles ?? "—")} mi</dd></div>
+        <div><dt>Route distance</dt><dd>${escapeHtml(tripMiles ?? "—")} mi</dd></div>
         <div><dt>Gas price</dt><dd>$${Number(enrichment.gas_price_usd || 0).toFixed(2)}/gal</dd></div>
         <div><dt>Derived constraints</dt><dd>${escapeHtml((enrichment.derived_constraints || []).join(", ") || "—")}</dd></div>
       </dl>
@@ -519,7 +538,6 @@ function renderEmpathyPanels(summary, topRec) {
   }
 
   const match = topRec?.empathy_match || {};
-  const vehicle = empathyVehicleRecommendation(summary) || {};
   const pitch = tco.top_pitch || empathy.empathy_pitch || vehicle.pitch || topRec?.explanation || "";
   if (scenarioEmpathyPitch) {
     scenarioEmpathyPitch.innerHTML = `
