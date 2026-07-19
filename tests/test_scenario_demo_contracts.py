@@ -116,17 +116,53 @@ def test_hotel_scenario_includes_empathy_vehicle_recommendation(client: TestClie
     assert data["request_summary"]["empathy"]["insights_available"] is True
 
 
+def test_recommend_from_scenario_exposes_slm_status(client: TestClient):
+    response = client.post(
+        "/recommend-from-scenario",
+        json={
+            "scenario_text": (
+                "Hosted SLM demo — I need something comfortable for a trip next week, "
+                "not sure which car. Maybe family-friendly? Budget is flexible but I care about safety."
+            ),
+            "limit": 3,
+            "inference_mode": "rules",
+            "use_llm_explanation": False,
+        },
+    )
+    assert response.status_code == 200
+    summary = response.json()["request_summary"]
+    assert summary["inference_mode"] == "rules"
+    assert "llm_status" in summary
+    assert "slm_engine" in summary["llm_status"]
+    assert "provider_telemetry" in summary
+    assert summary["inference"]["tier"] == "rules"
+
+
+def test_scenario_app_has_hosted_slm_demo_flow():
+    app_js = (ROOT / "static" / "scenario_app.js").read_text(encoding="utf-8")
+    assert 'hosted_slm:' in app_js
+    assert 'rules_vs_slm:' in app_js
+    assert "compare_rules_vs_slm" in app_js
+    assert "Hosted SLM telemetry" in app_js
+    assert 'inference_mode: "slm"' in app_js
+    assert "use_llm_explanation: true" in app_js
+
+
 def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     response = client.get("/scenario-demo")
     assert response.status_code == 200
     assert "scenario_app.js" in response.text
     assert 'id="scenarioChipRowTravel"' in response.text
     assert 'id="scenarioChipRowGovernance"' in response.text
+    assert 'id="scenarioChipRowSlm"' in response.text
     assert 'id="scenarioChipRowCompare"' in response.text
     assert "scenario-sampler" in response.text
     assert "Try scenario" in response.text
     assert "Try governance" in response.text
+    assert "Try hosted SLM" in response.text
     assert "Compare vs traditional" in response.text
+    assert 'data-scenario-key="hosted_slm"' in response.text
+    assert 'data-scenario-key="rules_vs_slm"' in response.text
     assert 'data-scenario-key="compare_rules"' in response.text
     assert 'data-scenario-key="compare_edta"' in response.text
     assert "scenario-start-here" in response.text
