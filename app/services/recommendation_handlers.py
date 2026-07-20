@@ -292,6 +292,7 @@ class RecommendationHandlers:
                 haoe=self.services.engine.orchestrator.status(),
                 ose_calibration=calibration,
                 context_graph=graph.summary(),
+                slm_vehicle_proposal=getattr(self.services.engine, "last_slm_vehicle_proposal", None),
             ),
             recommendations=recommendations,
         )
@@ -455,6 +456,7 @@ class RecommendationHandlers:
                 ose_calibration=calibration,
                 context_graph=graph.summary(),
                 scenario_profile=scenario_profile,
+                slm_vehicle_proposal=getattr(self.services.engine, "last_slm_vehicle_proposal", None),
             ),
             recommendations=recommendations,
         )

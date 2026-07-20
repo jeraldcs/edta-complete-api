@@ -57,6 +57,7 @@ class RecommendationEngine:
         self.tapl_audit = tapl_audit
         self.rules_audit = rules_audit
         self.last_inference: InferenceResult | None = None
+        self.last_slm_vehicle_proposal: dict | None = None
 
     def _apply_tkge_context(self, context, graph: ContextGraph):
         updates = {}
@@ -394,6 +395,18 @@ class RecommendationEngine:
                 if satisfied:
                     reasons.append(f"empathy_satisfied:{','.join(satisfied[:4])}")
 
+        slm_proposal = business_context.get("slm_vehicle_proposal") or {}
+        proposed_id = slm_proposal.get("candidate_id")
+        if proposed_id and candidate.id == proposed_id:
+            try:
+                proposal_confidence = float(slm_proposal.get("confidence") or 0.0)
+            except (TypeError, ValueError):
+                proposal_confidence = 0.0
+            # Hint only — EDTA still owns final rank and TAPL.
+            slm_boost = round(0.10 + (0.08 * max(0.0, min(1.0, proposal_confidence))), 4)
+            ai_rank_score = round(max(0.0, min(1.0, ai_rank_score + slm_boost)), 4)
+            reasons.append(f"slm_vehicle_proposal:{proposed_id}")
+
         if tapl.action.value in {"suppress", "generic_fallback"}:
             final_hybrid = min(ai_rank_score, 0.15)
             reasons.append("tapl_governance_block_or_fallback")
@@ -454,6 +467,7 @@ class RecommendationEngine:
         graph = ContextGraph(context, prior_snapshot=prior_graph_snapshot)
         context = self._apply_tkge_context(context, graph)
         context_text = graph.to_text()
+        self.last_slm_vehicle_proposal = None
 
         intent_prediction, journey_prediction, orchestration = self._resolve_predictions(
             context,
@@ -463,6 +477,13 @@ class RecommendationEngine:
             use_slm,
             inference_mode,
             graph,
+        )
+        context = self._maybe_apply_slm_vehicle_proposal(
+            context,
+            context_text,
+            candidates,
+            use_slm=use_slm,
+            inference_mode=inference_mode,
         )
 
         ranked = []
@@ -514,6 +535,49 @@ class RecommendationEngine:
         )
         ranked = self._align_trained_profile_vehicle(ranked, context)
         return ranked[:limit]
+
+    def _should_request_slm_vehicle_proposal(
+        self,
+        *,
+        use_slm: bool,
+        inference_mode: str,
+    ) -> bool:
+        mode = str(inference_mode or "auto").strip().lower()
+        if mode in {"slm", "distilled", "distilled_pattern"}:
+            return True
+        if use_slm:
+            return True
+        if self.last_inference and self.last_inference.sub_source == "slm_endpoint":
+            return True
+        return False
+
+    def _maybe_apply_slm_vehicle_proposal(
+        self,
+        context,
+        context_text: str,
+        candidates,
+        *,
+        use_slm: bool,
+        inference_mode: str,
+    ):
+        """Ask hosted SLM for a vehicle hint; store as proposal only (not final pick)."""
+        if not self._should_request_slm_vehicle_proposal(use_slm=use_slm, inference_mode=inference_mode):
+            return context
+        catalog = [
+            {
+                "id": candidate.id,
+                "title": candidate.title,
+                "description": (candidate.description or "")[:160],
+            }
+            for candidate in candidates
+        ]
+        proposal = self.slm.propose_vehicle(context_text, catalog)
+        self.last_slm_vehicle_proposal = proposal
+        if not proposal:
+            return context
+        business_context = dict(context.business_context or {})
+        business_context["slm_vehicle_proposal"] = proposal
+        return context.model_copy(update={"business_context": business_context})
 
     @staticmethod
     def _align_trained_profile_vehicle(ranked, context):

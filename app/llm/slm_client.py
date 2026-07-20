@@ -4,7 +4,11 @@ from typing import Any, Optional
 
 from app.inference.providers.distilled_slm_provider import DistilledSLMProvider
 from app.llm.openai_compatible_client import OpenAICompatibleClient
-from app.llm.prompt_templates import enrich_intent_prompt, explain_recommendation_prompt
+from app.llm.prompt_templates import (
+    enrich_intent_prompt,
+    explain_recommendation_prompt,
+    propose_vehicle_prompt,
+)
 from app.llm.provider_config import ProviderSettings, get_inference_provider_config
 from app.models import IntentType, JourneyStage
 from app.provider_telemetry import ProviderTelemetryStore
@@ -114,6 +118,53 @@ class SLMClient:
             "confidence": max(intent.confidence, journey.confidence),
             "reason": result.metadata.get("reason") or f"Unified SLM via {result.sub_source}",
         }
+
+    def propose_vehicle(
+        self,
+        context_text: str,
+        catalog: list[dict[str, Any]],
+    ) -> Optional[dict[str, Any]]:
+        """Ask remote SLM to propose a catalog vehicle. EDTA still owns final ranking."""
+        if not self.enabled or self.remote is None or self.remote.client is None:
+            self.last_status = "vehicle_propose_skipped"
+            return None
+        if not catalog:
+            return None
+        allowed_ids = {str(item.get("id")) for item in catalog if item.get("id")}
+        try:
+            result = self.remote.complete_text(
+                propose_vehicle_prompt(context_text, catalog),
+                operation="slm_propose_vehicle",
+                temperature=0.1,
+            )
+            if self.telemetry is not None:
+                self.telemetry.record(result.usage)
+            payload = self.remote.parse_json(result.text)
+            if not isinstance(payload, dict):
+                self.last_status = "vehicle_propose_invalid"
+                return None
+            candidate_id = str(payload.get("candidate_id") or "").strip()
+            if candidate_id not in allowed_ids:
+                self.last_status = "vehicle_propose_invalid_id"
+                self.last_error = f"SLM proposed unknown candidate_id={candidate_id!r}"
+                return None
+            try:
+                confidence = round(max(0.0, min(1.0, float(payload.get("confidence", 0.0)))), 4)
+            except (TypeError, ValueError):
+                confidence = 0.0
+            reason = str(payload.get("reason") or "SLM vehicle proposal").strip()
+            self.last_status = "vehicle_propose_success"
+            self.last_error = None
+            return {
+                "candidate_id": candidate_id,
+                "confidence": confidence,
+                "reason": reason,
+                "source": "slm_endpoint",
+            }
+        except Exception as exc:
+            self.last_status = "vehicle_propose_failed"
+            self.last_error = str(exc)
+            return None
 
     def explain_recommendation(
         self,

@@ -1538,6 +1538,38 @@ textarea:focus,
   color: #344054;
 }
 
+.slm-proposal-strip {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid #9dbde6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #eef5ff 0%, #e4eefc 100%);
+}
+
+.slm-proposal-title {
+  color: #1d4f91;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.slm-proposal-strip p,
+.slm-proposal-reason,
+.slm-proposal-note {
+  margin: 0;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.slm-proposal-note {
+  color: #475569;
+  font-size: 12px;
+}
+
 @media (max-width: 720px) {
   .slm-compare-grid {
     grid-template-columns: 1fr;

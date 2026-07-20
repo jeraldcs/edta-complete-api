@@ -711,6 +711,33 @@ function renderGovernancePunchline(scenarioKey, summary) {
   `;
 }
 
+function renderSlmProposalStrip(summary, rankedCandidateId) {
+  const proposal = summary?.slm_vehicle_proposal;
+  if (!proposal?.candidate_id) {
+    return "";
+  }
+  const proposedId = String(proposal.candidate_id);
+  const rankedId = String(rankedCandidateId || "");
+  const same = proposedId === rankedId;
+  const title = same
+    ? "SLM proposed · EDTA ranked the same vehicle"
+    : "SLM proposed · EDTA ranked differently";
+  const detail = same
+    ? `Hosted SLM proposed <strong>${escapeHtml(pretty(proposedId))}</strong>; EDTA kept it after ranking + TAPL.`
+    : `Hosted SLM proposed <strong>${escapeHtml(pretty(proposedId))}</strong>; EDTA ranked <strong>${escapeHtml(pretty(rankedId))}</strong> after EDS/empathy/TAPL.`;
+  const reason = proposal.reason
+    ? `<p class="slm-proposal-reason">${escapeHtml(proposal.reason)}</p>`
+    : "";
+  return `
+    <aside class="slm-proposal-strip" aria-label="SLM vehicle proposal versus EDTA rank">
+      <span class="slm-proposal-title">${escapeHtml(title)}</span>
+      <p>${detail}</p>
+      ${reason}
+      <p class="slm-proposal-note">Proposal is a hint only — EDTA still owns final ranking and trust policy.</p>
+    </aside>
+  `;
+}
+
 function renderGovernanceDiff(previous, current) {
   if (!previous || !current) {
     return "";
@@ -827,10 +854,12 @@ function renderRecommendation(data) {
     ? renderRulesVsSlmStrip(lastRulesVsSlmCompare)
     : "";
   const punchlineHtml = renderGovernancePunchline(scenarioKey, summary);
+  const slmProposalHtml = renderSlmProposalStrip(summary, rec.candidate?.id);
 
   scenarioRecommendation.innerHTML = `
     ${compareHtml}
     ${rulesVsSlmHtml}
+    ${slmProposalHtml}
     ${punchlineHtml}
     ${diffHtml}
     ${renderHeroContextStrip(summary)}
@@ -1023,6 +1052,9 @@ function renderSlmTelemetryArticle(summary, rec) {
           <div><dt>SLM operations</dt><dd>${escapeHtml(opLines || "none yet")}</dd></div>
           <div><dt>Explanation source</dt><dd>${escapeHtml(pretty(rec.explanation_source || "local"))}</dd></div>
           <div><dt>Explanation routing</dt><dd>${escapeHtml(pretty(summary.explanation_routing?.prefer_slm_first ? "prefer SLM first" : "default"))}</dd></div>
+          <div><dt>SLM proposed vehicle</dt><dd>${escapeHtml(pretty(summary.slm_vehicle_proposal?.candidate_id || "n/a"))}</dd></div>
+          <div><dt>SLM proposal reason</dt><dd>${escapeHtml(summary.slm_vehicle_proposal?.reason || "n/a")}</dd></div>
+          <div><dt>EDTA ranked vehicle</dt><dd>${escapeHtml(pretty(rec.candidate?.id || "n/a"))}</dd></div>
         </dl>
       </article>
   `;
