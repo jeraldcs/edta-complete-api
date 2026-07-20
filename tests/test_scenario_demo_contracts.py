@@ -236,7 +236,7 @@ def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):
     assert "scenario-sampler" in response.text
     assert "Try scenario" in response.text
     assert "Try governance" in response.text
-    assert "Try hosted SLM" in response.text
+    assert "Inference modes" in response.text
     assert "Compare vs traditional" in response.text
     assert 'data-scenario-key="hosted_slm"' in response.text
     assert 'data-scenario-key="rules_vs_slm"' in response.text

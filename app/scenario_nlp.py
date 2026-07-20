@@ -191,7 +191,16 @@ class ScenarioNLPParser:
         return None
 
     @staticmethod
-    def _infer_channel(lower: str) -> Channel:
+    def _keyword_in_text(keyword: str, lower: str) -> bool:
+        """Whole-word / phrase match so 'mobile' does not hit inside 'automobile'."""
+        parts = [re.escape(part) for part in keyword.split() if part]
+        if not parts:
+            return False
+        pattern = r"\b" + r"\s+".join(parts) + r"\b"
+        return re.search(pattern, lower, re.I) is not None
+
+    @classmethod
+    def _infer_channel(cls, lower: str) -> Channel:
         checks = [
             (Channel.chatbot, ["chatbot", "chat bot", "chat", "conversation"]),
             (Channel.iot, ["iot", "sensor", "device", "firmware", "low battery"]),
@@ -204,7 +213,7 @@ class ScenarioNLPParser:
             (Channel.web, ["web", "website", "page", "browser", "landing page"]),
         ]
         for channel, keywords in checks:
-            if any(keyword in lower for keyword in keywords):
+            if any(cls._keyword_in_text(keyword, lower) for keyword in keywords):
                 return channel
         return Channel.web
 

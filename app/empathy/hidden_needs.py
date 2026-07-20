@@ -33,12 +33,25 @@ class HiddenNeedsExtractor:
         with path.open(encoding="utf-8") as handle:
             return yaml.safe_load(handle) or {}
 
-    @staticmethod
-    def _trigger_matches(trigger: str | int | float, text: str) -> bool:
+    # Toddler ages 0-12, or bare "year-old" / "year old" not attached to an adult age (13+).
+    _TODDLER_AGE_PATTERN = re.compile(
+        r"\b(?:[0-9]|1[0-2])(?:\s*-\s*|\s+)years?(?:\s*-\s*|\s+)old\b",
+        re.I,
+    )
+    _BARE_YEAR_OLD_PATTERN = re.compile(
+        r"(?<!\d-)(?<!\d\s)(?<!\d)\byears?\s*-?\s*old\b",
+        re.I,
+    )
+
+    @classmethod
+    def _trigger_matches(cls, trigger: str | int | float, text: str) -> bool:
         """Match whole words/phrases only — avoid false hits like 'son' in 'personalization'."""
         normalized = str(trigger).strip().lower()
         if not normalized:
             return False
+        # "year-old" is a substring of "80-year-old"; only treat as toddler age when 0-12 or bare.
+        if normalized in {"year-old", "year old"}:
+            return bool(cls._TODDLER_AGE_PATTERN.search(text) or cls._BARE_YEAR_OLD_PATTERN.search(text))
         parts = [re.escape(part) for part in re.split(r"\s+", normalized) if part]
         pattern = r"\b" + r"\s+".join(parts) + r"\b"
         return re.search(pattern, text, re.I) is not None
