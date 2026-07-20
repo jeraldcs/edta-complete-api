@@ -26,6 +26,7 @@ class DistilledSLMProvider:
         context_text: str,
         *,
         min_overlap: float = 0.35,
+        catalog: list[dict] | None = None,
     ) -> tuple[ModelPrediction, ModelPrediction, InferenceResult]:
         distilled = self.distillation.predict(context_text, min_overlap=min_overlap)
         if distilled is not None:
@@ -43,7 +44,10 @@ class DistilledSLMProvider:
             )
 
         if self.remote_enricher is not None:
-            enriched = self.remote_enricher(context_text)
+            try:
+                enriched = self.remote_enricher(context_text, catalog=catalog)
+            except TypeError:
+                enriched = self.remote_enricher(context_text)
             if enriched:
                 intent = ModelPrediction(
                     label=str(enriched.get("intent", "unknown")),
@@ -56,6 +60,13 @@ class DistilledSLMProvider:
                     source="slm_endpoint",
                 )
                 confidence = max(intent.confidence, journey.confidence)
+                metadata = {"reason": enriched.get("reason")}
+                if enriched.get("candidate_id"):
+                    metadata["vehicle_proposal"] = {
+                        "candidate_id": enriched.get("candidate_id"),
+                        "confidence": enriched.get("vehicle_confidence", enriched.get("confidence")),
+                        "reason": enriched.get("vehicle_reason") or enriched.get("reason"),
+                    }
                 return intent, journey, InferenceResult(
                     tier="slm",
                     provider="distilled_slm",
@@ -64,7 +75,7 @@ class DistilledSLMProvider:
                     confidence=confidence,
                     signals=["slm_endpoint"],
                     sub_source="slm_endpoint",
-                    metadata={"reason": enriched.get("reason")},
+                    metadata=metadata,
                 )
 
         intent, journey, confidence = self.rules.infer_from_text(context_text)

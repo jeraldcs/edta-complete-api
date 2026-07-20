@@ -51,7 +51,8 @@ const DEMO_SCENARIOS = {
     options: {
       inference_mode: "slm",
       use_slm: true,
-      use_llm_explanation: true,
+      // Keep false on free Render: enrich+propose already hit Groq; local explanation is enough.
+      use_llm_explanation: false,
     },
   },
   rules_vs_slm: {
@@ -60,7 +61,7 @@ const DEMO_SCENARIOS = {
     options: {
       inference_mode: "slm",
       use_slm: true,
-      use_llm_explanation: true,
+      use_llm_explanation: false,
       compare_rules_vs_slm: true,
     },
   },
@@ -1149,13 +1150,13 @@ async function runRulesVsSlmCompare(basePayload) {
     use_llm_explanation: false,
   }, { timeoutMs: 90000 });
 
-  setColdStartMessage("Rules vs SLM — running hosted SLM leg (Groq may take up to ~2 min)…");
+  setColdStartMessage("Rules vs SLM — running hosted SLM leg (Groq may take up to ~3 min)…");
   const slmData = await fetchScenarioRecommendation({
     ...basePayload,
     inference_mode: "slm",
     use_slm: true,
-    use_llm_explanation: true,
-  }, { timeoutMs: 150000 });
+    use_llm_explanation: false,
+  }, { timeoutMs: 180000 });
 
   lastRulesVsSlmCompare = {
     rules: captureInferenceCompareSnapshot(rulesData),
@@ -1186,7 +1187,14 @@ async function runScenario() {
       data = await runRulesVsSlmCompare(payload);
     } else {
       lastRulesVsSlmCompare = null;
-      data = await fetchScenarioRecommendation(payload);
+      const slmMode = String(payload.inference_mode || "").toLowerCase() === "slm" || payload.use_slm;
+      if (slmMode) {
+        setColdStartMessage("Hosted SLM — calling Groq for intent + vehicle proposal (may take 1–3 min)…");
+      }
+      data = await fetchScenarioRecommendation(
+        payload,
+        slmMode ? { timeoutMs: 180000 } : undefined,
+      );
     }
     lastScenarioData = data;
     lastParsedScenarioText = payload.scenario_text;

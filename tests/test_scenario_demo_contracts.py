@@ -220,9 +220,9 @@ def test_scenario_app_has_hosted_slm_demo_flow():
     assert "compare_rules_vs_slm" in app_js
     assert "Hosted SLM telemetry" in app_js
     assert 'inference_mode: "slm"' in app_js
-    assert "use_llm_explanation: true" in app_js
     assert "renderSlmProposalStrip" in app_js
     assert "SLM proposed · EDTA ranked" in app_js
+    assert "timeoutMs: 180000" in app_js
 
 
 def test_scenario_demo_page_has_unified_empathy_controls(client: TestClient):

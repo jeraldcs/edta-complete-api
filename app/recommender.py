@@ -109,6 +109,7 @@ class RecommendationEngine:
         use_slm: bool,
         inference_mode: str,
         graph: ContextGraph,
+        catalog: list[dict] | None = None,
     ):
         policy = self.orchestrator.policy
         distilled_cfg = policy.section("distilled")
@@ -161,7 +162,11 @@ class RecommendationEngine:
             self.orchestrator.record_llm_failure()
 
         if route.tier == HybridAIOrchestrationEngine.SLM_TIER:
-            intent, journey, inference = self.distilled_slm.infer(context_text, min_overlap=min_overlap)
+            intent, journey, inference = self.distilled_slm.infer(
+                context_text,
+                min_overlap=min_overlap,
+                catalog=catalog,
+            )
             self.last_inference = inference
             if inference.sub_source in {"slm_endpoint", "distilled_pattern"}:
                 teacher = "slm" if inference.sub_source == "slm_endpoint" else "slm"
@@ -468,6 +473,19 @@ class RecommendationEngine:
         context = self._apply_tkge_context(context, graph)
         context_text = graph.to_text()
         self.last_slm_vehicle_proposal = None
+        proposal_catalog = [
+            {
+                "id": candidate.id,
+                "title": candidate.title,
+                "description": (candidate.description or "")[:120],
+            }
+            for candidate in candidates
+        ]
+        slm_catalog = (
+            proposal_catalog
+            if self._should_request_slm_vehicle_proposal(use_slm=use_slm, inference_mode=inference_mode)
+            else None
+        )
 
         intent_prediction, journey_prediction, orchestration = self._resolve_predictions(
             context,
@@ -477,6 +495,7 @@ class RecommendationEngine:
             use_slm,
             inference_mode,
             graph,
+            catalog=slm_catalog,
         )
         context = self._maybe_apply_slm_vehicle_proposal(
             context,
@@ -560,18 +579,33 @@ class RecommendationEngine:
         use_slm: bool,
         inference_mode: str,
     ):
-        """Ask hosted SLM for a vehicle hint; store as proposal only (not final pick)."""
+        """Attach hosted SLM vehicle hint; prefer enrich-combined proposal to avoid a second Groq call."""
         if not self._should_request_slm_vehicle_proposal(use_slm=use_slm, inference_mode=inference_mode):
             return context
-        catalog = [
-            {
-                "id": candidate.id,
-                "title": candidate.title,
-                "description": (candidate.description or "")[:160],
-            }
-            for candidate in candidates
-        ]
-        proposal = self.slm.propose_vehicle(context_text, catalog)
+
+        proposal = getattr(self.slm, "last_vehicle_proposal", None)
+        if not proposal and self.last_inference and isinstance(self.last_inference.metadata, dict):
+            nested = self.last_inference.metadata.get("vehicle_proposal")
+            if isinstance(nested, dict) and nested.get("candidate_id"):
+                proposal = {
+                    "candidate_id": nested["candidate_id"],
+                    "confidence": nested.get("confidence") or 0.0,
+                    "reason": nested.get("reason") or "SLM vehicle proposal",
+                    "source": "slm_endpoint",
+                }
+
+        # Fallback only when enrich did not return a catalog proposal (e.g. distilled hit).
+        if not proposal:
+            catalog = [
+                {
+                    "id": candidate.id,
+                    "title": candidate.title,
+                    "description": (candidate.description or "")[:160],
+                }
+                for candidate in candidates
+            ]
+            proposal = self.slm.propose_vehicle(context_text, catalog)
+
         self.last_slm_vehicle_proposal = proposal
         if not proposal:
             return context

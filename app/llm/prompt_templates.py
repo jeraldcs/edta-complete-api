@@ -10,15 +10,36 @@ INTENT_JSON_SCHEMA = """
 """.strip()
 
 
-def enrich_intent_prompt(context_text: str) -> str:
+def enrich_intent_prompt(context_text: str, catalog: list[dict] | None = None) -> str:
+    catalog_block = ""
+    schema = INTENT_JSON_SCHEMA
+    if catalog:
+        import json
+
+        schema = """
+{
+  "intent": "research|purchase|support|retention|upgrade|unknown",
+  "confidence": 0.0,
+  "journey_stage": "awareness|research|consideration|purchase|service|retention",
+  "reason": "short reason",
+  "candidate_id": "one id from the catalog",
+  "vehicle_confidence": 0.0,
+  "vehicle_reason": "short reason under 25 words"
+}
+""".strip()
+        catalog_block = f"""
+
+Also propose exactly one vehicle from this catalog (candidate_id must match an id):
+{json.dumps(catalog, indent=2)}
+"""
     return f"""
 Analyze this customer session context and return JSON only.
 
 Context:
 {context_text}
-
+{catalog_block}
 Return exactly this schema:
-{INTENT_JSON_SCHEMA}
+{schema}
 """.strip()
 
 
