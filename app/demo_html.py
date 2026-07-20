@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 
 import app.config as edta_config
 
-DEMO_ASSET_VERSION = "20260719c"
+DEMO_ASSET_VERSION = "20260719d"
 _DEMO_CSP = (
     "default-src 'self'; "
     "script-src 'self'; "

@@ -1120,11 +1120,12 @@ async function ensureDemoReady() {
   }
 }
 
-async function fetchScenarioRecommendation(payload) {
+async function fetchScenarioRecommendation(payload, { timeoutMs } = {}) {
   const response = await window.DemoApi.fetch("/recommend-from-scenario", {
     method: "POST",
     body: JSON.stringify(payload),
     onProgress: setColdStartMessage,
+    ...(timeoutMs ? { timeoutMs } : {}),
   });
   const body = await response.text();
   if (!response.ok) {
@@ -1138,20 +1139,24 @@ async function fetchScenarioRecommendation(payload) {
 }
 
 async function runRulesVsSlmCompare(basePayload) {
-  const [rulesData, slmData] = await Promise.all([
-    fetchScenarioRecommendation({
-      ...basePayload,
-      inference_mode: "rules",
-      use_slm: false,
-      use_llm_explanation: false,
-    }),
-    fetchScenarioRecommendation({
-      ...basePayload,
-      inference_mode: "slm",
-      use_slm: true,
-      use_llm_explanation: true,
-    }),
-  ]);
+  // Sequential on purpose: parallel dual calls overload a free Render dyno and
+  // the SLM leg may do multiple Groq round-trips (enrich + propose + explain).
+  setColdStartMessage("Rules vs SLM — running rules leg…");
+  const rulesData = await fetchScenarioRecommendation({
+    ...basePayload,
+    inference_mode: "rules",
+    use_slm: false,
+    use_llm_explanation: false,
+  }, { timeoutMs: 90000 });
+
+  setColdStartMessage("Rules vs SLM — running hosted SLM leg (Groq may take up to ~2 min)…");
+  const slmData = await fetchScenarioRecommendation({
+    ...basePayload,
+    inference_mode: "slm",
+    use_slm: true,
+    use_llm_explanation: true,
+  }, { timeoutMs: 150000 });
+
   lastRulesVsSlmCompare = {
     rules: captureInferenceCompareSnapshot(rulesData),
     slm: captureInferenceCompareSnapshot(slmData),
