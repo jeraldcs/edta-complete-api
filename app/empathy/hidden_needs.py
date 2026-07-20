@@ -22,6 +22,18 @@ class HiddenNeedsExtractor:
         "comfort_seeker": "Any Midsize Sedan",
     }
 
+    # Prefer safety/family personas over leisure when multiple fire (not alphabetical).
+    PERSONA_PRIORITY = (
+        "toddler_family",
+        "elderly_passenger",
+        "desert_summer_travel",
+        "mountain_travel",
+        "college_move",
+        "couple_leisure",
+        "efficiency_seeker",
+        "comfort_seeker",
+    )
+
     def __init__(self, config_path: str | Path | None = None):
         path = Path(config_path or "config/empathy/hidden_needs.yaml")
         self.config = self._load_config(path)
@@ -56,6 +68,31 @@ class HiddenNeedsExtractor:
         pattern = r"\b" + r"\s+".join(parts) + r"\b"
         return re.search(pattern, text, re.I) is not None
 
+    def _pattern_matches(self, pattern: dict[str, Any], text: str) -> list[str]:
+        """Return matched trigger phrases, honoring companion_requires_any gates."""
+        triggers = pattern.get("triggers") or []
+        matched = [str(trigger) for trigger in triggers if self._trigger_matches(trigger, text)]
+        companion_triggers = pattern.get("companion_triggers") or []
+        companion_matched = [
+            str(trigger) for trigger in companion_triggers if self._trigger_matches(trigger, text)
+        ]
+        if not companion_matched:
+            return matched
+        required = pattern.get("companion_requires_any") or []
+        if not required:
+            return matched + companion_matched
+        if any(self._trigger_matches(item, text) for item in required):
+            return matched + companion_matched
+        # Companion words alone (e.g. spouse on a snow trip) do not fire leisure personas.
+        return matched
+
+    def _primary_persona(self, persona_tags: list[str]) -> str | None:
+        unique = set(persona_tags)
+        for persona in self.PERSONA_PRIORITY:
+            if persona in unique:
+                return persona
+        return sorted(unique)[0] if unique else None
+
     def extract(self, scenario_text: str) -> HiddenNeedsProfile:
         text = (scenario_text or "").lower()
         persona_tags: list[str] = []
@@ -64,8 +101,7 @@ class HiddenNeedsExtractor:
         weights = self.config.get("constraint_weights") or {}
 
         for pattern_id, pattern in (self.config.get("patterns") or {}).items():
-            triggers = pattern.get("triggers") or []
-            matched = [trigger for trigger in triggers if self._trigger_matches(trigger, text)]
+            matched = self._pattern_matches(pattern, text)
             if not matched:
                 continue
             persona = pattern.get("persona") or pattern_id
@@ -87,13 +123,17 @@ class HiddenNeedsExtractor:
             if existing is None or item.weight > existing.weight:
                 deduped[item.constraint_id] = item
 
-        confidence = min(0.95, 0.45 + 0.12 * len(persona_tags) + 0.05 * len(deduped))
-        standard_filter = self.STANDARD_FILTER_HINTS.get(persona_tags[0], "Generic category match") if persona_tags else ""
+        unique_personas = sorted(set(persona_tags))
+        confidence = min(0.95, 0.45 + 0.12 * len(unique_personas) + 0.05 * len(deduped))
+        primary = self._primary_persona(unique_personas)
+        standard_filter = (
+            self.STANDARD_FILTER_HINTS.get(primary, "Generic category match") if primary else ""
+        )
 
         return HiddenNeedsProfile(
-            persona_tags=sorted(set(persona_tags)),
+            persona_tags=unique_personas,
             implicit_constraints=list(deduped.values()),
-            confidence=round(confidence, 4) if persona_tags else 0.0,
+            confidence=round(confidence, 4) if unique_personas else 0.0,
             evidence_phrases=sorted(set(evidence)),
             standard_filter_match=standard_filter,
         )

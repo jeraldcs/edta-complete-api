@@ -37,15 +37,26 @@ patterns:
     persona: toddler_family
 
   scenic_couple:
+    # Leisure/scenic cues fire alone; spouse/partner only with leisure context (not winter AWD trips).
     triggers:
       - pacific coast
       - pch
-      - partner
       - scenic
       - convertible
+    companion_triggers:
+      - partner
       - wife
       - husband
       - spouse
+    companion_requires_any:
+      - scenic
+      - pacific coast
+      - pch
+      - convertible
+      - leisure
+      - wine tasting
+      - coast highway
+      - road trip romance
     constraints:
       - panoramic_roof
       - convertible_option
@@ -67,6 +78,7 @@ patterns:
     persona: college_move
 
   mountain_drive:
+    # Napa is wine country, not mountain elevation — keep out of AWD mountain triggers.
     triggers:
       - denver
       - colorado
@@ -76,7 +88,6 @@ patterns:
       - yosemite
       - tahoe
       - sierra
-      - napa valley
     constraints:
       - awd_preferred
       - strong_engine

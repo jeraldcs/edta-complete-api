@@ -300,7 +300,11 @@ class EmpathyEngine:
                 vehicle_ids,
             )
         tco_by_id = {item.candidate_id: item for item in bundle.tco_comparisons}
-        enrichment_notes = self.enrichment_service.enrichment_notes(bundle.enrichment)
+        top_candidate_id = recommendations[0].candidate.id if recommendations else None
+        enrichment_notes = self.enrichment_service.enrichment_notes(
+            bundle.enrichment,
+            top_candidate_id=top_candidate_id,
+        )
 
         updated: list[RankedRecommendation] = []
         for index, recommendation in enumerate(recommendations):
