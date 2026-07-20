@@ -2,6 +2,8 @@ let lastScenarioData = null;
 let lastParsedScenarioText = "";
 let demoReady = false;
 let activeScenarioKey = "loyalty";
+let scenarioRunInFlight = false;
+let scenarioRunGeneration = 0;
 
 const DEMO_SCENARIOS = {
   loyalty: {
@@ -257,6 +259,13 @@ function setRunning(isRunning) {
     mobileBtn.disabled = isRunning;
     mobileBtn.textContent = isRunning ? "Running..." : "Recommend";
   }
+  document.querySelectorAll(".scenario-chip-btn, .try-next-btn").forEach((button) => {
+    button.disabled = isRunning;
+  });
+  document.querySelectorAll(".benchmark-row").forEach((row) => {
+    row.setAttribute("aria-disabled", isRunning ? "true" : "false");
+    row.classList.toggle("is-disabled", isRunning);
+  });
   if (scenarioLoading) {
     scenarioLoading.classList.toggle("hidden", !isRunning);
   }
@@ -338,6 +347,9 @@ function detectScenarioKey(text) {
 function applyScenarioChip(key, { autoRun = false } = {}) {
   const scenario = DEMO_SCENARIOS[key];
   if (!scenario || !scenarioText) {
+    return;
+  }
+  if (autoRun && scenarioRunInFlight) {
     return;
   }
   scenarioText.value = scenario.text;
@@ -1166,6 +1178,9 @@ async function runRulesVsSlmCompare(basePayload) {
 }
 
 async function runScenario() {
+  if (scenarioRunInFlight) {
+    return;
+  }
   const validationError = validateScenarioText(scenarioText?.value || "");
   if (validationError) {
     showError(new Error(validationError), validationError);
@@ -1174,6 +1189,8 @@ async function runScenario() {
 
   const payload = buildPayload();
   const options = activeScenarioOptions();
+  const runId = ++scenarioRunGeneration;
+  scenarioRunInFlight = true;
   updatePayloadPreview();
   setRunError("");
   setColdStartMessage("");
@@ -1182,6 +1199,9 @@ async function runScenario() {
 
   try {
     await ensureDemoReady();
+    if (runId !== scenarioRunGeneration) {
+      return;
+    }
     let data;
     if (options.compare_rules_vs_slm) {
       data = await runRulesVsSlmCompare(payload);
@@ -1195,6 +1215,9 @@ async function runScenario() {
         payload,
         slmMode ? { timeoutMs: 180000 } : undefined,
       );
+    }
+    if (runId !== scenarioRunGeneration) {
+      return;
     }
     lastScenarioData = data;
     lastParsedScenarioText = payload.scenario_text;
@@ -1210,10 +1233,15 @@ async function runScenario() {
     setRunError("");
     setColdStartMessage("");
   } catch (error) {
-    showError(error);
+    if (runId === scenarioRunGeneration) {
+      showError(error);
+    }
   } finally {
-    setRunning(false);
-    setColdStartMessage("");
+    if (runId === scenarioRunGeneration) {
+      scenarioRunInFlight = false;
+      setRunning(false);
+      setColdStartMessage("");
+    }
   }
 }
 
@@ -1293,7 +1321,7 @@ function bindScenarioDemo() {
 
 function loadScenarioFromBenchmarkRow(row) {
   const text = row?.scenario_text;
-  if (!text || !scenarioText) {
+  if (!text || !scenarioText || scenarioRunInFlight) {
     return;
   }
   scenarioText.value = text;

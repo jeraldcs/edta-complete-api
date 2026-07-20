@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any
 
@@ -31,13 +30,19 @@ class EnrichmentService:
         derived = self._derived_constraints(weather, route)
         gas_price = self._gas_price(destination_key)
 
-        live_mode = bool(os.getenv("WEATHER_API_KEY") or os.getenv("ROUTE_API_KEY"))
+        # Only claim "live" when a provider call actually returned live data — keys alone
+        # are not enough (stubs/keywords are still used when live providers are absent).
+        sources = {
+            getattr(weather, "source", None),
+            getattr(route, "source", None),
+        }
+        source_mode = "live" if "live" in sources else "stub"
         return EnrichmentBundle(
             weather=weather,
             route=route,
             derived_constraints=derived,
             gas_price_usd=gas_price,
-            source_mode="live" if live_mode else "stub",
+            source_mode=source_mode,
         )
 
     @staticmethod
@@ -165,14 +170,27 @@ class EnrichmentService:
             return float(by_state.get("WA", default))
         return default
 
-    def enrichment_notes(self, enrichment: EnrichmentBundle) -> list[str]:
+    def enrichment_notes(
+        self,
+        enrichment: EnrichmentBundle,
+        *,
+        top_candidate_id: str | None = None,
+    ) -> list[str]:
         notes: list[str] = []
         weather = enrichment.weather
         if weather and weather.forecast in {"snow", "heavy_rain", "high_wind"} and weather.note:
-            notes.append(
-                f"We upgraded your recommendation to an AWD SUV because "
-                f"{weather.forecast.replace('_', ' ')} is forecasted along your route."
-            )
+            forecast_label = weather.forecast.replace("_", " ")
+            top_id = (top_candidate_id or "").lower()
+            if "awd" in top_id:
+                notes.append(
+                    f"We upgraded your recommendation to an AWD SUV because "
+                    f"{forecast_label} is forecasted along your route."
+                )
+            else:
+                notes.append(
+                    f"Favoring AWD / higher-traction options because "
+                    f"{forecast_label} is forecasted along your route."
+                )
         if weather and weather.forecast == "extreme_heat":
             notes.append(
                 "Extreme heat along your route — prioritizing fuel efficiency and cabin comfort "

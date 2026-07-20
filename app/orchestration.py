@@ -1,10 +1,16 @@
 import os
+from contextvars import ContextVar
 
 from app.haoe_policy import HAOEPolicyEngine
 from app.haoe_telemetry import HAOETelemetryStore
 from app.inference.contracts import PUBLIC_INFERENCE_TIERS
 from app.models import CustomerContext, IntentType, OrchestrationDecision
 from app.rules.confidence import combined_rules_confidence, scenario_rules_ready
+
+# Per-request isolation for the process-wide HAOE singleton (demo multi-user safety).
+_llm_failures: ContextVar[int] = ContextVar("haoe_llm_failures", default=0)
+_llm_circuit_open: ContextVar[bool] = ContextVar("haoe_llm_circuit_open", default=False)
+_session_cost_units: ContextVar[float] = ContextVar("haoe_session_cost", default=0.0)
 
 
 class HybridAIOrchestrationEngine:
@@ -19,15 +25,36 @@ class HybridAIOrchestrationEngine:
     ):
         self.telemetry = telemetry or HAOETelemetryStore()
         self.policy = policy or HAOEPolicyEngine()
-        self.llm_failures = 0
-        self.llm_circuit_open = False
-        self.session_cost_units = 0.0
         circuit = self.policy.section("circuit_breaker")
         self.cost_budget = float(os.getenv("HAOE_LLM_COST_BUDGET", circuit.get("session_cost_budget", 10.0)))
         self.failure_threshold = int(os.getenv("HAOE_LLM_FAILURE_THRESHOLD", circuit.get("failure_threshold", 3)))
 
+    @property
+    def llm_failures(self) -> int:
+        return _llm_failures.get()
+
+    @llm_failures.setter
+    def llm_failures(self, value: int) -> None:
+        _llm_failures.set(int(value))
+
+    @property
+    def llm_circuit_open(self) -> bool:
+        return _llm_circuit_open.get()
+
+    @llm_circuit_open.setter
+    def llm_circuit_open(self, value: bool) -> None:
+        _llm_circuit_open.set(bool(value))
+
+    @property
+    def session_cost_units(self) -> float:
+        return _session_cost_units.get()
+
+    @session_cost_units.setter
+    def session_cost_units(self, value: float) -> None:
+        _session_cost_units.set(float(value))
+
     def record_llm_failure(self) -> None:
-        self.llm_failures += 1
+        self.llm_failures = self.llm_failures + 1
         if self.llm_failures >= self.failure_threshold:
             self.llm_circuit_open = True
 
@@ -38,7 +65,7 @@ class HybridAIOrchestrationEngine:
         return (self.session_cost_units + estimated_cost) <= self.cost_budget
 
     def _finalize(self, decision: OrchestrationDecision) -> OrchestrationDecision:
-        self.session_cost_units += decision.estimated_cost_units
+        self.session_cost_units = self.session_cost_units + decision.estimated_cost_units
         self.telemetry.record(
             tier=decision.tier,
             reason=decision.reason,
