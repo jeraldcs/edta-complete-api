@@ -27,6 +27,10 @@ patterns:
       - 1-year
       - baby
       - kid
+      - child
+      - children
+      - stroller
+      - family of
     constraints:
       - isofix_anchors
       - rear_legroom

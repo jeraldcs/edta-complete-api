@@ -1,3 +1,5 @@
+from contextvars import ContextVar
+
 from app.models import RankedRecommendation, AIModelBreakdown, ModelPrediction, IntentType, JourneyStage
 from app.context_graph import ContextGraph
 from app.catalog import DEFAULT_CANDIDATES
@@ -16,6 +18,10 @@ from app.rules_engine import RulesEngine
 from app.rules_audit import RulesAuditLog
 from app.self_distillation import SelfDistillationStore
 from app.tapl_audit import TAPLAuditLog
+
+# Per-request isolation for the process-wide RecommendationEngine singleton.
+_last_inference: ContextVar[InferenceResult | None] = ContextVar("edta_last_inference", default=None)
+_last_slm_vehicle_proposal: ContextVar[dict | None] = ContextVar("edta_last_slm_proposal", default=None)
 
 
 class RecommendationEngine:
@@ -56,8 +62,22 @@ class RecommendationEngine:
         )
         self.tapl_audit = tapl_audit
         self.rules_audit = rules_audit
-        self.last_inference: InferenceResult | None = None
-        self.last_slm_vehicle_proposal: dict | None = None
+
+    @property
+    def last_inference(self) -> InferenceResult | None:
+        return _last_inference.get()
+
+    @last_inference.setter
+    def last_inference(self, value: InferenceResult | None) -> None:
+        _last_inference.set(value)
+
+    @property
+    def last_slm_vehicle_proposal(self) -> dict | None:
+        return _last_slm_vehicle_proposal.get()
+
+    @last_slm_vehicle_proposal.setter
+    def last_slm_vehicle_proposal(self, value: dict | None) -> None:
+        _last_slm_vehicle_proposal.set(value)
 
     def _apply_tkge_context(self, context, graph: ContextGraph):
         updates = {}
@@ -324,9 +344,25 @@ class RecommendationEngine:
         if candidate.channel != context.channel and not channel_relaxed:
             return None
 
-        scoring_context = context.model_copy(
-            update={"journey_stage": JourneyStage(journey_prediction.label)}
-        )
+        try:
+            journey_stage = JourneyStage(journey_prediction.label)
+        except ValueError:
+            journey_stage = context.journey_stage or JourneyStage.research
+        if journey_prediction.label != journey_stage.value:
+            journey_prediction = ModelPrediction(
+                label=journey_stage.value,
+                confidence=journey_prediction.confidence,
+                source=journey_prediction.source,
+            )
+        try:
+            IntentType(intent_prediction.label)
+        except ValueError:
+            intent_prediction = ModelPrediction(
+                label=IntentType.unknown.value,
+                confidence=intent_prediction.confidence,
+                source=intent_prediction.source,
+            )
+        scoring_context = context.model_copy(update={"journey_stage": journey_stage})
         eds_score, reasons = self.eds_engine.score(
             scoring_context,
             candidate,
@@ -501,6 +537,7 @@ class RecommendationEngine:
             context,
             context_text,
             candidates,
+            inference=self.last_inference,
             use_slm=use_slm,
             inference_mode=inference_mode,
         )
@@ -560,15 +597,34 @@ class RecommendationEngine:
         *,
         use_slm: bool,
         inference_mode: str,
+        inference: InferenceResult | None = None,
     ) -> bool:
         mode = str(inference_mode or "auto").strip().lower()
         if mode in {"slm", "distilled", "distilled_pattern"}:
             return True
         if use_slm:
             return True
-        if self.last_inference and self.last_inference.sub_source == "slm_endpoint":
+        if inference and inference.sub_source == "slm_endpoint":
             return True
         return False
+
+    @staticmethod
+    def _proposal_from_inference(inference: InferenceResult | None) -> dict | None:
+        if not inference or not isinstance(inference.metadata, dict):
+            return None
+        nested = inference.metadata.get("vehicle_proposal")
+        if not isinstance(nested, dict) or not nested.get("candidate_id"):
+            return None
+        try:
+            confidence = round(max(0.0, min(1.0, float(nested.get("confidence") or 0.0))), 4)
+        except (TypeError, ValueError):
+            confidence = 0.0
+        return {
+            "candidate_id": str(nested["candidate_id"]),
+            "confidence": confidence,
+            "reason": str(nested.get("reason") or "SLM vehicle proposal"),
+            "source": "slm_endpoint",
+        }
 
     def _maybe_apply_slm_vehicle_proposal(
         self,
@@ -576,23 +632,21 @@ class RecommendationEngine:
         context_text: str,
         candidates,
         *,
+        inference: InferenceResult | None,
         use_slm: bool,
         inference_mode: str,
     ):
         """Attach hosted SLM vehicle hint; prefer enrich-combined proposal to avoid a second Groq call."""
-        if not self._should_request_slm_vehicle_proposal(use_slm=use_slm, inference_mode=inference_mode):
+        self.last_slm_vehicle_proposal = None
+        if not self._should_request_slm_vehicle_proposal(
+            use_slm=use_slm,
+            inference_mode=inference_mode,
+            inference=inference,
+        ):
             return context
 
-        proposal = getattr(self.slm, "last_vehicle_proposal", None)
-        if not proposal and self.last_inference and isinstance(self.last_inference.metadata, dict):
-            nested = self.last_inference.metadata.get("vehicle_proposal")
-            if isinstance(nested, dict) and nested.get("candidate_id"):
-                proposal = {
-                    "candidate_id": nested["candidate_id"],
-                    "confidence": nested.get("confidence") or 0.0,
-                    "reason": nested.get("reason") or "SLM vehicle proposal",
-                    "source": "slm_endpoint",
-                }
+        # Prefer proposal carried on this request's inference metadata (not shared SLM client state).
+        proposal = self._proposal_from_inference(inference)
 
         # Fallback only when enrich did not return a catalog proposal (e.g. distilled hit).
         if not proposal:

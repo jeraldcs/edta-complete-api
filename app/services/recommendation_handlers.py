@@ -186,11 +186,36 @@ class RecommendationHandlers:
         ).lower()
         travel_like = detected_domain in {"travel", "car_rental", "vehicle"}
 
+        # Travel on web/mobile uses the vehicle catalog (avoids hotel/restaurant SKUs and
+        # the automobile→mobile restaurant bug). Chatbot/call-center keep channel catalogs.
+        travel_vehicle_channels = {Channel.web, Channel.mobile}
+        if travel_like and enriched_context.channel in travel_vehicle_channels:
+            vehicle_pool = vehicle_candidates()
+            if vehicle_pool:
+                business_context = dict(enriched_context.business_context)
+                updates: dict = {"business_context": business_context}
+                if enriched_context.channel != Channel.web:
+                    business_context["demo_channel_fallback"] = True
+                    business_context["demo_channel_requested"] = enriched_context.channel.value
+                    nlp_summary["empathy_channel_override"] = {
+                        "from": enriched_context.channel.value,
+                        "to": "web",
+                        "reason": "Travel-domain vehicle catalog requires web-channel ranking.",
+                    }
+                    updates["channel"] = Channel.web
+                business_context["demo_channel_fallback"] = True
+                nlp_summary["travel_vehicle_catalog"] = {
+                    "reason": "Travel-domain web/mobile scenario uses vehicle catalog instead of channel offers.",
+                }
+                enriched_context = enriched_context.model_copy(update=updates)
+                return enriched_context, vehicle_pool
+
         if empathy_bundle and empathy_bundle.active:
             vehicle_pool = vehicle_candidates()
             candidates = self.services.empathy_engine.merge_candidate_pools(base_candidates, vehicle_pool)
             if candidates:
                 business_context = dict(enriched_context.business_context)
+                updates = {"business_context": business_context}
                 if enriched_context.channel != Channel.web:
                     business_context["demo_channel_fallback"] = True
                     business_context["demo_channel_requested"] = enriched_context.channel.value
@@ -199,20 +224,9 @@ class RecommendationHandlers:
                         "to": "web",
                         "reason": "Empathy vehicle SKUs merged using relaxed web-channel ranking.",
                     }
-                    enriched_context = enriched_context.model_copy(update={"business_context": business_context})
+                    updates["channel"] = Channel.web
+                enriched_context = enriched_context.model_copy(update=updates)
                 return enriched_context, candidates
-
-        # Free-text travel on the web demo should rank vehicles, not generic hotel/web offers.
-        if travel_like and enriched_context.channel == Channel.web:
-            vehicle_pool = vehicle_candidates()
-            if vehicle_pool:
-                business_context = dict(enriched_context.business_context)
-                business_context["demo_channel_fallback"] = True
-                nlp_summary["travel_vehicle_catalog"] = {
-                    "reason": "Travel-domain web scenario uses vehicle catalog instead of generic web offers.",
-                }
-                enriched_context = enriched_context.model_copy(update={"business_context": business_context})
-                return enriched_context, vehicle_pool
 
         if base_candidates:
             return enriched_context, base_candidates

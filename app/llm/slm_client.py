@@ -45,7 +45,6 @@ class SLMClient:
         self.remote: OpenAICompatibleClient | None = None
         self.last_status = "ready" if self.enabled else "disabled"
         self.last_error = None
-        self.last_vehicle_proposal: dict[str, Any] | None = None
         if self.enabled and self.settings.base_url:
             remote_settings = ProviderSettings(
                 name=self.settings.name,
@@ -93,7 +92,6 @@ class SLMClient:
     ) -> Optional[dict[str, Any]]:
         if self.remote is None or self.remote.client is None:
             return None
-        self.last_vehicle_proposal = None
         try:
             result = self.remote.complete_text(
                 enrich_intent_prompt(context_text, catalog=catalog),
@@ -105,6 +103,7 @@ class SLMClient:
             if not isinstance(payload, dict):
                 self.last_status = "remote_slm_invalid"
                 return None
+            # Keep only allow-listed catalog IDs on the returned payload (per-request; no shared state).
             if catalog:
                 allowed_ids = {str(item.get("id")) for item in catalog if item.get("id")}
                 candidate_id = str(payload.get("candidate_id") or "").strip()
@@ -116,12 +115,15 @@ class SLMClient:
                         )
                     except (TypeError, ValueError):
                         vehicle_confidence = 0.0
-                    self.last_vehicle_proposal = {
-                        "candidate_id": candidate_id,
-                        "confidence": vehicle_confidence,
-                        "reason": str(payload.get("vehicle_reason") or payload.get("reason") or "SLM vehicle proposal").strip(),
-                        "source": "slm_endpoint",
-                    }
+                    payload["candidate_id"] = candidate_id
+                    payload["vehicle_confidence"] = vehicle_confidence
+                    payload["vehicle_reason"] = str(
+                        payload.get("vehicle_reason") or payload.get("reason") or "SLM vehicle proposal"
+                    ).strip()
+                else:
+                    payload.pop("candidate_id", None)
+                    payload.pop("vehicle_confidence", None)
+                    payload.pop("vehicle_reason", None)
             self.last_status = "remote_slm_success"
             self.last_error = None
             return payload

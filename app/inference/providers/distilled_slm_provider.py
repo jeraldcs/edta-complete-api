@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.inference.contracts import InferenceResult, RuleTrace
-from app.models import ModelPrediction
+from app.models import IntentType, JourneyStage, ModelPrediction
 from app.rules_engine import RulesEngine
 from app.self_distillation import SelfDistillationStore
 
@@ -20,6 +20,27 @@ class DistilledSLMProvider:
         self.distillation = distillation or SelfDistillationStore()
         self.rules = rules or RulesEngine()
         self.remote_enricher = remote_enricher
+
+    @staticmethod
+    def _safe_confidence(value: Any, default: float = 0.0) -> float:
+        try:
+            return round(max(0.0, min(1.0, float(value))), 4)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _safe_intent_label(value: Any) -> str:
+        try:
+            return IntentType(str(value or IntentType.unknown.value)).value
+        except ValueError:
+            return IntentType.unknown.value
+
+    @staticmethod
+    def _safe_journey_label(value: Any) -> str:
+        try:
+            return JourneyStage(str(value or JourneyStage.research.value)).value
+        except ValueError:
+            return JourneyStage.research.value
 
     def infer(
         self,
@@ -49,22 +70,25 @@ class DistilledSLMProvider:
             except TypeError:
                 enriched = self.remote_enricher(context_text)
             if enriched:
+                confidence = self._safe_confidence(enriched.get("confidence", 0.0))
                 intent = ModelPrediction(
-                    label=str(enriched.get("intent", "unknown")),
-                    confidence=round(float(enriched.get("confidence", 0.0)), 4),
+                    label=self._safe_intent_label(enriched.get("intent", "unknown")),
+                    confidence=confidence,
                     source="slm_endpoint",
                 )
                 journey = ModelPrediction(
-                    label=str(enriched.get("journey_stage", "research")),
-                    confidence=round(float(enriched.get("confidence", 0.0)), 4),
+                    label=self._safe_journey_label(enriched.get("journey_stage", "research")),
+                    confidence=confidence,
                     source="slm_endpoint",
                 )
-                confidence = max(intent.confidence, journey.confidence)
                 metadata = {"reason": enriched.get("reason")}
-                if enriched.get("candidate_id"):
+                candidate_id = str(enriched.get("candidate_id") or "").strip()
+                if candidate_id:
                     metadata["vehicle_proposal"] = {
-                        "candidate_id": enriched.get("candidate_id"),
-                        "confidence": enriched.get("vehicle_confidence", enriched.get("confidence")),
+                        "candidate_id": candidate_id,
+                        "confidence": self._safe_confidence(
+                            enriched.get("vehicle_confidence", enriched.get("confidence")),
+                        ),
                         "reason": enriched.get("vehicle_reason") or enriched.get("reason"),
                     }
                 return intent, journey, InferenceResult(
