@@ -171,7 +171,7 @@
     } catch (error) {
       if (error && error.name === "AbortError") {
         throw new Error(
-          "Request timed out. The server may still be waking up — wait a few seconds and click Recommend again.",
+          "Request timed out. Hosted SLM compare can take longer (rules + Groq). Wait a few seconds and try again — or click Hosted SLM alone first.",
         );
       }
       if (wakeUp && !serverAwake) {
