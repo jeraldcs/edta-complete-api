@@ -171,7 +171,7 @@
     } catch (error) {
       if (error && error.name === "AbortError") {
         throw new Error(
-          "Request timed out. Hosted SLM compare can take longer (rules + Groq). Wait a few seconds and try again — or click Hosted SLM alone first.",
+          "Request timed out. Hosted SLM calls Groq and can take 1–2 minutes on a free Render dyno — wait, hard-refresh, then try Hosted SLM again.",
         );
       }
       if (wakeUp && !serverAwake) {
@@ -183,7 +183,7 @@
         } catch (retryError) {
           if (retryError && retryError.name === "AbortError") {
             throw new Error(
-              "Request timed out. The server may still be waking up — wait a few seconds and click Recommend again.",
+              "Request timed out while waking the demo. Wait ~30s and click Recommend again.",
             );
           }
           throw retryError;

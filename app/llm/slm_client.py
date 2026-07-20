@@ -45,6 +45,7 @@ class SLMClient:
         self.remote: OpenAICompatibleClient | None = None
         self.last_status = "ready" if self.enabled else "disabled"
         self.last_error = None
+        self.last_vehicle_proposal: dict[str, Any] | None = None
         if self.enabled and self.settings.base_url:
             remote_settings = ProviderSettings(
                 name=self.settings.name,
@@ -85,17 +86,42 @@ class SLMClient:
             "remote": self.remote.status() if self.remote else None,
         }
 
-    def remote_enrich_intent(self, context_text: str) -> Optional[dict[str, Any]]:
+    def remote_enrich_intent(
+        self,
+        context_text: str,
+        catalog: list[dict[str, Any]] | None = None,
+    ) -> Optional[dict[str, Any]]:
         if self.remote is None or self.remote.client is None:
             return None
+        self.last_vehicle_proposal = None
         try:
             result = self.remote.complete_text(
-                enrich_intent_prompt(context_text),
+                enrich_intent_prompt(context_text, catalog=catalog),
                 operation="slm_enrich_intent",
             )
             if self.telemetry is not None:
                 self.telemetry.record(result.usage)
             payload = self.remote.parse_json(result.text)
+            if not isinstance(payload, dict):
+                self.last_status = "remote_slm_invalid"
+                return None
+            if catalog:
+                allowed_ids = {str(item.get("id")) for item in catalog if item.get("id")}
+                candidate_id = str(payload.get("candidate_id") or "").strip()
+                if candidate_id in allowed_ids:
+                    try:
+                        vehicle_confidence = round(
+                            max(0.0, min(1.0, float(payload.get("vehicle_confidence", payload.get("confidence", 0.0))))),
+                            4,
+                        )
+                    except (TypeError, ValueError):
+                        vehicle_confidence = 0.0
+                    self.last_vehicle_proposal = {
+                        "candidate_id": candidate_id,
+                        "confidence": vehicle_confidence,
+                        "reason": str(payload.get("vehicle_reason") or payload.get("reason") or "SLM vehicle proposal").strip(),
+                        "source": "slm_endpoint",
+                    }
             self.last_status = "remote_slm_success"
             self.last_error = None
             return payload
