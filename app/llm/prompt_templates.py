@@ -22,6 +22,32 @@ Return exactly this schema:
 """.strip()
 
 
+def propose_vehicle_prompt(context_text: str, catalog: list[dict]) -> str:
+    import json
+
+    return f"""
+You are proposing a vehicle candidate for EDTA. EDTA will still re-rank and apply TAPL governance.
+
+Customer / scenario context:
+{context_text}
+
+Allowed catalog (pick exactly one id from this list):
+{json.dumps(catalog, indent=2)}
+
+Return JSON only with this schema:
+{{
+  "candidate_id": "one id from the catalog",
+  "confidence": 0.0,
+  "reason": "short reason under 25 words"
+}}
+
+Rules:
+- candidate_id MUST be one of the catalog ids.
+- Prefer safety/traction for winter/snow; fuel efficiency and cabin comfort for extreme heat / long desert trips.
+- Do not invent ids or vehicles outside the catalog.
+""".strip()
+
+
 def explain_recommendation_prompt(context_text: str, recommendation_payload: dict) -> str:
     import json
 
