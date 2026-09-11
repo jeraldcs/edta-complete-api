@@ -17,7 +17,9 @@ Every recommend request moves through three phases:
 
 ![Governed Architecture reference implementation](static/governed_architecture.png)
 
-Solid arrows are request flow; dashed lines are context inputs and state feedback.
+**Arrow key:** solid navy = request flow · solid blue = API ingress / feedback · purple dash = cross-phase context (EML→TAPL trust/fatigue, TKGE→EDS intent/keywords) · orange dash = external calls (profile adapter, SLM/LLM) · blue dash = SQLite read/write · green dot = state persistence.
+
+Regenerate: `python scripts/generate_governed_architecture_diagram.py`
 
 ---
 
