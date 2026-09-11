@@ -19,6 +19,19 @@ data/edta.db-*
 # Environment and secrets
 .env
 .env.local
+**/edtakey.txt
+**/*api_key*.txt
+
+# Internal documentation (kept locally; use a private repo for backups)
+docs/
+_phase_plan_extract.txt
+
+# Generated benchmark / demo artifacts
+data/generated/
+
+# Office lock / temp files
+~$*
+**/~$*
 
 # OS / editor
 .DS_Store

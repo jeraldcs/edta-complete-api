@@ -1,5 +1,7 @@
 # EDTA Full AI Models
 
+**Architecture overview:** [ARCHITECTURE.md](ARCHITECTURE.md) · **Live demo:** https://edta-api.onrender.com/scenario-demo
+
 This project extends the EDTA / EDS personalization framework with detailed AI models for all major decision categories:
 
 1. Intent Classification Model
@@ -120,20 +122,13 @@ Single browser demo for the full EDTA stack:
 - **Security headers** — applied on all responses; HSTS in production
 - **Graceful shutdown** — uvicorn `--timeout-graceful-shutdown 30` in Docker entrypoint
 - **Load test baseline** — `python scripts/load_test.py`
-- **Four-tier benchmark** — `python scripts/load_test_tiers.py` (see [docs/BENCHMARKS.md](docs/BENCHMARKS.md))
-
-Operator guides:
-
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- [docs/SECURITY.md](docs/SECURITY.md)
+- **Four-tier benchmark** — `python scripts/load_test_tiers.py`
 
 Optional OpenTelemetry tracing: install `requirements-observability.txt` and set `OTEL_ENABLED=true`.
 
 ## Deploy on Render (free)
 
 Use the included [`render.yaml`](render.yaml) blueprint for one-click Docker deploy on Render's free tier.
-
-Full steps: [docs/RENDER.md](docs/RENDER.md)
 
 Quick summary:
 
