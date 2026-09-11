@@ -2,7 +2,7 @@
 
 **Experience-Driven Targeting Architecture (EDTA)** — an open-source reference for governed, explainable personalization.
 
-**Architecture overview:** [ARCHITECTURE.md](ARCHITECTURE.md) · **Live demo:** https://edta-api.onrender.com/scenario-demo
+**Architecture overview:** [ARCHITECTURE.md](ARCHITECTURE.md) · **Live demo:** https://edta-api.onrender.com/scenario-demo · **11-scenario matrix:** [benchmark/TRAVEL_SCENARIO_SCORES.md](benchmark/TRAVEL_SCENARIO_SCORES.md)
 
 ## What is EDTA?
 

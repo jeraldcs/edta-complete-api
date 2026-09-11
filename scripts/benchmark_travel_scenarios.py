@@ -21,7 +21,7 @@ def main() -> int:
     payload = handlers.travel_scenario_benchmark()
 
     out_json = ROOT / "data" / "generated" / "travel_scenario_scores.json"
-    out_md = ROOT / "docs" / "TRAVEL_SCENARIO_SCORES.md"
+    out_md = ROOT / "benchmark" / "TRAVEL_SCENARIO_SCORES.md"
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     out_md.write_text(benchmark_to_markdown(payload), encoding="utf-8")
