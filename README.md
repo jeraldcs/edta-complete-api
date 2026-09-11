@@ -1,8 +1,42 @@
 # EDTA Full AI Models
 
+**Experience-Driven Targeting Architecture (EDTA)** — an open-source reference for governed, explainable personalization.
+
 **Architecture overview:** [ARCHITECTURE.md](ARCHITECTURE.md) · **Live demo:** https://edta-api.onrender.com/scenario-demo
 
-This project extends the EDTA / EDS personalization framework with detailed AI models for all major decision categories:
+## What is EDTA?
+
+**EDTA (Experience-Driven Targeting Architecture)** is a governed decision pipeline for enterprise personalization. Instead of treating recommendation as a single model call (`context → model → rank`), EDTA decomposes each request into explicit layers: cross-session memory, live journey context, tiered inference routing, explainable relevance scoring, trust governance, outcome simulation, and auditable API responses.
+
+Each layer owns one decision responsibility — so teams can trace *why* an offer was shown, *whether* it was permitted, and *what* happens on the next request when fatigue or journey context changes.
+
+## What problem does this solve?
+
+Enterprise personalization often fails in production for architectural reasons, not model quality:
+
+- **Relevance without governance** — models rank offers well, but consent, fatigue, channel sensitivity, and journey context rarely appear in one inspectable flow.
+- **Opaque decisions** — explanations stop at a score; operators cannot defend an offer under compliance or customer-trust review.
+- **Stateless sessions** — the same candidate looks identical on every request, even after repeated declines.
+- **Unbounded LLM cost** — ambiguous text escalates every call to the most expensive tier.
+- **Trust as metadata** — logging `trust_score=0.4` while still serving a full-strength upsell is not governance.
+
+EDTA addresses these by making **relevance propose, governance modify or block, memory preserve context, and orchestration select the simplest reliable inference tier** for each request.
+
+## Why EDTA?
+
+| Traditional approach | EDTA approach |
+|---------------------|---------------|
+| One ranker or LLM owns everything | Separate modules for memory, routing, relevance, trust, and outcomes |
+| Trust fields in analytics only | TAPL actions change rank (show / soften / delay / suppress) |
+| Every request starts from zero | EML + TKGE carry trust, fatigue, and journey sequence forward |
+| Hidden inference routing | HAOE: explicit Rules → SLM → ML → optional LLM tiers |
+| `{id, score}` responses | API contract includes tier, rules fired, TAPL reason, EDS breakdown, `request_id` |
+
+This repository is a **runnable reference implementation** of that architecture — FastAPI, YAML policies, modular ML, optional LLM enrichment, and a live scenario demo.
+
+## What this repo includes
+
+This project implements the EDTA pipeline with detailed AI models for all major decision categories:
 
 1. Intent Classification Model
 2. Journey Stage Classification Model
